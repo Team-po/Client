@@ -7,3 +7,5 @@
 - Server state: TanStack Query
 - Lint/format: Biome
 - Package manager: pnpm
+- Landing UI approach: token-driven design system (CSS variables + Tailwind extension)
+- Shared primitives for marketing pages: `Button`, `Badge`, `Surface`, `Container`, `SectionHeading`
