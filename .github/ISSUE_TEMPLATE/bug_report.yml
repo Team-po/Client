@@ -1,0 +1,57 @@
+name: Bug report
+description: 버그 재현 정보와 기대 동작을 기록합니다.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 요약
+      description: 무엇이 잘못되었는지 한두 문장으로 적어주세요.
+      placeholder: 예) 프로필 페이지에서 새로고침 시 사용자 정보가 빈 상태로 표시됩니다.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 절차
+      description: 재현 가능한 순서대로 작성해주세요.
+      placeholder: |
+        1. 로그인한다
+        2. 프로필 페이지로 이동한다
+        3. 브라우저 새로고침을 실행한다
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 동작
+      description: 원래 어떻게 동작해야 하는지 적어주세요.
+      placeholder: 예) 새로고침 후에도 현재 사용자 정보가 정상적으로 렌더링되어야 합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+      description: 실제로 발생한 결과를 적어주세요.
+      placeholder: 예) 이름, 이메일, 아바타가 모두 비어 있는 상태로 표시됩니다.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 영향 범위
+      description: 관련된 화면, 기능, API가 있으면 적어주세요.
+      placeholder: 예) `src/pages/profile-page.tsx`, `/me` API, 인증 세션 복원 로직
+    validations:
+      required: false
+  - type: textarea
+    id: verification
+    attributes:
+      label: 확인한 사항
+      description: 이미 시도한 우회 방법이나 확인한 로그가 있으면 적어주세요.
+      placeholder: 예) 콘솔 에러 없음, 로컬 MSW 모드와 실제 API 모드 모두에서 재현됨
+    validations:
+      required: false
