@@ -25,10 +25,10 @@ export function ValueSection() {
 						return (
 							<Surface key={feature.title} className="space-y-4">
 								<div className="flex items-center justify-between">
-									<div className="flex size-10 items-center justify-center rounded-full bg-accent/15 text-accent">
+									<div className="flex size-10 items-center justify-center rounded-xl bg-accent/15 text-accent shadow-sm">
 										<Icon className="size-5" />
 									</div>
-									<Badge variant="warm">AI Assist</Badge>
+									<Badge variant="brand">AI Assist</Badge>
 								</div>
 								<h3 className="font-display text-xl leading-tight">
 									{feature.title}

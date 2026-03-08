@@ -38,65 +38,78 @@ export function HeroSection() {
 						</p>
 					</div>
 
-					<div className="flex flex-wrap gap-3">
-						<Button size="lg" className="gap-2">
-							대기열 등록 시작
-							<ArrowRight className="size-4" />
+					<div className="flex flex-wrap gap-3 mt-8">
+						<Button
+							size="lg"
+							className="relative overflow-hidden group gap-2 shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 active:translate-y-0"
+						>
+							<span className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] skew-x-[-20deg] group-hover:animate-[shine_1.5s_ease-in-out_infinite]" />
+							<span className="relative z-10 flex items-center gap-2">
+								대기열 등록 시작
+								<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+							</span>
 						</Button>
-						<Button variant="outline" size="lg">
+						<Button
+							variant="outline"
+							size="lg"
+							className="transition-all hover:-translate-y-0.5 hover:bg-white/80"
+						>
 							작동 방식 보기
 						</Button>
 					</div>
 				</div>
 
-				<Surface
-					variant="glass"
-					spacing="spacious"
-					className="animate-rise-in space-y-6 [animation-delay:140ms]"
-				>
-					<div className="space-y-2">
-						<p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-							Queue Snapshot
-						</p>
-						<p className="text-2xl font-display leading-tight">
-							지금 바로 팀에 배치될 준비가 된 개발 학습자
-						</p>
-					</div>
+				<div className="relative animate-rise-in [animation-delay:140ms]">
+					<div className="absolute inset-0 -z-10 animate-float bg-primary/20 blur-[100px] rounded-full" />
+					<Surface
+						variant="glass"
+						spacing="spacious"
+						className="space-y-6 animate-float"
+					>
+						<div className="space-y-2">
+							<p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+								Queue Snapshot
+							</p>
+							<p className="text-2xl font-display leading-tight">
+								지금 바로 팀에 배치될 준비가 된 개발 학습자
+							</p>
+						</div>
 
-					<div className="space-y-3 rounded-xl border border-border/70 bg-white/80 p-4">
-						<QueueItem
-							icon={UsersRound}
-							queueRole="Frontend"
-							level="React / TypeScript"
-						/>
-						<QueueItem
-							icon={Timer}
-							queueRole="Backend"
-							level="NestJS / PostgreSQL"
-						/>
-						<QueueItem
-							icon={Sparkles}
-							queueRole="Product"
-							level="Planning / Docs"
-						/>
-					</div>
+						<div className="space-y-3 rounded-xl border border-border/70 bg-white/80 p-4">
+							<QueueItem
+								icon={UsersRound}
+								queueRole="Frontend"
+								level="React / TypeScript"
+							/>
+							<QueueItem
+								icon={Timer}
+								queueRole="Backend"
+								level="NestJS / PostgreSQL"
+							/>
+							<QueueItem
+								icon={Sparkles}
+								queueRole="Product"
+								level="Planning / Docs"
+							/>
+						</div>
 
-					<div className="grid gap-3 sm:grid-cols-3">
-						{heroStats.map((stat) => (
-							<div
-								key={stat.label}
-								className="rounded-xl border border-border/70 bg-white/80 p-4"
-							>
-								<p className="font-display text-2xl text-[hsl(var(--brand-ink))]">
-									{stat.value}
-								</p>
-								<p className="mt-1 text-xs font-semibold text-muted-foreground">
-									{stat.label}
-								</p>
-							</div>
-						))}
-					</div>
-				</Surface>
+						<div className="grid gap-3 sm:grid-cols-3">
+							{heroStats.map((stat) => (
+								<div
+									key={stat.label}
+									className="rounded-xl border border-border bg-white/80 p-4 shadow-sm"
+								>
+									<p className="font-mono font-semibold tracking-tight text-2xl text-primary">
+										{stat.value}
+									</p>
+									<p className="mt-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+										{stat.label}
+									</p>
+								</div>
+							))}
+						</div>
+					</Surface>
+				</div>
 			</Container>
 		</section>
 	);

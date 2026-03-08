@@ -1,4 +1,5 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -8,36 +9,37 @@
 	:root {
 		--font-display: "Pretendard Variable", "Pretendard", sans-serif;
 		--font-body: "Pretendard Variable", "Pretendard", sans-serif;
+		--font-mono: "JetBrains Mono", monospace;
 
-		--background: 42 38% 97%;
-		--foreground: 210 23% 15%;
+		--background: 0 0% 100%;
+		--foreground: 222.2 84% 4.9%;
 		--card: 0 0% 100%;
-		--card-foreground: 210 23% 15%;
+		--card-foreground: 222.2 84% 4.9%;
 		--popover: 0 0% 100%;
-		--popover-foreground: 210 23% 15%;
-		--primary: 208 91% 43%;
-		--primary-foreground: 0 0% 100%;
-		--secondary: 205 52% 95%;
-		--secondary-foreground: 210 33% 23%;
-		--muted: 43 29% 92%;
-		--muted-foreground: 214 12% 36%;
-		--accent: 27 90% 55%;
-		--accent-foreground: 0 0% 100%;
-		--destructive: 0 78% 55%;
-		--destructive-foreground: 0 0% 100%;
-		--border: 207 26% 82%;
-		--input: 205 33% 88%;
-		--ring: 208 91% 43%;
-		--chart-1: 208 91% 43%;
-		--chart-2: 188 74% 36%;
-		--chart-3: 32 92% 56%;
-		--chart-4: 143 47% 37%;
-		--chart-5: 352 75% 57%;
-		--radius: 0.9rem;
+		--popover-foreground: 222.2 84% 4.9%;
+		--primary: 221.2 83.2% 53.3%;
+		--primary-foreground: 210 40% 98%;
+		--secondary: 210 40% 96.1%;
+		--secondary-foreground: 222.2 47.4% 11.2%;
+		--muted: 210 40% 96.1%;
+		--muted-foreground: 215.4 16.3% 46.9%;
+		--accent: 243 75% 59%;
+		--accent-foreground: 210 40% 98%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 210 40% 98%;
+		--border: 214.3 31.8% 91.4%;
+		--input: 214.3 31.8% 91.4%;
+		--ring: 221.2 83.2% 53.3%;
+		--chart-1: 221.2 83.2% 53.3%;
+		--chart-2: 215 100% 45%;
+		--chart-3: 152 60% 42%;
+		--chart-4: 43 100% 50%;
+		--chart-5: 0 84% 60%;
+		--radius: 0.5rem;
 
-		--brand-ink: 210 36% 12%;
-		--brand-soft: 202 88% 96%;
-		--brand-warm: 31 100% 95%;
+		--brand-ink: 222.2 84% 4.9%;
+		--brand-soft: 210 40% 96.1%;
+		--brand-warm: 210 40% 98%;
 	}
 
 	* {
@@ -148,8 +150,8 @@
 		background-image: linear-gradient(
 			95deg,
 			hsl(var(--brand-ink)) 0%,
-			hsl(var(--primary)) 56%,
-			hsl(var(--accent)) 100%
+			hsl(var(--primary)) 60%,
+			#6366f1 100% /* Indigo/Violet color to not fade out */
 		);
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
