@@ -1,12 +1,12 @@
 import type { UserProfile } from "@/lib/types/user";
 
 export const previewAuthSeed = {
-	email: "preview@matchqueue.dev",
+	email: "preview@teampo.dev",
 	nickname: "queue_runner",
-	password: "matchqueue123!",
+	password: "teampo123!",
 	profileImageUrl: "https://i.pravatar.cc/240?img=12",
 	userId: "user_preview_001",
-	verificationToken: "MATCHQUEUE-2026",
+	verificationToken: "TEAMPO-2026",
 };
 
 export function createPreviewUser(

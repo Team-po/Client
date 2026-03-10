@@ -1,4 +1,6 @@
-# SSU-JJS Client
+![Team-po logo](./public/logo-full.svg)
+
+# Team-po Client
 
 Developer side-project random team matching service frontend.
 

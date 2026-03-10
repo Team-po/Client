@@ -37,7 +37,7 @@ function getPath(path: string) {
 }
 
 function isServerErrorTrigger(value: string) {
-	return value.trim() === "server-error@matchqueue.dev";
+	return value.trim() === "server-error@teampo.dev";
 }
 
 function isValidEmail(value: string) {
@@ -155,7 +155,7 @@ export const handlers = [
 			);
 		}
 
-		if (body.email.trim() === "taken@matchqueue.dev") {
+		if (body.email.trim() === "taken@teampo.dev") {
 			return buildErrorResponse(
 				409,
 				"이미 사용 중인 이메일입니다.",

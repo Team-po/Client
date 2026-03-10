@@ -1,4 +1,3 @@
-import { Code2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -21,11 +20,15 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 		<header className="sticky top-0 z-20 border-b border-border/50 bg-background/80 backdrop-blur-md">
 			<Container className="flex h-16 items-center justify-between gap-4">
 				<Link className="flex items-center gap-2" to="/">
-					<div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-soft">
-						<Code2 />
-					</div>
+					<img
+						alt="Team-po icon"
+						className="size-9 rounded-lg shadow-soft"
+						height={36}
+						src="/icon-light.svg"
+						width={36}
+					/>
 					<div>
-						<p className="font-display text-lg leading-none">MatchQueue</p>
+						<p className="font-display text-lg leading-none">Team-po</p>
 						<p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
 							dev team project builder
 						</p>

@@ -130,7 +130,7 @@ export function SignupView() {
 									email: event.target.value,
 								}));
 							}}
-							placeholder="you@matchqueue.dev"
+							placeholder="you@teampo.dev"
 							required
 							type="email"
 							value={form.email}

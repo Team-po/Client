@@ -1,7 +1,7 @@
 export const previewAuth = {
-	email: "preview@matchqueue.dev",
-	password: "matchqueue123!",
-	verificationToken: "MATCHQUEUE-2026",
+	email: "preview@teampo.dev",
+	password: "teampo123!",
+	verificationToken: "TEAMPO-2026",
 };
 
 export function getProfileFallback(value: string) {

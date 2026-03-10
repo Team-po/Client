@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: MatchQueue User API
+  title: Team-po User API
   version: 0.1.0
-  summary: Authentication and current-user endpoints for the MatchQueue frontend MVP.
+  summary: Authentication and current-user endpoints for the Team-po frontend MVP.
   description: |
     Initial contract for the user-facing authentication flow used by the frontend
     routes `/login`, `/signup`, `/verify-email`, and `/me`.
@@ -31,8 +31,8 @@ paths:
             examples:
               default:
                 value:
-                  email: preview@matchqueue.dev
-                  password: matchqueue123!
+                  email: preview@teampo.dev
+                  password: teampo123!
       responses:
         '200':
           description: Login completed
@@ -45,9 +45,9 @@ paths:
                   value:
                     user:
                       id: usr_01HQ7ZJ5M3P8Q2A2F4F4Q7T3VV
-                      email: preview@matchqueue.dev
+                      email: preview@teampo.dev
                       nickname: queue_runner
-                      profileImageUrl: https://images.matchqueue.dev/profiles/preview.png
+                      profileImageUrl: https://images.teampo.dev/profiles/preview.png
                       emailVerified: true
                       createdAt: '2026-03-05T09:00:00Z'
                       verifiedAt: '2026-03-05T09:15:00Z'
@@ -78,8 +78,8 @@ paths:
             examples:
               default:
                 value:
-                  email: new.dev@matchqueue.dev
-                  password: matchqueue123!
+                  email: new.dev@teampo.dev
+                  password: teampo123!
                   nickname: sprintmaker
                   profileImage: <binary image file>
       responses:
@@ -94,14 +94,14 @@ paths:
                   value:
                     user:
                       id: usr_01HQ81GHZ4BHZSE1M6P63PQXTX
-                      email: new.dev@matchqueue.dev
+                      email: new.dev@teampo.dev
                       nickname: sprintmaker
-                      profileImageUrl: https://images.matchqueue.dev/profiles/sprintmaker.png
+                      profileImageUrl: https://images.teampo.dev/profiles/sprintmaker.png
                       emailVerified: false
                       createdAt: '2026-03-08T07:00:00Z'
                       verifiedAt: null
                     verification:
-                      email: new.dev@matchqueue.dev
+                      email: new.dev@teampo.dev
                       deliveryStatus: queued
                       resendAfterSeconds: 60
         '400':
@@ -126,7 +126,7 @@ paths:
             examples:
               default:
                 value:
-                  email: new.dev@matchqueue.dev
+                  email: new.dev@teampo.dev
       responses:
         '200':
           description: Verification email queued
@@ -137,7 +137,7 @@ paths:
               examples:
                 success:
                   value:
-                    email: new.dev@matchqueue.dev
+                    email: new.dev@teampo.dev
                     deliveryStatus: queued
                     resendAfterSeconds: 60
         '400':
@@ -162,8 +162,8 @@ paths:
             examples:
               default:
                 value:
-                  email: new.dev@matchqueue.dev
-                  token: MATCHQUEUE-2026
+                  email: new.dev@teampo.dev
+                  token: TEAMPO-2026
       responses:
         '200':
           description: Email confirmed
@@ -176,9 +176,9 @@ paths:
                   value:
                     user:
                       id: usr_01HQ81GHZ4BHZSE1M6P63PQXTX
-                      email: new.dev@matchqueue.dev
+                      email: new.dev@teampo.dev
                       nickname: sprintmaker
-                      profileImageUrl: https://images.matchqueue.dev/profiles/sprintmaker.png
+                      profileImageUrl: https://images.teampo.dev/profiles/sprintmaker.png
                       emailVerified: true
                       createdAt: '2026-03-08T07:00:00Z'
                       verifiedAt: '2026-03-08T07:03:00Z'
@@ -210,9 +210,9 @@ paths:
                   value:
                     user:
                       id: usr_01HQ7ZJ5M3P8Q2A2F4F4Q7T3VV
-                      email: preview@matchqueue.dev
+                      email: preview@teampo.dev
                       nickname: queue_runner
-                      profileImageUrl: https://images.matchqueue.dev/profiles/preview.png
+                      profileImageUrl: https://images.teampo.dev/profiles/preview.png
                       emailVerified: true
                       createdAt: '2026-03-05T09:00:00Z'
                       verifiedAt: '2026-03-05T09:15:00Z'
@@ -295,7 +295,7 @@ components:
           type: string
           format: email
           examples:
-            - preview@matchqueue.dev
+            - preview@teampo.dev
         nickname:
           type: string
           minLength: 2
@@ -308,7 +308,7 @@ components:
             - 'null'
           format: uri
           examples:
-            - https://images.matchqueue.dev/profiles/preview.png
+            - https://images.teampo.dev/profiles/preview.png
         emailVerified:
           type: boolean
         createdAt:

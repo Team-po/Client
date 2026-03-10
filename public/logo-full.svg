@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 120" fill="none">
+  <!-- 
+    Team-po Full Logo
+    Stroke thickness rolled back to 14. 
+    Rectangles shifted down so the top rect aligns perfectly with the visual top of the '>'.
+  -->
+  <g>
+    <!-- Terminal Prompt ">" (Top visual boundary is roughly y=37 due to stroke-width=14) -->
+    <path 
+      d="M 25 44 L 50 64 L 25 84" 
+      stroke="#1E293B" 
+      stroke-width="14" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" 
+    />
+    
+    <!-- Ascending "Jandi" blocks -->
+    <rect x="58" y="77" width="16" height="16" rx="4" fill="#10B981" />
+    <rect x="78" y="57" width="16" height="16" rx="4" fill="#3B82F6" />
+    <rect x="98" y="37" width="16" height="16" rx="4" fill="#6366F1" />
+  </g>
+  
+  <!-- 
+    Typography: 
+    Sharp font leaning forward to the right (skewX -15) 
+    for a fast, forward-moving aesthetic.
+  -->
+  <g transform="translate(135, 85) skewX(-15)">
+    <text 
+      x="0" 
+      y="0" 
+      font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+      font-weight="900" 
+      font-size="68" 
+      letter-spacing="-1.5"
+    >
+      <tspan fill="#1E293B">Team</tspan><tspan fill="#3B82F6">-po</tspan>
+    </text>
+  </g>
+</svg>
