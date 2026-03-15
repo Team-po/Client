@@ -83,7 +83,7 @@ export const presentationSections: PresentationSectionLink[] = [
 		id: "team-space",
 		label: "03-2",
 		title: "팀 스페이스",
-		summary: "협업 기능 · 가이드",
+		summary: "협업 기능 · AI 가이드",
 	},
 	{
 		id: "schema",
@@ -116,19 +116,19 @@ export const painPoints: PainPoint[] = [
 		label: "Pain Point 1",
 		title: "팀 구성의 높은 진입장벽",
 		description:
-			"초보 개발자는 같이 프로젝트 할 팀원을 구하는 방법 자체를 모르는 경우가 많다. 커뮤니티 모집글은 경쟁이 치열하고, 지인 네트워크도 한계가 있다.",
+			"초보 개발자는 같이 프로젝트 할 팀원을 구하는 방법 자체를 모르는 경우가 많다. 커뮤니티 모집글은 경쟁이 치열하고, 지인 네트워크도 한계가 있습니다.",
 	},
 	{
 		label: "Pain Point 2",
 		title: "프로젝트 중도 포기",
 		description:
-			"팀을 구성해도 명확한 역할 분담, 일정 관리, 책임 구조 없이 시작하면 흐지부지 해체되는 경우가 빈번하다.",
+			"팀을 구성해도 명확한 역할 분담, 일정 관리, 책임 구조 없이 시작하면 흐지부지 해체되는 경우가 빈번합니다.",
 	},
 	{
 		label: "Pain Point 3",
 		title: "협업 경험 부족으로 인한 혼란",
 		description:
-			"FE/BE 간 협업, Git 브랜치 전략, 코드 리뷰 등 실무적 협업 방식을 처음 접하는 팀원들이 많아 시작부터 마찰이 생긴다.",
+			"FE/BE 간 협업, Git 브랜치 전략, 코드 리뷰 등 실무적 협업 방식을 처음 접하는 팀원들이 많아 시작부터 마찰이 생깁니다.",
 	},
 ];
 
@@ -174,7 +174,7 @@ export const matchingSteps: MatchingStep[] = [
 	{
 		step: "4",
 		title: "수락/거절",
-		details: ["주제 확인 후 수락/거절", "거절 시 온도 감소"],
+		details: ["주제 확인 후 수락/거절"],
 	},
 	{
 		step: "5",

@@ -450,28 +450,28 @@ export function TeamPoPresentationView() {
 											`bg-gradient-to-r ${accentClass}`,
 										)}
 									>
-										<div className="rounded-full bg-white/15 px-4 py-1.5 text-base font-semibold">
+										<div className="rounded-full bg-white/15 px-4 py-2 text-lg font-semibold">
 											{solution.label}
 										</div>
-										<h3 className="text-2xl font-display leading-tight text-white">
+										<h3 className="text-3xl font-display leading-tight text-white">
 											{solution.title}
 										</h3>
 									</div>
-									<div className="flex-1 space-y-5 px-7 py-7">
+									<div className="flex-1 space-y-4 px-7 py-7">
 										{solution.description.map((item) => (
 											<div
-												className="flex items-start gap-4 rounded-2xl border border-border/60 bg-background/70 px-5 py-5"
+												className="flex items-start gap-4 rounded-2xl border border-border/60 bg-background/70 px-5 py-4"
 												key={item}
 											>
-												<CheckCircle2 className="mt-0.5 size-6 shrink-0 text-primary" />
-												<p className="text-base leading-8 text-muted-foreground">
+												<CheckCircle2 className="mt-0.5 size-7 shrink-0 text-primary" />
+												<p className="text-lg leading-8 text-slate-800">
 													{item}
 												</p>
 											</div>
 										))}
 
 										<div className="rounded-[1.75rem] border border-dashed border-primary/20 bg-primary/5 px-5 py-5">
-											<p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">
+											<p className="text-base font-semibold uppercase tracking-[0.14em] text-primary">
 												Key Inputs
 											</p>
 											<div className="mt-4 flex flex-wrap gap-3">
@@ -479,7 +479,7 @@ export function TeamPoPresentationView() {
 													solution.label as keyof typeof solutionKeywords
 												].map((keyword) => (
 													<div
-														className="rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-sm text-muted-foreground"
+														className="rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-base text-slate-800"
 														key={keyword}
 													>
 														{keyword}
@@ -547,7 +547,7 @@ export function TeamPoPresentationView() {
 									<div className="space-y-4">
 										{matchingFactors.map((factor) => (
 											<div
-												className="rounded-2xl border border-primary/10 bg-white/80 px-5 py-4 text-base text-muted-foreground"
+												className="rounded-2xl border border-primary/10 bg-white/80 px-5 py-4 text-base text-slate-800"
 												key={factor}
 											>
 												{factor}
@@ -577,7 +577,7 @@ export function TeamPoPresentationView() {
 										매칭 세션 핵심
 									</h4>
 								</div>
-								<div className="mt-6 space-y-4 text-base leading-8 text-muted-foreground">
+								<div className="mt-6 space-y-4 text-base leading-8 text-slate-800">
 									<p>주제·역할·기술 스택·온도를 함께 반영해 팀원을 구성</p>
 									<p>매칭 완료 시 이메일 알림과 수락/거절 플로우 제공</p>
 									<p>최종 수락 시 자동으로 팀 스페이스를 개설</p>
@@ -599,21 +599,21 @@ export function TeamPoPresentationView() {
 
 							return (
 								<div
-									className="flex min-h-[18.5rem] flex-col rounded-3xl border border-border/60 bg-background/80 p-7 shadow-sm"
+									className="flex min-h-[17.2rem] flex-col rounded-3xl border border-border/60 bg-background/80 p-6 shadow-sm"
 									key={feature.title}
 								>
 									<div className="flex items-center gap-3">
-										<div className="flex size-14 items-center justify-center rounded-[1.25rem] bg-primary/10 text-primary">
-											<Icon className="size-6" />
+										<div className="flex size-12 items-center justify-center rounded-[1rem] bg-primary/10 text-primary">
+											<Icon className="size-5" />
 										</div>
-										<h4 className="text-2xl font-display text-brand-ink">
+										<h4 className="text-xl font-display text-brand-ink">
 											{feature.title}
 										</h4>
 									</div>
-									<div className="mt-6 space-y-4">
+									<div className="mt-5 space-y-3">
 										{feature.description.map((item) => (
 											<div
-												className="rounded-2xl border border-border/60 bg-white/80 px-5 py-4 text-base leading-7 text-muted-foreground"
+												className="rounded-2xl border border-border/60 bg-white/80 px-4 py-3 text-base leading-7 text-slate-800"
 												key={item}
 											>
 												{item}
