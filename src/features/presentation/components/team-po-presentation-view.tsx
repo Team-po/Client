@@ -27,7 +27,7 @@ import {
 	UsersRound,
 	Workflow,
 } from "lucide-react";
-import type { PropsWithChildren } from "react";
+import { useEffect, useRef, type PropsWithChildren } from "react";
 import { useLocation } from "react-router-dom";
 
 import { SiteFooter } from "@/components/site-footer";
@@ -62,6 +62,8 @@ const teamSpaceIcons = [
 	CalendarRange,
 ];
 
+const painPointIcons: LucideIcon[] = [UserRoundPlus, CalendarRange, MessageSquareText];
+
 const sectionAccentClasses = {
 	primary: "border-primary/25 bg-primary/10 text-primary",
 	accent: "border-accent/25 bg-accent/10 text-accent",
@@ -83,9 +85,9 @@ const introHighlights = [
 		icon: Workflow,
 	},
 	{
-		title: "발표 포인트",
-		value: "문제 정의부터 개발 계획까지",
-		description: "기획, 구조, 운영 흐름을 발표 장표에 맞게 정리",
+		title: "핵심 가치",
+		value: "문제 해결형 팀 플랫폼",
+		description: "초보자가 팀을 찾고, 규칙을 정하고, 완주까지 이어지도록 설계",
 		icon: Sparkles,
 	},
 ] as const;
@@ -188,6 +190,90 @@ export function TeamPoPresentationView() {
 	const location = useLocation();
 	const isCaptureMode =
 		new URLSearchParams(location.search).get("mode") === "capture";
+	const captureSlideIndex = useRef(0);
+	const captureSlidesRef = useRef<HTMLElement[]>([]);
+	const CAPTURE_SCROLL_OFFSET = 2;
+
+	useEffect(() => {
+		if (!isCaptureMode) {
+			return;
+		}
+
+		const slides = Array.from(
+			document.querySelectorAll<HTMLElement>(".presentation-slide"),
+		);
+
+		if (!slides.length) {
+			return;
+		}
+
+		captureSlidesRef.current = slides;
+		captureSlideIndex.current = 0;
+
+		const goToSlide = (index: number) => {
+			const nextIndex = Math.min(
+				Math.max(index, 0),
+				captureSlidesRef.current.length - 1,
+			);
+
+			captureSlideIndex.current = nextIndex;
+			const target = captureSlidesRef.current[nextIndex];
+			const top = Math.max(0, target.offsetTop + CAPTURE_SCROLL_OFFSET);
+
+			window.scrollTo({
+				top,
+				behavior: "auto",
+			});
+		};
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (
+				event.target instanceof HTMLInputElement ||
+				event.target instanceof HTMLTextAreaElement ||
+				(event.target as HTMLElement | null)?.isContentEditable
+			) {
+				return;
+			}
+
+			switch (event.key) {
+				case "ArrowRight":
+				case "ArrowDown":
+				case "j":
+				case "PageDown": {
+					event.preventDefault();
+					goToSlide(captureSlideIndex.current + 1);
+					return;
+				}
+				case "ArrowLeft":
+				case "ArrowUp":
+				case "k":
+				case "PageUp": {
+					event.preventDefault();
+					goToSlide(captureSlideIndex.current - 1);
+					return;
+				}
+				case "Home": {
+					event.preventDefault();
+					goToSlide(0);
+					return;
+				}
+				case "End": {
+					event.preventDefault();
+					goToSlide(captureSlidesRef.current.length - 1);
+					return;
+				}
+				default:
+					return;
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown, { passive: false });
+		goToSlide(0);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isCaptureMode]);
 
 	return (
 		<div
@@ -200,9 +286,11 @@ export function TeamPoPresentationView() {
 			<div className="ds-presentation-orb left-[-10rem] top-[8rem] size-[22rem]" />
 			<div className="ds-presentation-orb bottom-[18rem] right-[-8rem] size-[18rem]" />
 
-			<div className="presentation-print-hide">
+			{!isCaptureMode && (
+				<div className="presentation-print-hide">
 				<SiteHeader showMyPageLink={false} />
-			</div>
+				</div>
+			)}
 
 			<main className="relative pb-16">
 				<section
@@ -214,7 +302,7 @@ export function TeamPoPresentationView() {
 							<div className="flex flex-wrap items-center gap-4">
 								<Badge variant="brand">전공종합설계1</Badge>
 								<Badge variant="neutral">2026. 3. 16.</Badge>
-								<Badge variant="neutral">6조 github</Badge>
+								<Badge variant="neutral">6조 githug</Badge>
 							</div>
 
 							<div className="flex-1">
@@ -234,13 +322,11 @@ export function TeamPoPresentationView() {
 													<span className="ds-title-gradient">Team-po</span>
 												</h1>
 												<p className="max-w-3xl text-lg leading-9 text-muted-foreground md:text-[1.35rem]">
-													발표 초안의 내용은 그대로 유지하고, Team-po 서비스가
-													가진 현재 UI 시스템의 언어로 다시 정돈한 웹 버전 발표
-													자료입니다.
+													 
 												</p>
 											</div>
 
-											<div className="grid gap-4 md:grid-cols-3">
+											<div className="mt-[7.5rem] grid gap-4 md:grid-cols-3">
 												{introHighlights.map((item) => {
 													const Icon = item.icon;
 
@@ -299,7 +385,6 @@ export function TeamPoPresentationView() {
 				</section>
 
 				<PresentationSlide
-					description="PDF의 목차 구성을 현재 서비스의 카드 시스템과 동일한 언어로 다시 정리했습니다."
 					id="toc"
 					label="INDEX"
 					title="목차"
@@ -374,8 +459,11 @@ export function TeamPoPresentationView() {
 							</div>
 						</Surface>
 
-						<div className="grid auto-rows-fr gap-5">
-							{painPoints.map((point, index) => (
+							<div className="grid auto-rows-fr gap-5">
+							{painPoints.map((point, index) => {
+								const Icon = painPointIcons[index] ?? Target;
+
+								return (
 								<Surface
 									className="relative flex h-full min-h-[13.9rem] flex-col justify-between overflow-hidden border-border/60 bg-white/85 p-5"
 									key={point.label}
@@ -386,7 +474,7 @@ export function TeamPoPresentationView() {
 										<div className="flex items-center justify-between gap-4">
 											<div className="flex items-center gap-3">
 												<div className="flex size-10 items-center justify-center rounded-[0.75rem] bg-primary/10 text-primary">
-													<Target className="size-5" />
+													<Icon className="size-5" />
 												</div>
 												<div>
 													<p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
@@ -420,7 +508,8 @@ export function TeamPoPresentationView() {
 										))}
 									</div>
 								</Surface>
-							))}
+								);
+							})}
 						</div>
 					</div>
 				</PresentationSlide>
@@ -495,7 +584,7 @@ export function TeamPoPresentationView() {
 				</PresentationSlide>
 
 				<PresentationSlide
-					description="매칭 요청부터 팀 결성까지의 흐름과 알고리즘 요소를 한 장에 정리합니다."
+					description="프로젝트를 진행하기 위한 팀 결성 플로우"
 					id="matching-system"
 					label="03-1"
 					title="매칭 시스템"
@@ -535,10 +624,10 @@ export function TeamPoPresentationView() {
 							))}
 						</div>
 
-						<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-							<div className="grid auto-rows-fr gap-5 sm:grid-cols-2">
-								<div className="rounded-3xl border border-border/60 bg-primary/5 p-6">
-									<div className="mb-4 flex items-center gap-3 text-primary">
+							<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
+								<div className="grid auto-rows-fr gap-5 sm:grid-cols-2">
+									<div className="rounded-3xl border border-border/60 bg-primary/5 p-6">
+										<div className="mb-4 flex items-center gap-3 text-primary">
 										<Thermometer className="size-6" />
 										<h4 className="text-xl font-display text-brand-ink">
 											매칭 알고리즘 요소
@@ -556,32 +645,31 @@ export function TeamPoPresentationView() {
 									</div>
 								</div>
 
-								<div className="rounded-3xl border border-amber-400/30 bg-amber-50/90 p-6">
-									<div className="mb-4 flex items-center gap-3 text-amber-700">
-										<TriangleAlert className="size-6" />
-										<h4 className="text-xl font-display text-amber-950">
-											패널티 제도
+								<div className="rounded-[2rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-chart-2/10 p-7 shadow-panel">
+									<div className="flex items-center gap-3">
+										<Dice5 className="size-6 text-primary" />
+										<h4 className="text-xl font-display text-brand-ink">
+											매칭 세션 핵심
 										</h4>
 									</div>
-									<p className="text-base leading-8 text-amber-900/80">
-										팀 결성 이후 탈퇴/노쇼 시 패널티를 부여해 매칭 신뢰도를
-										보존합니다.
-									</p>
+									<div className="mt-6 space-y-4 text-base leading-8 text-slate-800">
+										<p>주제·역할·기술 스택·온도를 함께 반영해 팀원을 구성</p>
+										<p>매칭 완료 시 이메일 알림과 수락/거절 플로우 제공</p>
+										<p>최종 수락 시 자동으로 팀 스페이스를 개설</p>
+									</div>
 								</div>
 							</div>
 
-							<div className="rounded-[2rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-chart-2/10 p-7 shadow-panel">
-								<div className="flex items-center gap-3">
-									<Dice5 className="size-6 text-primary" />
-									<h4 className="text-xl font-display text-brand-ink">
-										매칭 세션 핵심
-									</h4>
-								</div>
-								<div className="mt-6 space-y-4 text-base leading-8 text-slate-800">
-									<p>주제·역할·기술 스택·온도를 함께 반영해 팀원을 구성</p>
-									<p>매칭 완료 시 이메일 알림과 수락/거절 플로우 제공</p>
-									<p>최종 수락 시 자동으로 팀 스페이스를 개설</p>
-								</div>
+							<div className="rounded-3xl border border-amber-400/30 bg-amber-50/90 p-6">
+							<div className="mb-4 flex items-center gap-3 text-amber-700">
+								<TriangleAlert className="size-6" />
+								<h4 className="text-xl font-display text-amber-950">
+									패널티 제도
+								</h4>
+							</div>
+							<p className="text-base leading-8 text-amber-900/80">
+								팀 결성 이후 노쇼 패널티를 부여해 매칭 신뢰도를 보존합니다.
+							</p>
 							</div>
 						</div>
 					</div>
@@ -593,30 +681,31 @@ export function TeamPoPresentationView() {
 					label="03-2"
 					title="팀 스페이스"
 				>
-					<div className="grid auto-rows-fr gap-5 xl:grid-cols-2">
+					<div className="grid auto-rows-fr gap-5 md:grid-cols-2 xl:grid-cols-2">
 						{teamSpaceFeatures.map((feature, index) => {
 							const Icon = teamSpaceIcons[index];
 
 							return (
 								<div
-									className="flex min-h-[17.2rem] flex-col rounded-3xl border border-border/60 bg-background/80 p-6 shadow-sm"
+									className="flex min-h-[13.8rem] flex-col rounded-3xl border border-border/60 bg-background/80 p-4 shadow-sm"
 									key={feature.title}
 								>
 									<div className="flex items-center gap-3">
-										<div className="flex size-12 items-center justify-center rounded-[1rem] bg-primary/10 text-primary">
-											<Icon className="size-5" />
+										<div className="flex size-10 items-center justify-center rounded-[0.9rem] bg-primary/10 text-primary">
+											<Icon className="size-6" />
 										</div>
-										<h4 className="text-xl font-display text-brand-ink">
+										<h4 className="text-xl font-display leading-tight text-brand-ink">
 											{feature.title}
 										</h4>
 									</div>
-									<div className="mt-5 space-y-3">
+									<div className="mt-2.5 space-y-1.5">
 										{feature.description.map((item) => (
 											<div
-												className="rounded-2xl border border-border/60 bg-white/80 px-4 py-3 text-base leading-7 text-slate-800"
+												className="flex items-start gap-2 rounded-lg border border-border/40 bg-white/80 px-2.5 py-1.5 text-base leading-6 text-slate-800"
 												key={item}
 											>
-												{item}
+												<span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary/70" />
+												<p>{item}</p>
 											</div>
 										))}
 									</div>
@@ -634,29 +723,29 @@ export function TeamPoPresentationView() {
 				>
 					<div className="grid auto-rows-fr gap-5 xl:grid-cols-3">
 						{schemaTables.map((table) => (
-							<Surface
-								className="h-full border-border/60 bg-white/85 p-7"
-								key={table.name}
-								variant="glass"
-							>
-								<div className="space-y-6">
+						<Surface
+							className="h-full border-border/60 bg-white/85 p-4"
+							key={table.name}
+							variant="glass"
+						>
+							<div className="space-y-5">
 									<div className="flex items-center gap-3">
-										<div className="flex size-14 items-center justify-center rounded-[1.25rem] bg-primary/10 text-primary">
-											<Database className="size-6" />
-										</div>
-										<h3 className="text-3xl font-display text-brand-ink">
-											{table.name}
-										</h3>
-									</div>
-									<div className="space-y-4">
+								<div className="flex size-11 items-center justify-center rounded-[1.1rem] bg-primary/10 text-primary">
+									<Database className="size-5" />
+								</div>
+								<h3 className="text-xl font-display text-brand-ink">
+									{table.name}
+								</h3>
+							</div>
+							<div className="space-y-2">
 										{table.fields.map((field) => (
 											<p
-												className={cn(
-													"rounded-2xl border px-5 py-4 text-base",
-													field.includes("(PK)")
-														? "border-primary/20 bg-primary/10 text-primary"
-														: "border-border/60 bg-background/80 text-muted-foreground",
-												)}
+									className={cn(
+										"rounded-2xl border px-3 py-2.5 text-sm leading-5",
+										field.includes("(PK)")
+											? "border-primary/20 bg-primary/10 text-primary"
+										: "border-border/60 bg-background/80 text-brand-ink/90",
+									)}
 												key={field}
 											>
 												{field}
@@ -668,50 +757,50 @@ export function TeamPoPresentationView() {
 						))}
 					</div>
 
-					<Surface
-						className="border-primary/15 bg-gradient-to-r from-primary/10 via-white to-accent/10 p-7"
-						variant="glass"
-					>
+						<Surface
+							className="border-primary/15 bg-gradient-to-r from-primary/10 via-white to-accent/10 p-5"
+							variant="glass"
+						>
 						<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 							<div className="flex items-center gap-3">
-								<Workflow className="size-6 text-primary" />
-								<h3 className="text-2xl font-display text-brand-ink">
-									주요 설계 결정사항
-								</h3>
-							</div>
-							<p className="max-w-3xl text-base leading-8 text-muted-foreground">
-								주제 있는/없는 사용자 단일 테이블 처리(nullable) ·
-								ProjectRequest → Match → ProjectGroup 흐름
-							</p>
+								<Workflow className="size-5 text-primary" />
+							<h3 className="text-lg font-display text-brand-ink">
+								주요 설계 결정사항
+							</h3>
+						</div>
+						<p className="max-w-3xl text-sm leading-6 text-brand-ink/90">
+							주제 있는/없는 사용자 단일 테이블 처리(nullable) ·
+							ProjectRequest → Match → ProjectGroup 흐름
+						</p>
 						</div>
 					</Surface>
 				</PresentationSlide>
 
 				<PresentationSlide
-					description="발표 초안의 역할 분담을 서비스 UI 카드 문법으로 다시 정리했습니다."
+					description="초기 기능 단위로 역할을 나누고, 애자일하게 업무를 할당합니다."
 					id="roles"
 					label="05"
 					title="역할 분담"
 				>
-					<div className="grid auto-rows-fr gap-5 xl:grid-cols-2">
+					<div className="grid auto-rows-fr gap-5 grid-cols-4">
 						{roleOwners.map((owner) => (
 							<Surface
-								className="h-full border-border/60 bg-white/85 p-7"
+								className="h-full min-h-[27rem] border-border/60 bg-white/85 p-10"
 								key={owner.name}
 								variant="glass"
 							>
-								<div className="space-y-6">
+								<div className="flex h-full flex-col space-y-6">
 									<div
 										className={cn(
-											"rounded-[1.75rem] border px-6 py-5",
+											"rounded-[1.5rem] border px-7 py-6",
 											sectionAccentClasses[owner.tone],
 										)}
 									>
 										<div className="flex items-center gap-3">
 											<UsersRound className="size-6" />
 											<div>
-												<h3 className="text-3xl font-display">{owner.name}</h3>
-												<p className="text-base text-current/80">
+												<h3 className="text-4xl font-display">{owner.name}</h3>
+												<p className="text-lg text-current/80">
 													{owner.scope}
 												</p>
 											</div>
@@ -720,7 +809,7 @@ export function TeamPoPresentationView() {
 									<div className="space-y-4">
 										{owner.items.map((item) => (
 											<div
-												className="rounded-2xl border border-border/60 bg-background/80 px-5 py-4 text-base leading-7 text-muted-foreground"
+												className="rounded-2xl border border-border/60 bg-background/80 px-5 py-4 text-lg leading-8 text-brand-ink/90"
 												key={item}
 											>
 												{item}
@@ -739,7 +828,7 @@ export function TeamPoPresentationView() {
 					label="06"
 					title="개발 계획"
 				>
-					<div className="space-y-7">
+					<div className="space-y-5">
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<Badge variant="warm">Phase-based Delivery</Badge>
 							<div className="flex items-center gap-3 text-base text-muted-foreground">
@@ -748,15 +837,15 @@ export function TeamPoPresentationView() {
 							</div>
 						</div>
 
-						<div className="space-y-5">
+						<div className="space-y-4">
 							{roadmapPhases.map((phase) => (
 								<div
-									className="grid gap-5 rounded-[2rem] border border-border/60 bg-background/80 p-5 lg:grid-cols-[16rem_minmax(0,1fr)]"
+									className="grid gap-4 rounded-[1.75rem] border border-border/60 bg-background/80 p-4 lg:grid-cols-[16rem_minmax(0,1fr)]"
 									key={phase.label}
 								>
 									<div
 										className={cn(
-											"rounded-[1.5rem] border px-6 py-7",
+											"rounded-[1.5rem] border px-5 py-5",
 											sectionAccentClasses[phase.tone],
 										)}
 									>
@@ -767,17 +856,17 @@ export function TeamPoPresentationView() {
 											{phase.title}
 										</h4>
 									</div>
-									<div className="grid auto-rows-fr gap-4 md:grid-cols-3">
+									<div className="grid auto-rows-fr gap-3 md:grid-cols-3">
 										{phase.items.map((item) => {
 											const Icon = getRoadmapItemIcon(item);
 
-											return (
-												<div
-													className="rounded-[1.5rem] border border-border/60 bg-white/85 px-5 py-6 text-center text-base font-medium leading-7 text-muted-foreground"
+									return (
+										<div
+													className="rounded-[1.25rem] border border-border/60 bg-white/85 px-4 py-4 text-center text-base font-medium leading-6 text-brand-ink"
 													key={item}
 												>
-													<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-[1.15rem] bg-primary/10 text-primary">
-														<Icon className="size-6" />
+													<div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-[1rem] bg-primary/10 text-primary">
+														<Icon className="size-5" />
 													</div>
 													{item}
 												</div>
@@ -788,17 +877,17 @@ export function TeamPoPresentationView() {
 							))}
 						</div>
 
-						<div className="rounded-[1.75rem] border border-accent/15 bg-gradient-to-r from-accent/10 via-white to-chart-2/10 px-7 py-6">
+						<div className="rounded-[1.5rem] border border-accent/15 bg-gradient-to-r from-accent/10 via-white to-chart-2/10 px-6 py-5">
 							<div className="flex items-center gap-3">
 								<Rocket className="size-6 text-primary" />
 								<h4 className="text-xl font-display text-brand-ink">
 									추후 구현 (v2)
 								</h4>
 							</div>
-							<div className="mt-5 flex flex-wrap gap-4">
+							<div className="mt-4 flex flex-wrap gap-3">
 								{roadmapLaterItems.map((item) => (
 									<div
-										className="rounded-full border border-border/60 bg-white/85 px-5 py-2.5 text-base text-muted-foreground"
+										className="rounded-full border border-border/60 bg-white/85 px-4 py-2 text-sm text-muted-foreground"
 										key={item}
 									>
 										{item}
@@ -810,15 +899,15 @@ export function TeamPoPresentationView() {
 				</PresentationSlide>
 
 				<section
-					className="presentation-slide scroll-mt-28 py-8 md:py-10"
+					className="presentation-slide scroll-mt-28 py-10 md:py-12"
 					id="closing"
 				>
-					<Container className="presentation-slide-inner rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
+					<Container className="presentation-slide-inner rounded-[2rem] border border-border/60 bg-white/72 px-7 py-11 shadow-panel backdrop-blur-sm md:px-10 md:py-14">
 						<div className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(99,102,241,0.16),_transparent_28%),linear-gradient(135deg,_rgba(255,255,255,0.96),_rgba(244,248,255,0.94))] p-8 md:p-10">
 							<div className="absolute -left-12 top-12 h-52 w-52 rounded-full border border-primary/10 bg-primary/10 blur-2xl" />
 							<div className="absolute -bottom-10 right-0 h-56 w-56 rounded-full border border-accent/10 bg-accent/10 blur-2xl" />
 
-							<div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
+									<div className="relative grid min-h-[39rem] gap-10 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
 								<div className="flex flex-col justify-between gap-8">
 									<div>
 										<p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -827,29 +916,29 @@ export function TeamPoPresentationView() {
 										<h2 className="mt-5 text-6xl font-display leading-none text-brand-ink md:text-[6rem]">
 											<span className="ds-title-gradient">Team-po</span>
 										</h2>
-										<p className="mt-6 max-w-2xl text-xl leading-9 text-muted-foreground">
+										<p className="mt-6 max-w-2xl text-2xl leading-9 text-muted-foreground">
 											초보 개발자가 팀을 찾고, 협업을 유지하고, 프로젝트를
 											끝까지 완주할 수 있도록 돕는 팀 매칭 & 프로젝트 관리
 											플랫폼입니다.
 										</p>
 									</div>
 
-									<div className="grid gap-4 md:grid-cols-3">
+									<div className="grid gap-4 py-3 md:grid-cols-3">
 										{closingPillars.map((item) => {
 											const Icon = item.icon;
 
 											return (
 												<div
-													className="rounded-[1.75rem] border border-white/80 bg-white/75 p-5 shadow-soft"
+													className="rounded-[1.75rem] border border-white/80 bg-white/75 p-6 shadow-soft"
 													key={item.title}
 												>
 													<div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
 														<Icon className="size-5" />
 													</div>
-													<h3 className="mt-5 text-2xl font-display text-brand-ink">
+													<h3 className="mt-5 text-4xl font-display text-brand-ink">
 														{item.title}
 													</h3>
-													<p className="mt-3 text-sm leading-7 text-muted-foreground">
+													<p className="mt-3 text-lg leading-7 text-muted-foreground">
 														{item.description}
 													</p>
 												</div>
@@ -858,64 +947,87 @@ export function TeamPoPresentationView() {
 									</div>
 								</div>
 
-								<div className="flex flex-col gap-5">
-									<div className="rounded-[2rem] border border-brand-ink/10 bg-brand-ink px-7 py-7 text-white shadow-panel">
-										<div className="flex items-center gap-3">
-											<div className="flex size-12 items-center justify-center rounded-2xl bg-white/10 text-white">
-												<FolderKanban className="size-5" />
+								<div className="flex flex-col gap-7">
+									<div className="relative min-h-[20rem] overflow-hidden rounded-[1.75rem] border border-primary/20 bg-white/75 p-9 backdrop-blur-xl">
+												<div className="absolute -left-8 top-6 h-24 w-24 rounded-full bg-primary/15 blur-2xl" />
+												<div className="absolute -bottom-8 right-2 h-24 w-24 rounded-full bg-accent/15 blur-2xl" />
+												<div className="relative flex items-center gap-3">
+													<div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+													<FolderKanban className="size-5" />
+												</div>
+												<div>
+															<p className="text-sm uppercase tracking-[0.16em] text-primary">
+																Product Focus
+															</p>
+														<p className="mt-1 text-4xl font-display text-brand-ink">
+															Match, Manage, Momentum
+														</p>
+													</div>
+												</div>
+															<p className="relative mt-5 max-w-2xl text-lg leading-8 text-brand-ink/85">
+																팀 매칭은 시작점입니다. 매칭 이후 협업 규칙, 체크리스트,
+																공유 지표로 팀은 지속적으로 작동합니다.
+															</p>
+												<div className="relative mt-7 grid grid-cols-2 gap-2.5">
+													{[
+														"빠른 팀 결성",
+														"책임 분담 고정",
+														"기여도 기반 성장",
+														"완주율 향상",
+													].map((item) => (
+														<div
+												className="rounded-xl border border-border/40 bg-white/75 px-3 py-2.5 text-sm font-medium text-brand-ink/85"
+															key={item}
+														>
+															{item}
+														</div>
+													))}
+												</div>
 											</div>
-											<div>
-												<p className="text-sm uppercase tracking-[0.16em] text-white/60">
-													Product Focus
-												</p>
-												<p className="mt-1 text-2xl font-display">
-													Match, Manage, Momentum
-												</p>
-											</div>
-										</div>
-									</div>
 
-									<div className="grid gap-4">
-										{[
-											{ label: "팀 매칭", icon: Target },
-											{ label: "라이프사이클", icon: Rocket },
-											{ label: "AI 가이드", icon: Sparkles },
-											{ label: "GitHub 연동", icon: GitBranch },
+										<div className="grid min-h-[12rem] grid-cols-2 gap-3">
+											{[
+												{ label: "팀 매칭", icon: Target },
+												{ label: "라이프사이클", icon: Rocket },
+												{ label: "AI 가이드", icon: Sparkles },
+												{ label: "GitHub 연동", icon: GitBranch },
 										].map((item) => {
 											const Icon = item.icon;
 
-											return (
-												<div
-													className="flex items-center gap-4 rounded-[1.5rem] border border-border/60 bg-white/80 px-5 py-5"
-													key={item.label}
-												>
-													<div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+												return (
+													<div
+													className="flex items-center gap-3 rounded-[1.25rem] border border-border/60 bg-white/80 px-5 py-5"
+														key={item.label}
+													>
+													<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
 														<Icon className="size-5" />
 													</div>
-													<p className="text-lg text-brand-ink">{item.label}</p>
+														<p className="text-lg text-brand-ink">{item.label}</p>
 												</div>
 											);
 										})}
 									</div>
 
-									<div className="rounded-[1.75rem] border border-primary/15 bg-white/80 px-7 py-6">
-										<div className="flex items-center gap-3">
-											<BadgeCheck className="size-5 text-primary" />
-											<p className="text-lg font-medium text-brand-ink">
-												감사합니다.
-											</p>
+										<div className="rounded-[1.75rem] border border-primary/15 bg-white/80 px-6 py-5">
+													<div className="flex items-center gap-3">
+														<BadgeCheck className="size-5 text-primary" />
+														<p className="text-2xl font-medium text-brand-ink">
+															감사합니다.
+														</p>
+													</div>
 										</div>
 									</div>
-								</div>
 							</div>
 						</div>
 					</Container>
 				</section>
 			</main>
 
-			<div className="presentation-print-hide">
-				<SiteFooter />
-			</div>
+			{!isCaptureMode && (
+				<div className="presentation-print-hide">
+					<SiteFooter />
+				</div>
+			)}
 		</div>
 	);
 }
