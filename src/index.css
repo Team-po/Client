@@ -146,6 +146,38 @@
 			);
 	}
 
+	.ds-presentation-bg {
+		background:
+			radial-gradient(
+				circle at 8% 12%,
+				hsl(var(--primary) / 0.08),
+				transparent 22%
+			),
+			radial-gradient(
+				circle at 86% 16%,
+				hsl(var(--accent) / 0.08),
+				transparent 24%
+			),
+			linear-gradient(
+				180deg,
+				hsl(var(--brand-warm)) 0%,
+				hsl(var(--background)) 38%,
+				hsl(var(--brand-soft)) 100%
+			);
+	}
+
+	.ds-presentation-orb {
+		position: absolute;
+		border-radius: 9999px;
+		border: 1px solid hsl(var(--primary) / 0.12);
+		background: radial-gradient(
+			circle at 30% 30%,
+			hsl(var(--primary) / 0.08),
+			transparent 70%
+		);
+		filter: blur(8px);
+	}
+
 	.ds-title-gradient {
 		background-image: linear-gradient(
 			95deg,
@@ -155,5 +187,88 @@
 		);
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
+	}
+}
+
+.presentation-slide {
+	padding-top: 1.25rem;
+	padding-bottom: 1.25rem;
+}
+
+.presentation-slide-inner {
+	width: calc(100vw - 2.5rem);
+	max-width: 1680px;
+}
+
+.presentation-slide-stack {
+	display: flex;
+	min-height: 100%;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.presentation-slide-body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+}
+
+@media (min-width: 1280px) {
+	.presentation-slide-inner {
+		min-height: min(940px, calc((100vw - 2.5rem) * 0.5625));
+		padding: 2.25rem 2.75rem;
+	}
+}
+
+.presentation-capture .presentation-slide-inner {
+	min-height: min(940px, calc((100vw - 2.5rem) * 0.5625));
+}
+
+@media print {
+	@page {
+		size: A4 landscape;
+		margin: 10mm;
+	}
+
+	html,
+	body {
+		background: #fff;
+	}
+
+	body {
+		min-height: auto;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	.presentation-print-hide,
+	.ds-grid-overlay,
+	.ds-presentation-orb {
+		display: none;
+	}
+
+	.presentation-slide {
+		break-after: page;
+		padding: 0;
+	}
+
+	.presentation-slide:last-of-type {
+		break-after: auto;
+	}
+
+	.presentation-slide-inner {
+		min-height: calc(100vh - 20mm);
+		max-width: none;
+		padding: 0;
+		background: transparent;
+		border: none;
+		box-shadow: none;
+		backdrop-filter: none;
+	}
+
+	.ds-container {
+		max-width: none;
+		padding-left: 0;
+		padding-right: 0;
 	}
 }
