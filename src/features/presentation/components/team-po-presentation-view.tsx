@@ -51,6 +51,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const teamMembers = ["장다은", "김황조", "박상혁", "정종우"];
+const teamLeaderName = "장다은";
 
 const teamSpaceIcons = [
 	Bot,
@@ -209,22 +210,22 @@ export function TeamPoPresentationView() {
 					id="intro"
 				>
 					<Container className="presentation-slide-inner rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
-						<div className="space-y-10">
+						<div className="flex h-full flex-col gap-10">
 							<div className="flex flex-wrap items-center gap-4">
 								<Badge variant="brand">전공종합설계1</Badge>
 								<Badge variant="neutral">2026. 3. 16.</Badge>
 								<Badge variant="neutral">6조 github</Badge>
 							</div>
 
-							<div>
+							<div className="flex-1">
 								<Surface
-									className="relative overflow-hidden border-primary/10 bg-white/90 p-10 shadow-panel md:p-12"
+									className="relative flex h-full overflow-hidden border-primary/10 bg-white/90 p-10 shadow-panel md:p-12"
 									variant="glass"
 								>
 									<div className="absolute right-0 top-0 h-48 w-48 rounded-full border border-primary/15 bg-primary/5 blur-3xl" />
 									<div className="absolute bottom-0 right-10 h-56 w-56 rounded-full border border-accent/10 bg-accent/5 blur-3xl" />
-									<div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.9fr)]">
-										<div className="space-y-8">
+									<div className="relative flex h-full w-full flex-col justify-between gap-10">
+										<div className="flex h-full flex-col justify-between gap-10">
 											<div className="space-y-4">
 												<p className="text-base font-semibold uppercase tracking-[0.22em] text-primary">
 													초보 개발자를 위한 팀 매칭 & 프로젝트 관리 플랫폼
@@ -264,40 +265,29 @@ export function TeamPoPresentationView() {
 													);
 												})}
 											</div>
-										</div>
 
-										<div className="grid gap-4">
-											<div className="rounded-[2rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-chart-2/10 p-7">
-												<p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">
-													Presentation Scope
-												</p>
-												<div className="mt-5 space-y-4">
-													{["문제 정의", "솔루션 구조", "개발 계획"].map(
-														(item) => (
-															<div
-																className="rounded-2xl border border-white/70 bg-white/80 px-5 py-4 text-lg font-medium text-brand-ink"
-																key={item}
-															>
-																{item}
-															</div>
-														),
-													)}
-												</div>
-											</div>
-
-											<div className="rounded-[2rem] border border-border/60 bg-brand-ink px-7 py-6 text-white shadow-soft">
-												<p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/70">
+											<div className="w-fit max-w-full rounded-[1.75rem] border border-primary/10 bg-white/70 px-6 py-5 shadow-soft">
+												<p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary/80">
 													Team
 												</p>
-												<div className="mt-5 flex flex-wrap gap-3">
-													{teamMembers.map((member) => (
-														<div
-															className="rounded-full border border-white/15 bg-white/10 px-4 py-2.5 text-base"
-															key={member}
-														>
-															{member}
-														</div>
-													))}
+												<div className="mt-4 flex max-w-3xl flex-wrap gap-3">
+													{teamMembers.map((member) => {
+														const isLeader = member === teamLeaderName;
+
+														return (
+															<div
+																className={cn(
+																	"flex items-center gap-2 rounded-full border px-4 py-2.5 text-base font-medium",
+																	isLeader
+																		? "border-primary bg-primary/20 text-primary shadow-sm"
+																		: "border-primary/10 bg-primary/5 text-brand-ink",
+																)}
+																key={member}
+															>
+																{isLeader ? `${member} · 팀장` : member}
+															</div>
+														);
+													})}
 												</div>
 											</div>
 										</div>
@@ -319,7 +309,7 @@ export function TeamPoPresentationView() {
 							.filter((section) => section.id !== "intro")
 							.map((section) => (
 								<Surface
-									className="group flex h-full min-h-[14.5rem] flex-col justify-between gap-6 border-border/60 bg-white/80 p-7 shadow-soft"
+									className="group flex h-full min-h-[13.9rem] flex-col justify-between gap-5 border-border/60 bg-white/80 p-6 shadow-soft"
 									key={section.id}
 									variant="glass"
 								>
@@ -347,35 +337,35 @@ export function TeamPoPresentationView() {
 					label="01"
 					title="문제 정의"
 				>
-					<div className="grid gap-6 xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
+					<div className="grid gap-4 xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
 						<Surface
-							className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/10 via-white to-accent/10 p-8"
+							className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/10 via-white to-accent/10 p-6"
 							variant="glass"
 						>
-							<div className="absolute -right-10 top-6 flex size-44 items-center justify-center rounded-full border border-primary/10 bg-white/50 font-display text-8xl text-primary/10">
+							<div className="absolute -right-8 top-6 flex size-32 items-center justify-center rounded-full border border-primary/10 bg-white/50 font-display text-6xl text-primary/10">
 								3
 							</div>
-							<div className="relative flex h-full flex-col justify-between gap-8">
+							<div className="relative flex h-full flex-col justify-between gap-4">
 								<div>
 									<p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
 										Why This Service
 									</p>
-									<h3 className="mt-4 max-w-sm text-4xl font-display leading-tight text-brand-ink">
+									<h3 className="mt-3 max-w-sm text-3xl font-display leading-tight text-brand-ink">
 										프로젝트는 시작보다 지속이 더 어렵습니다.
 									</h3>
-									<p className="mt-5 max-w-lg text-lg leading-9 text-muted-foreground">
+									<p className="mt-4 max-w-lg text-base leading-7 text-muted-foreground">
 										초보 개발자에게 필요한 것은 단순한 모집 게시판이 아니라,
 										팀이 만들어지고 유지되며 끝까지 완주할 수 있는 구조입니다.
 									</p>
 								</div>
 
-								<div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
+								<div className="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
 									{["진입 장벽", "중도 이탈", "협업 혼란"].map((item) => (
 										<div
-											className="rounded-[1.5rem] border border-white/70 bg-white/80 px-5 py-5"
+											className="rounded-[1.25rem] border border-white/70 bg-white/80 px-4 py-4"
 											key={item}
 										>
-											<p className="text-xl font-display text-brand-ink">
+											<p className="text-lg font-display text-brand-ink">
 												{item}
 											</p>
 										</div>
@@ -387,42 +377,42 @@ export function TeamPoPresentationView() {
 						<div className="grid auto-rows-fr gap-5">
 							{painPoints.map((point, index) => (
 								<Surface
-									className="relative flex h-full min-h-[16rem] flex-col justify-between overflow-hidden border-border/60 bg-white/85 p-8"
+									className="relative flex h-full min-h-[13.9rem] flex-col justify-between overflow-hidden border-border/60 bg-white/85 p-5"
 									key={point.label}
 									variant="glass"
 								>
 									<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-chart-2 to-accent" />
-									<div className="space-y-7">
+									<div className="space-y-3">
 										<div className="flex items-center justify-between gap-4">
 											<div className="flex items-center gap-3">
-												<div className="flex size-14 items-center justify-center rounded-[1.25rem] bg-primary/10 text-primary">
-													<Target className="size-6" />
+												<div className="flex size-10 items-center justify-center rounded-[0.75rem] bg-primary/10 text-primary">
+													<Target className="size-5" />
 												</div>
 												<div>
-													<p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+													<p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
 														{point.label}
 													</p>
-													<p className="mt-1 text-base text-muted-foreground">
+													<p className="mt-1 text-sm text-muted-foreground">
 														0{index + 1}
 													</p>
 												</div>
 											</div>
-											<div className="hidden rounded-full border border-border/60 bg-background/70 px-4 py-2 text-sm text-muted-foreground md:block">
+											<div className="hidden rounded-full border border-border/60 bg-background/70 px-3 py-1.5 text-xs leading-none text-muted-foreground md:block">
 												핵심 이슈
 											</div>
 										</div>
-										<h3 className="text-3xl font-display leading-tight text-brand-ink">
+										<h3 className="text-2xl font-display leading-tight text-brand-ink">
 											{point.title}
 										</h3>
-										<p className="text-base leading-8 text-muted-foreground">
+										<p className="text-sm leading-7 text-muted-foreground">
 											{point.description}
 										</p>
 									</div>
 
-									<div className="flex flex-wrap gap-3">
+									<div className="flex flex-wrap gap-2">
 										{painPointKeywords[index].map((keyword) => (
 											<div
-												className="rounded-full border border-border/60 bg-background/80 px-4 py-2 text-sm text-muted-foreground"
+												className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs leading-none text-muted-foreground"
 												key={keyword}
 											>
 												{keyword}
