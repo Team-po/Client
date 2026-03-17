@@ -6,6 +6,7 @@ import { LoginPage } from "@/pages/login-page";
 import { ProfilePage } from "@/pages/profile-page";
 import { SignupPage } from "@/pages/signup-page";
 import { TeamPoPresentationPage } from "@/pages/team-po-presentation-page";
+import { TeamPoPresentationSecondPage } from "@/pages/team-po-presentation-second-page";
 
 export function App() {
 	return (
@@ -13,6 +14,10 @@ export function App() {
 			<Routes>
 				<Route path="/" element={<LandingPage />} />
 				<Route path="/deck/team-po" element={<TeamPoPresentationPage />} />
+				<Route
+					path="/deck/team-po-2"
+					element={<TeamPoPresentationSecondPage />}
+				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
 				<Route path="/verify-email" element={<EmailVerificationPage />} />
