@@ -289,56 +289,6 @@ export function TeamPoPresentationThirdView() {
 				title="진행 계획 개요"
 			>
 				<div className="space-y-5">
-					<div className="grid gap-4 md:grid-cols-3">
-						{[
-							{
-								label: "Duration",
-								value: "13 Weeks",
-								description: "주제 확정부터 통합 테스트와 발표 준비까지",
-								icon: TimerReset,
-							},
-							{
-								label: "Phases",
-								value: "3 Stages",
-								description: "기반 정의, 협업 확장, 연동 및 마무리",
-								icon: Layers3,
-							},
-							{
-								label: "Current Focus",
-								value: "Auth API",
-								description: "회원가입 및 로그인 API 구현 진행 중",
-								icon: Clock3,
-							},
-						].map((item) => {
-							const Icon = item.icon;
-
-							return (
-								<Surface
-									className="border-border/60 bg-white/85 p-5"
-									key={item.label}
-									variant="glass"
-								>
-									<div className="flex items-center justify-between gap-4">
-										<div>
-											<p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">
-												{item.label}
-											</p>
-											<h3 className="mt-2 text-[1.8rem] font-display text-brand-ink">
-												{item.value}
-											</h3>
-										</div>
-										<div className="flex size-12 items-center justify-center rounded-[1rem] bg-primary/10 text-primary">
-											<Icon className="size-5" />
-										</div>
-									</div>
-									<p className="mt-3 text-sm leading-6 text-muted-foreground">
-										{item.description}
-									</p>
-								</Surface>
-							);
-						})}
-					</div>
-
 					<div className="grid gap-4 xl:grid-cols-3">
 						{phaseSummaries.map((phase) => {
 							const Icon = phase.icon;
