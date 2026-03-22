@@ -7,6 +7,7 @@ import { ProfilePage } from "@/pages/profile-page";
 import { SignupPage } from "@/pages/signup-page";
 import { TeamPoPresentationPage } from "@/pages/team-po-presentation-page";
 import { TeamPoPresentationSecondPage } from "@/pages/team-po-presentation-second-page";
+import { TeamPoPresentationThirdPage } from "@/pages/team-po-presentation-third-page";
 
 export function App() {
 	return (
@@ -17,6 +18,10 @@ export function App() {
 				<Route
 					path="/deck/team-po-2"
 					element={<TeamPoPresentationSecondPage />}
+				/>
+				<Route
+					path="/deck/team-po-3"
+					element={<TeamPoPresentationThirdPage />}
 				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
