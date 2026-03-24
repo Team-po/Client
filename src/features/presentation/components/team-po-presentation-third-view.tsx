@@ -222,13 +222,15 @@ function getTimelineMarker(title: string) {
 
 const completedItems = [
 	"서버 인프라 구축 완료",
-	"CI 파이프라인 구축 완료",
+	"CI/CD 파이프라인 구축 완료",
 	"랜딩 페이지 구축 완료",
+	"회원가입/로그인 API 개발 완료",
+	"회원가입/로그인 페이지 개발 완료",
 ] as const;
 
 const inProgressItems = [
-	"회원가입 및 로그인 API 구현 진행 중",
-	"회원가입 및 로그인 페이지 구현 진행 중",
+	"이메일 중복 검사 API 개발 중",
+	"팀 생성 기능 스펙 협의 중",
 ] as const;
 
 const foundationCards = [
@@ -613,14 +615,14 @@ export function TeamPoPresentationThirdView() {
 							{
 								label: "Completed",
 								value: `${completedItems.length} Items`,
-								description: "서버 인프라와 CI 파이프라인 기반을 구축 완료",
+								description: "서버 인프라와 CI/CD 파이프라인 기반을 구축 완료",
 								icon: CheckCheck,
 								toneClass: "bg-emerald-500/10 text-emerald-600",
 							},
 							{
 								label: "In Progress",
 								value: `${inProgressItems.length} Core Track`,
-								description: "회원가입 및 로그인 API 구현을 현재 진행 중",
+								description: "현재는 인증 보강 및 팀 생성 스펙 협의가 진행 중입니다",
 								icon: Clock3,
 								toneClass: "bg-amber-500/10 text-amber-600",
 							},
@@ -637,7 +639,7 @@ export function TeamPoPresentationThirdView() {
 
 							return (
 								<Surface
-									className="border-border/60 bg-white/85 p-5"
+									className="border-border/60 bg-white/85 p-4"
 									key={item.label}
 									variant="glass"
 								>
@@ -666,7 +668,7 @@ export function TeamPoPresentationThirdView() {
 
 					<div className="grid gap-4 xl:grid-cols-3">
 						<Surface
-							className="border-border/60 bg-white/85 p-5"
+							className="border-border/60 bg-white/85 p-4"
 							variant="glass"
 						>
 							<div className="flex items-center justify-between gap-4">
@@ -686,7 +688,7 @@ export function TeamPoPresentationThirdView() {
 							<div className="mt-5 grid gap-3">
 								{completedItems.map((item) => (
 									<div
-										className="grid items-center gap-3 rounded-[1.2rem] border border-emerald-200/70 bg-emerald-50/70 px-4 py-4 md:grid-cols-[3rem_minmax(0,1fr)]"
+										className="grid items-center gap-3 rounded-[1.2rem] border border-emerald-200/70 bg-emerald-50/70 px-3.5 py-3.5 md:grid-cols-[3rem_minmax(0,1fr)]"
 										key={item}
 									>
 										<div className="flex size-11 items-center justify-center rounded-[0.95rem] bg-white text-emerald-600 shadow-soft">
@@ -701,7 +703,7 @@ export function TeamPoPresentationThirdView() {
 						</Surface>
 
 						<Surface
-							className="border-border/60 bg-white/85 p-5"
+							className="border-border/60 bg-white/85 p-4"
 							variant="glass"
 						>
 							<div className="flex items-center justify-between gap-4">
@@ -721,7 +723,7 @@ export function TeamPoPresentationThirdView() {
 							<div className="mt-5 grid gap-3">
 								{inProgressItems.map((item) => (
 									<div
-										className="grid items-center gap-3 rounded-[1.2rem] border border-amber-200/70 bg-amber-50/75 px-4 py-4 md:grid-cols-[3rem_minmax(0,1fr)]"
+										className="grid items-center gap-3 rounded-[1.2rem] border border-amber-200/70 bg-amber-50/75 px-3.5 py-3.5 md:grid-cols-[3rem_minmax(0,1fr)]"
 										key={item}
 									>
 										<div className="flex size-11 items-center justify-center rounded-[0.95rem] bg-white text-amber-600 shadow-soft">
@@ -736,7 +738,7 @@ export function TeamPoPresentationThirdView() {
 						</Surface>
 
 						<Surface
-							className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/10 via-white to-chart-2/10 p-5"
+							className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/10 via-white to-chart-2/10 p-4"
 							variant="glass"
 						>
 							<div className="absolute -right-10 top-0 size-40 rounded-full border border-primary/10 bg-primary/10 blur-3xl" />
@@ -762,7 +764,7 @@ export function TeamPoPresentationThirdView() {
 										"다음 단계: 사용자 기능 마무리 후 매칭 시스템 연결",
 									].map((item) => (
 										<div
-											className="flex items-center gap-3 rounded-[1.2rem] border border-white/80 bg-white/82 px-4 py-3"
+											className="flex items-center gap-3 rounded-[1.2rem] border border-white/80 bg-white/82 px-3.5 py-2.5"
 											key={item}
 										>
 											<div className="flex size-10 items-center justify-center rounded-[0.9rem] bg-primary/10 text-primary">
@@ -890,7 +892,7 @@ export function TeamPoPresentationThirdView() {
 			brandName="Team-po"
 			closingDescription="초보 개발자가 팀을 찾고, 협업을 유지하고, 프로젝트를 끝까지 완주할 수 있도록 돕는 팀 매칭 & 프로젝트 관리 플랫폼입니다."
 			courseLabel="전공종합설계1"
-			dateLabel="2026. 3. 23."
+			dateLabel="2026. 3. 25."
 			introEyebrow="초보 개발자를 위한 팀 매칭 & 프로젝트 관리 플랫폼"
 			postSolutionSlides={postSolutionSlides}
 			showDefaultOverviewSlides={false}
