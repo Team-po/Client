@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import {
 	useEffect,
+	createContext,
+	useContext,
 	useRef,
 	type PropsWithChildren,
 	type ReactNode,
@@ -70,8 +72,11 @@ interface TeamPoPresentationViewProps {
 	closingDescription?: string;
 	postSolutionSlides?: ReactNode;
 	showDefaultPostSolutionSlides?: boolean;
+	showPageNumbers?: boolean;
 	tocSections?: PresentationSectionLink[];
 }
+
+const PresentationPaginationContext = createContext<Map<string, string> | null>(null);
 
 const teamSpaceIcons = [
 	Bot,
@@ -186,16 +191,21 @@ export function PresentationSlide({
 	label,
 	title,
 	description,
+	pageLabel,
 	children,
 }: PropsWithChildren<{
 	id: string;
 	label: string;
 	title: string;
 	description?: string;
+	pageLabel?: string;
 }>) {
+	const contextPageLabel = useContext(PresentationPaginationContext);
+	const resolvedPageLabel = pageLabel ?? contextPageLabel?.get(id);
+
 	return (
 		<section className="presentation-slide scroll-mt-28 py-8 md:py-10" id={id}>
-			<Container className="presentation-slide-inner rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
+			<Container className="presentation-slide-inner relative rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
 				<div className="space-y-10">
 					<SectionHeading
 						description={description}
@@ -205,6 +215,11 @@ export function PresentationSlide({
 					/>
 					{children}
 				</div>
+				{resolvedPageLabel ? (
+					<div className="pointer-events-none absolute bottom-4 right-5 rounded-full border border-border/60 bg-white/85 px-3 py-1 text-xs font-mono font-medium text-muted-foreground shadow-soft md:bottom-5 md:right-6">
+						{resolvedPageLabel}
+					</div>
+				) : null}
 			</Container>
 		</section>
 	);
@@ -220,6 +235,7 @@ export function TeamPoPresentationView({
 	closingDescription = "초보 개발자가 팀을 찾고, 협업을 유지하고, 프로젝트를 끝까지 완주할 수 있도록 돕는 팀 매칭 & 프로젝트 관리 플랫폼입니다.",
 	postSolutionSlides,
 	showDefaultPostSolutionSlides = true,
+	showPageNumbers = false,
 	tocSections = presentationSections,
 }: TeamPoPresentationViewProps) {
 	const location = useLocation();
@@ -228,6 +244,14 @@ export function TeamPoPresentationView({
 	const captureSlideIndex = useRef(0);
 	const captureSlidesRef = useRef<HTMLElement[]>([]);
 	const CAPTURE_SCROLL_OFFSET = 2;
+	const pageLabels = showPageNumbers
+		? new Map(
+				tocSections.map((section, index) => [
+					section.id,
+					`(${index + 1}/${tocSections.length})`,
+				]),
+			)
+		: null;
 
 	useEffect(() => {
 		if (!isCaptureMode) {
@@ -311,12 +335,13 @@ export function TeamPoPresentationView({
 	}, [isCaptureMode]);
 
 	return (
-		<div
-			className={cn(
-				"team-po-presentation relative min-h-screen overflow-hidden",
-				isCaptureMode && "presentation-capture",
-			)}
-		>
+		<PresentationPaginationContext.Provider value={pageLabels}>
+			<div
+				className={cn(
+					"team-po-presentation relative min-h-screen overflow-hidden",
+					isCaptureMode && "presentation-capture",
+				)}
+			>
 			<div className="pointer-events-none absolute inset-0 ds-grid-overlay opacity-40" />
 			<div className="ds-presentation-orb left-[-10rem] top-[8rem] size-[22rem]" />
 			<div className="ds-presentation-orb bottom-[18rem] right-[-8rem] size-[18rem]" />
@@ -332,7 +357,7 @@ export function TeamPoPresentationView({
 					className="presentation-slide scroll-mt-28 py-8 md:py-10"
 					id="intro"
 				>
-					<Container className="presentation-slide-inner rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
+					<Container className="presentation-slide-inner relative rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
 						<div className="flex h-full flex-col gap-10">
 							<div className="flex flex-wrap items-center gap-4">
 								<Badge variant="brand">{courseLabel}</Badge>
@@ -418,6 +443,11 @@ export function TeamPoPresentationView({
 								</Surface>
 							</div>
 						</div>
+						{pageLabels?.get("intro") ? (
+							<div className="pointer-events-none absolute bottom-4 right-5 rounded-full border border-border/60 bg-white/85 px-3 py-1 text-xs font-mono font-medium text-muted-foreground shadow-soft md:bottom-5 md:right-6">
+								{pageLabels.get("intro")}
+							</div>
+						) : null}
 					</Container>
 				</section>
 
@@ -946,7 +976,7 @@ export function TeamPoPresentationView({
 					className="presentation-slide scroll-mt-28 py-10 md:py-12"
 					id="closing"
 				>
-					<Container className="presentation-slide-inner rounded-[2rem] border border-border/60 bg-white/72 px-7 py-11 shadow-panel backdrop-blur-sm md:px-10 md:py-14">
+					<Container className="presentation-slide-inner relative rounded-[2rem] border border-border/60 bg-white/72 px-7 py-11 shadow-panel backdrop-blur-sm md:px-10 md:py-14">
 						<div className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(99,102,241,0.16),_transparent_28%),linear-gradient(135deg,_rgba(255,255,255,0.96),_rgba(244,248,255,0.94))] p-8 md:p-10">
 							<div className="absolute -left-12 top-12 h-52 w-52 rounded-full border border-primary/10 bg-primary/10 blur-2xl" />
 							<div className="absolute -bottom-10 right-0 h-56 w-56 rounded-full border border-accent/10 bg-accent/10 blur-2xl" />
@@ -1061,6 +1091,11 @@ export function TeamPoPresentationView({
 								</div>
 							</div>
 						</div>
+						{pageLabels?.get("closing") ? (
+							<div className="pointer-events-none absolute bottom-4 right-5 rounded-full border border-border/60 bg-white/85 px-3 py-1 text-xs font-mono font-medium text-muted-foreground shadow-soft md:bottom-5 md:right-6">
+								{pageLabels.get("closing")}
+							</div>
+						) : null}
 					</Container>
 				</section>
 			</main>
@@ -1070,6 +1105,7 @@ export function TeamPoPresentationView({
 					<SiteFooter />
 				</div>
 			)}
-		</div>
+			</div>
+		</PresentationPaginationContext.Provider>
 	);
 }
