@@ -1,13 +1,13 @@
 export const heroStats = [
 	{
 		value: "3분",
-		label: "프로필 등록 평균 시간",
-		caption: "지원서 대신 역량 카드만 입력하면 대기열 등록 완료",
+		label: "프로필 완성까지 평균 시간",
+		caption: "역량 카드와 기본 정보만 입력하면 팀 탐색 준비 완료",
 	},
 	{
-		value: "100%",
-		label: "고정 라이프사이클 운영",
-		caption: "forming > active > shipping > completed/paused 상태로 일관 관리",
+		value: "5단계",
+		label: "프로젝트 라이프사이클 관리",
+		caption: "forming > active > shipping > completed/paused 흐름을 명확하게 관리",
 	},
 	{
 		value: "주간",

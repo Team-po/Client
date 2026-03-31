@@ -7,6 +7,26 @@ import { Container } from "@/components/ui/container";
 import { Surface } from "@/components/ui/surface";
 import { heroStats } from "@/features/landing/constants";
 
+function renderHeroStatValue(value: string) {
+	const parts = value.match(/[0-9A-Za-z%]+|[^0-9A-Za-z%]+/g) ?? [value];
+	let currentOffset = 0;
+
+	return parts.map((part) => {
+		const isHangul = /[가-힣]/.test(part);
+		const key = `${value}-${currentOffset}`;
+		currentOffset += part.length;
+
+		return (
+			<span
+				className={isHangul ? "font-display" : "font-mono"}
+				key={key}
+			>
+				{part}
+			</span>
+		);
+	});
+}
+
 export function HeroSection() {
 	return (
 		<section className="relative overflow-hidden pb-20 pt-10 md:pb-28 md:pt-16">
@@ -54,7 +74,7 @@ export function HeroSection() {
 							size="lg"
 							className="transition-all hover:-translate-y-0.5 hover:bg-white/80"
 						>
-							작동 방식 보기
+							운영 방식 확인
 						</Button>
 					</div>
 				</div>
@@ -71,7 +91,7 @@ export function HeroSection() {
 								Queue Snapshot
 							</p>
 							<p className="text-2xl font-display leading-tight">
-								지금 바로 팀에 배치될 준비가 된 개발 학습자
+								내 포지션만 입력하면 팀 매칭이 완료됩니다
 							</p>
 						</div>
 
@@ -99,8 +119,8 @@ export function HeroSection() {
 									key={stat.label}
 									className="rounded-xl border border-border bg-white/80 p-4 shadow-sm"
 								>
-									<p className="font-mono font-semibold tracking-tight text-2xl text-primary">
-										{stat.value}
+									<p className="font-semibold tracking-tight text-2xl text-primary">
+										{renderHeroStatValue(stat.value)}
 									</p>
 									<p className="mt-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
 										{stat.label}
