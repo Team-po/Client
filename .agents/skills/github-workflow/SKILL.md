@@ -81,7 +81,9 @@ Use non-interactive `gh` commands.
 
 ```bash
 gh issue create --repo <owner/repo> --title "<title>" --body "<body>"
-gh issue create --repo <owner/repo> --title "<title>" --body "<body>" --json number,url -q ".number"
+# Capture issue URL from stdout, then derive issue number for branch naming:
+issue_url="$(gh issue create --repo <owner/repo> --title "<title>" --body "<body>")"
+issue_number="${issue_url##*/}"
 gh pr create --repo <owner/repo> --base main --head <branch> --title "<title>" --body "<body>"
 ```
 
