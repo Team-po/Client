@@ -9,14 +9,17 @@ import { heroStats } from "@/features/landing/constants";
 
 function renderHeroStatValue(value: string) {
 	const parts = value.match(/[0-9A-Za-z%]+|[^0-9A-Za-z%]+/g) ?? [value];
+	let currentOffset = 0;
 
-	return parts.map((part, index) => {
+	return parts.map((part) => {
 		const isHangul = /[가-힣]/.test(part);
+		const key = `${value}-${currentOffset}`;
+		currentOffset += part.length;
 
 		return (
 			<span
 				className={isHangul ? "font-display" : "font-mono"}
-				key={`${value}-${index}`}
+				key={key}
 			>
 				{part}
 			</span>
