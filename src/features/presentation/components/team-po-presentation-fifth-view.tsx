@@ -28,6 +28,7 @@ import "./team-po-presentation-view.css";
 
 const teamMembers = ["장다은", "김황조", "박상혁", "정종우"];
 const teamLeaderName = "장다은";
+const featuredMemberName = "김황조";
 const CAPTURE_SCROLL_OFFSET = 2;
 
 const tocSections: PresentationSectionLink[] = [
@@ -373,12 +374,13 @@ export function TeamPoPresentationFifthView() {
 											<div className="mt-4 flex max-w-3xl flex-wrap gap-3">
 												{teamMembers.map((member) => {
 													const isLeader = member === teamLeaderName;
+													const isFeatured = member === featuredMemberName;
 
 													return (
 														<div
 															className={cn(
 																"flex items-center gap-2 rounded-full border px-4 py-2.5 text-base font-medium",
-																isLeader
+																isFeatured
 																	? "border-primary bg-primary/20 text-primary shadow-sm"
 																	: "border-primary/10 bg-primary/5 text-brand-ink",
 															)}
