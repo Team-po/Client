@@ -1,6 +1,6 @@
 ---
 name: github-workflow
-description: "Handles the repository's GitHub delivery workflow end to end: creating an issue, creating or renaming a branch, validating changes, making a conventional commit, pushing the branch, and opening a pull request. Use when the user asks for issue creation, branch creation or rename, commit, push, PR creation, or the full GitHub handoff workflow."
+description: "Handles the repository's GitHub delivery workflow end to end: issue creation, issue-number-linked branch creation, validation, conventional commit, push, and pull request creation."
 user-invocable: false
 ---
 
@@ -21,9 +21,10 @@ Keep the flow non-interactive and repository-safe.
    - `git remote -v`
    - `git log --oneline -5`
 2. If there are unrelated staged or modified files, do not revert them. Scope the workflow only to the user-requested change.
-3. Check GitHub CLI auth before issue or PR creation.
+3. Check GitHub CLI auth before remote work.
    - `gh auth status`
 4. If network access or auth blocks the workflow, continue as far as possible locally, then surface the exact blocker.
+5. Run all `gh` commands outside the sandbox (with escalation in this environment).
 
 ## Required Validation
 
@@ -39,35 +40,40 @@ Report pass/fail status in the final handoff and include the same validation lis
 
 1. Summarize the change in one line and identify the conventional commit type.
    - Use `feat(<domain>): ...`, `fix(<domain>): ...`, or `chore: ...`
-2. Create or rename the working branch.
-   - New branch: `git checkout -b <branch-name>`
-   - Rename current branch: `git branch -m <new-branch-name>`
-3. Create the GitHub issue if the user asked for it or asked for the full workflow.
+2. Create the GitHub issue (required for full workflow).
    - Prefer a concise title matching the change.
    - Use a body with `Summary` and `Validation` sections.
-4. Stage only the intended files.
+   - Capture issue number from the creation result.
+3. Create issue-numbered branch name and check out branch.
+   - Branch format: `type/<issue-number>-<short-kebab-summary>`
+   - Example: `feat/123-team-po-fourth-deck`
+   - Command: `git checkout -b <branch-name>`
+4. Stage only intended files.
    - `git add <paths...>`
 5. Commit with a conventional message.
    - `git commit -m "<type(scope): summary>"`
-6. Push the branch.
+6. Push branch.
    - `git push -u origin <branch-name>`
 7. Create the PR.
    - Base branch is usually `main` unless local context says otherwise.
    - PR body should contain:
      - `Summary`
      - `Validation`
-     - `Closes #<issue-number>` when applicable
+     - `Closes #<issue-number>`
 
 ## Naming Guidance
 
 - Issue title: short, user-facing, outcome-oriented
-- Branch name: lowercase kebab-case with a type prefix
+- Branch name: lowercase kebab-case with a type prefix and required issue number
+  - `feat/123-short-summary`
+  - `fix/456-short-summary`
+  - `chore/789-short-summary`
 - Good branch examples:
   - `fix/branding-svg-refresh`
   - `feat/auth-profile-page`
   - `chore/update-mock-handlers`
 
-Prefer branch names that match the commit intent. Include the issue number only when the repository already uses that convention.
+Prefer branch names that match the commit intent and always include issue number.
 
 ## Command Patterns
 
@@ -75,6 +81,9 @@ Use non-interactive `gh` commands.
 
 ```bash
 gh issue create --repo <owner/repo> --title "<title>" --body "<body>"
+# Capture issue URL from stdout, then derive issue number for branch naming:
+issue_url="$(gh issue create --repo <owner/repo> --title "<title>" --body "<body>")"
+issue_number="${issue_url##*/}"
 gh pr create --repo <owner/repo> --base main --head <branch> --title "<title>" --body "<body>"
 ```
 

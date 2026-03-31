@@ -194,15 +194,17 @@ export function PresentationSlide({
 	label,
 	title,
 	description,
+	pageLabel,
 	children,
 }: PropsWithChildren<{
 	id: string;
 	label: string;
 	title: string;
 	description?: string;
+	pageLabel?: string;
 }>) {
-	const pageLabels = useContext(PresentationPaginationContext);
-	const pageLabel = pageLabels?.get(id);
+	const contextPageLabel = useContext(PresentationPaginationContext);
+	const resolvedPageLabel = pageLabel ?? contextPageLabel?.get(id);
 
 	return (
 		<section className="presentation-slide scroll-mt-28 py-8 md:py-10" id={id}>
@@ -216,9 +218,9 @@ export function PresentationSlide({
 					/>
 					{children}
 				</div>
-				{pageLabel ? (
+				{resolvedPageLabel ? (
 					<div className="pointer-events-none absolute bottom-4 right-5 rounded-full border border-border/60 bg-white/85 px-3 py-1 text-xs font-mono font-medium text-muted-foreground shadow-soft md:bottom-5 md:right-6">
-						{pageLabel}
+						{resolvedPageLabel}
 					</div>
 				) : null}
 			</Container>
