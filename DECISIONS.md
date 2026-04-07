@@ -21,3 +21,6 @@
 
 ## 2026-03-10
 - Repository automation skill: local `.agents/skills/github-workflow` documents the standard issue → branch → validation → commit → push → PR flow for repeatable GitHub handoff work
+
+## 2026-04-07
+- Local PDF inspection skill: `.agents/skills/pdf-reading` documents a fallback workflow for reading PDFs in restricted environments, preferring text extraction first and Ghostscript rendering to temporary images with mandatory cleanup when visual inspection is required
