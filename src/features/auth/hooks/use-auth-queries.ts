@@ -83,10 +83,15 @@ export function useUpdateCurrentUserMutation() {
 }
 
 export function useEditPasswordMutation() {
+	const queryClient = useQueryClient();
+
 	return useMutation({
 		mutationFn: (payload: EditPasswordRequest) => editPassword(payload),
 		onSuccess: () => {
 			clearAuthSession();
+			queryClient.removeQueries({
+				queryKey: authQueryKeys.currentUser,
+			});
 		},
 	});
 }

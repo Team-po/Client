@@ -15,13 +15,13 @@ tags:
   - name: Users
     description: User account resources
 paths:
-  /auth/login:
+  /users/sign-in:
     post:
       tags:
         - Auth
-      operationId: loginWithEmailPassword
+      operationId: signInWithEmailPassword
       summary: Log in with email and password
-      description: Issues a session token pair and returns the current user profile.
+      description: Issues a session token pair for the authenticated user.
       requestBody:
         required: true
         content:
@@ -43,19 +43,9 @@ paths:
               examples:
                 success:
                   value:
-                    user:
-                      id: usr_01HQ7ZJ5M3P8Q2A2F4F4Q7T3VV
-                      email: preview@teampo.dev
-                      nickname: queue_runner
-                      profileImageUrl: https://images.teampo.dev/profiles/preview.png
-                      emailVerified: true
-                      createdAt: '2026-03-05T09:00:00Z'
-                      verifiedAt: '2026-03-05T09:15:00Z'
-                    session:
-                      accessToken: mq_access_demo_token
-                      refreshToken: mq_refresh_demo_token
-                      tokenType: Bearer
-                      expiresAt: '2026-03-08T18:30:00Z'
+                    accessToken: mq_access_demo_token
+                    refreshToken: mq_refresh_demo_token
+                    expiresAt: '2026-03-08T18:30:00Z'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -325,17 +315,12 @@ components:
       required:
         - accessToken
         - refreshToken
-        - tokenType
         - expiresAt
       properties:
         accessToken:
           type: string
         refreshToken:
           type: string
-        tokenType:
-          type: string
-          enum:
-            - Bearer
         expiresAt:
           type: string
           format: date-time
@@ -354,16 +339,7 @@ components:
           minLength: 8
           maxLength: 128
     LoginResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - user
-        - session
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        session:
-          $ref: '#/components/schemas/Session'
+      $ref: '#/components/schemas/Session'
     CreateUserRequest:
       type: object
       additionalProperties: false
