@@ -1,5 +1,3 @@
-import type { UserProfile } from "@/lib/types/user";
-
 export interface LoginRequest {
 	email: string;
 	password: string;
@@ -9,50 +7,45 @@ export interface SessionPayload {
 	accessToken: string;
 	expiresAt: string;
 	refreshToken: string;
-	tokenType: "Bearer";
 }
 
-export type VerificationDeliveryStatus = "queued" | "sent" | "throttled";
-
-export interface VerificationDelivery {
-	deliveryStatus: VerificationDeliveryStatus;
-	email: string;
-	resendAfterSeconds: number;
-}
-
-export interface LoginResponse {
-	session: SessionPayload;
-	user: UserProfile;
-}
+export type LoginResponse = SessionPayload;
 
 export interface CreateUserRequest {
 	email: string;
+	level: number;
 	nickname: string;
 	password: string;
+	passwordConfirm: string;
 	profileImage: File | null;
 }
 
-export interface CreateUserResponse {
-	user: UserProfile;
-	verification: VerificationDelivery;
-}
-
-export interface ResendEmailVerificationRequest {
+export interface SignUpRequest {
 	email: string;
+	level: number;
+	nickname: string;
+	password: string;
+	profileImageKey?: string;
 }
 
-export interface ResendEmailVerificationResponse {
-	deliveryStatus: VerificationDeliveryStatus;
-	email: string;
-	resendAfterSeconds: number;
+export interface ProfileImageUploadUrlRequest {
+	contentType: string;
 }
 
-export interface VerifyEmailRequest {
-	email: string;
-	token: string;
+export interface ProfileImageUploadUrlResponse {
+	contentType: string;
+	expiresAt: string;
+	formFields: Record<string, string>;
+	maxFileSizeBytes: number;
+	objectKey: string;
+	uploadUrl: string;
 }
 
-export interface VerifyEmailResponse {
-	user: UserProfile;
-	verifiedAt: string | null;
+export interface RefreshTokenRequest {
+	refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+	accessToken: string;
+	expiresAt: string;
 }

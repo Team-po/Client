@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { EmailVerificationPage } from "@/pages/email-verification-page";
 import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
+import { MatchPage } from "@/pages/match-page";
 import { ProfilePage } from "@/pages/profile-page";
 import { TeamPoPresentationFourthPage } from "@/pages/team-po-presentation-fourth-page";
 import { SignupPage } from "@/pages/signup-page";
@@ -47,6 +48,7 @@ export function App() {
 				<Route path="/signup" element={<SignupPage />} />
 				<Route path="/verify-email" element={<EmailVerificationPage />} />
 				<Route path="/me" element={<ProfilePage />} />
+				<Route path="/match" element={<MatchPage />} />
 				<Route path="*" element={<Navigate replace to="/" />} />
 			</Routes>
 		</BrowserRouter>

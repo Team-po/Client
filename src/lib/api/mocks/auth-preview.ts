@@ -4,22 +4,19 @@ export const previewAuthSeed = {
 	email: "preview@teampo.dev",
 	nickname: "queue_runner",
 	password: "teampo123!",
-	profileImageUrl: "https://i.pravatar.cc/240?img=12",
-	userId: "user_preview_001",
-	verificationToken: "TEAMPO-2026",
+	profileImage: "https://i.pravatar.cc/240?img=12",
 };
 
 export function createPreviewUser(
 	overrides: Partial<UserProfile> = {},
 ): UserProfile {
 	return {
-		createdAt: "2026-03-08T09:00:00.000Z",
+		description: "빠르게 실험하고, 팀원과 맥락을 맞추는 일을 좋아합니다.",
 		email: previewAuthSeed.email,
-		emailVerified: false,
-		id: previewAuthSeed.userId,
+		level: 3,
 		nickname: previewAuthSeed.nickname,
-		profileImageUrl: previewAuthSeed.profileImageUrl,
-		verifiedAt: null,
+		profileImage: previewAuthSeed.profileImage,
+		temperature: 50,
 		...overrides,
 	};
 }

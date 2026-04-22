@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import {
+	ArrowRight,
+	CheckCircle2,
+	LoaderCircle,
+	SearchCheck,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -14,34 +18,47 @@ import {
 import { Input } from "@/components/ui/input";
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { getProfileFallback } from "@/features/auth/constants";
+import { ProfileImagePicker } from "@/features/auth/components/profile-image-picker";
 import {
 	hasValidationErrors,
 	validateSignupForm,
 } from "@/features/auth/lib/validation";
-import { useSignupMutation } from "@/features/auth/hooks/use-auth-queries";
+import {
+	useCheckEmailDuplicateMutation,
+	useSignupMutation,
+} from "@/features/auth/hooks/use-auth-queries";
 import { getApiErrorMessage } from "@/lib/api/client";
+
+const levelOptions = [1, 2, 3, 4, 5] as const;
 
 export function SignupView() {
 	const navigate = useNavigate();
 	const [form, setForm] = useState({
 		email: "",
+		level: 3,
 		nickname: "",
 		password: "",
+		passwordConfirm: "",
 		profileImage: null as File | null,
 	});
 	const [touched, setTouched] = useState({
 		email: false,
+		level: false,
 		nickname: false,
 		password: false,
+		passwordConfirm: false,
 		profileImage: false,
 	});
+	const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
 	const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
 		string | null
 	>(null);
 	const signupMutation = useSignupMutation();
+	const checkEmailMutation = useCheckEmailDuplicateMutation();
 	const errors = validateSignupForm(form);
 	const isSubmitDisabled =
 		signupMutation.isPending || hasValidationErrors(errors);
+	const isEmailChecked = checkedEmail === form.email.trim().toLowerCase();
 
 	useEffect(() => {
 		if (!form.profileImage) {
@@ -69,8 +86,10 @@ export function SignupView() {
 
 		setTouched({
 			email: true,
+			level: true,
 			nickname: true,
 			password: true,
+			passwordConfirm: true,
 			profileImage: true,
 		});
 
@@ -78,36 +97,54 @@ export function SignupView() {
 			return;
 		}
 
-		const response = await signupMutation.mutateAsync(form);
+		await signupMutation.mutateAsync(form);
 
-		navigate(
-			`/verify-email?email=${encodeURIComponent(response.verification.email)}`,
-		);
+		navigate(`/login?email=${encodeURIComponent(form.email.trim())}`);
+	}
+
+	async function handleCheckEmail() {
+		markTouched("email");
+
+		if (errors.email) {
+			return;
+		}
+
+		await checkEmailMutation.mutateAsync(form.email);
+		setCheckedEmail(form.email.trim().toLowerCase());
 	}
 
 	return (
 		<AuthShell
 			badge="Signup"
-			description="이메일, 비밀번호, 닉네임으로 계정을 만들고 프로필 이미지를 더해 첫인상을 준비하세요."
-			title="첫 팀을 만들 계정을 준비하세요"
+			description="팀 매칭에 사용할 이메일, 비밀번호, 닉네임을 입력해 주세요."
+			title="회원가입"
 		>
 			<div className="mb-6 flex items-center gap-4 rounded-2xl border border-border/70 bg-secondary/35 p-4">
-				<Avatar className="size-16 border border-border/70">
-					<AvatarImage
-						alt={form.nickname || "프로필"}
-						src={profileImagePreviewUrl ?? undefined}
-					/>
-					<AvatarFallback>
-						{getProfileFallback(form.nickname || form.email)}
-					</AvatarFallback>
-				</Avatar>
+				<ProfileImagePicker
+					alt={form.nickname || "프로필"}
+					fallback={getProfileFallback(form.nickname || form.email)}
+					inputId="signup-profile-image"
+					invalid={Boolean(touched.profileImage && errors.profileImage)}
+					onBlur={() => markTouched("profileImage")}
+					onFileChange={(file) => {
+						markTouched("profileImage");
+						setForm((current) => ({
+							...current,
+							profileImage: file,
+						}));
+					}}
+					previewUrl={profileImagePreviewUrl}
+				/>
 				<div className="flex flex-col gap-1">
 					<p className="font-semibold text-brand-ink">
 						{form.nickname || "닉네임 미리보기"}
 					</p>
 					<p className="text-sm text-muted-foreground">
-						가입 전에 프로필 인상이 어떻게 보일지 확인할 수 있습니다.
+						팀원에게 보일 프로필을 미리 확인하세요.
 					</p>
+					{touched.profileImage && errors.profileImage ? (
+						<FieldError>{errors.profileImage}</FieldError>
+					) : null}
 				</div>
 			</div>
 
@@ -118,25 +155,53 @@ export function SignupView() {
 				<FieldGroup>
 					<Field data-invalid={Boolean(touched.email && errors.email)}>
 						<FieldLabel htmlFor="signup-email">이메일</FieldLabel>
-						<Input
-							aria-invalid={Boolean(touched.email && errors.email)}
-							autoComplete="email"
-							id="signup-email"
-							onBlur={() => markTouched("email")}
-							onChange={(event) => {
-								markTouched("email");
-								setForm((current) => ({
-									...current,
-									email: event.target.value,
-								}));
-							}}
-							placeholder="you@teampo.dev"
-							required
-							type="email"
-							value={form.email}
-						/>
+						<div className="flex flex-col gap-2 sm:flex-row">
+							<Input
+								aria-invalid={Boolean(touched.email && errors.email)}
+								autoComplete="email"
+								id="signup-email"
+								onBlur={() => markTouched("email")}
+								onChange={(event) => {
+									markTouched("email");
+									setCheckedEmail(null);
+									setForm((current) => ({
+										...current,
+										email: event.target.value,
+									}));
+								}}
+								placeholder="you@teampo.dev"
+								required
+								type="email"
+								value={form.email}
+							/>
+							<Button
+								className="shrink-0"
+								disabled={checkEmailMutation.isPending || Boolean(errors.email)}
+								onClick={() => void handleCheckEmail()}
+								type="button"
+								variant="outline"
+							>
+								{checkEmailMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : isEmailChecked ? (
+									<CheckCircle2 data-icon="inline-start" />
+								) : (
+									<SearchCheck data-icon="inline-start" />
+								)}
+								중복 확인
+							</Button>
+						</div>
 						{touched.email && errors.email ? (
 							<FieldError>{errors.email}</FieldError>
+						) : checkEmailMutation.error ? (
+							<FieldError>
+								{getApiErrorMessage(checkEmailMutation.error)}
+							</FieldError>
+						) : isEmailChecked ? (
+							<FieldDescription>사용할 수 있는 이메일입니다.</FieldDescription>
 						) : null}
 					</Field>
 
@@ -162,6 +227,39 @@ export function SignupView() {
 						/>
 						{touched.password && errors.password ? (
 							<FieldError>{errors.password}</FieldError>
+						) : null}
+					</Field>
+
+					<Field
+						data-invalid={Boolean(
+							touched.passwordConfirm && errors.passwordConfirm,
+						)}
+					>
+						<FieldLabel htmlFor="signup-password-confirm">
+							비밀번호 확인
+						</FieldLabel>
+						<Input
+							aria-invalid={Boolean(
+								touched.passwordConfirm && errors.passwordConfirm,
+							)}
+							autoComplete="new-password"
+							id="signup-password-confirm"
+							minLength={8}
+							onBlur={() => markTouched("passwordConfirm")}
+							onChange={(event) => {
+								markTouched("passwordConfirm");
+								setForm((current) => ({
+									...current,
+									passwordConfirm: event.target.value,
+								}));
+							}}
+							placeholder="비밀번호를 한 번 더 입력하세요"
+							required
+							type="password"
+							value={form.passwordConfirm}
+						/>
+						{touched.passwordConfirm && errors.passwordConfirm ? (
+							<FieldError>{errors.passwordConfirm}</FieldError>
 						) : null}
 					</Field>
 
@@ -193,36 +291,40 @@ export function SignupView() {
 						)}
 					</Field>
 
-					<Field
-						data-invalid={Boolean(touched.profileImage && errors.profileImage)}
-					>
-						<FieldLabel htmlFor="signup-profile-image">
-							프로필 이미지
-						</FieldLabel>
-						<Input
-							accept="image/*"
-							aria-invalid={Boolean(
-								touched.profileImage && errors.profileImage,
-							)}
-							id="signup-profile-image"
-							onBlur={() => markTouched("profileImage")}
-							onChange={(event) => {
-								markTouched("profileImage");
-								setForm((current) => ({
-									...current,
-									profileImage: event.target.files?.[0] ?? null,
-								}));
-							}}
-							type="file"
-						/>
-						{touched.profileImage && errors.profileImage ? (
-							<FieldError>{errors.profileImage}</FieldError>
+					<Field data-invalid={Boolean(touched.level && errors.level)}>
+						<FieldLabel>개발 레벨</FieldLabel>
+						<div className="grid grid-cols-5 gap-2">
+							{levelOptions.map((level) => (
+								<Button
+									aria-pressed={form.level === level}
+									key={level}
+									onClick={() => {
+										markTouched("level");
+										setForm((current) => ({
+											...current,
+											level,
+										}));
+									}}
+									type="button"
+									variant={form.level === level ? "default" : "outline"}
+								>
+									Lv.{level}
+								</Button>
+							))}
+						</div>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<span>배우는 중</span>
+							<span>익숙하게 구현</span>
+						</div>
+						{touched.level && errors.level ? (
+							<FieldError>{errors.level}</FieldError>
 						) : (
 							<FieldDescription>
-								PNG, JPG 같은 이미지 파일을 선택할 수 있습니다.
+								현재 경험치에 가까운 레벨을 선택해 주세요.
 							</FieldDescription>
 						)}
 					</Field>
+
 				</FieldGroup>
 
 				{signupMutation.error ? (

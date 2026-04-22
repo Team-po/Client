@@ -1,19 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { login, resendEmailVerification, verifyEmail } from "@/lib/api/auth";
+import { login } from "@/lib/api/auth";
 import {
+	clearAuthSession,
+	getAuthSession,
+	setAuthSession,
+} from "@/lib/api/auth-session";
+import {
+	checkEmailDuplicate,
 	createUser,
 	deleteCurrentUser,
+	editPassword,
 	getCurrentUser,
 	updateCurrentUser,
 } from "@/lib/api/users";
+import type { CreateUserRequest, LoginRequest } from "@/lib/types/auth";
 import type {
-	CreateUserRequest,
-	LoginRequest,
-	ResendEmailVerificationRequest,
-	VerifyEmailRequest,
-} from "@/lib/types/auth";
-import type { UpdateCurrentUserRequest, UserProfile } from "@/lib/types/user";
+	DeleteCurrentUserRequest,
+	EditPasswordRequest,
+	UpdateCurrentUserRequest,
+	UserProfile,
+} from "@/lib/types/user";
 
 const authQueryKeys = {
 	currentUser: ["users", "me"] as const,
@@ -21,10 +28,8 @@ const authQueryKeys = {
 
 export function useCurrentUserQuery() {
 	return useQuery({
-		queryFn: async () => {
-			const response = await getCurrentUser();
-			return response.user;
-		},
+		enabled: Boolean(getAuthSession()),
+		queryFn: () => getCurrentUser(),
 		queryKey: authQueryKeys.currentUser,
 	});
 }
@@ -35,10 +40,8 @@ export function useLoginMutation() {
 	return useMutation({
 		mutationFn: (payload: LoginRequest) => login(payload),
 		onSuccess: (response) => {
-			queryClient.setQueryData<UserProfile>(
-				authQueryKeys.currentUser,
-				response.user,
-			);
+			setAuthSession(response);
+			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
 		},
 	});
 }
@@ -49,24 +52,9 @@ export function useSignupMutation() {
 	});
 }
 
-export function useVerifyEmailMutation() {
-	const queryClient = useQueryClient();
-
+export function useCheckEmailDuplicateMutation() {
 	return useMutation({
-		mutationFn: (payload: VerifyEmailRequest) => verifyEmail(payload),
-		onSuccess: (response) => {
-			queryClient.setQueryData<UserProfile>(
-				authQueryKeys.currentUser,
-				response.user,
-			);
-		},
-	});
-}
-
-export function useResendEmailVerificationMutation() {
-	return useMutation({
-		mutationFn: (payload: ResendEmailVerificationRequest) =>
-			resendEmailVerification(payload),
+		mutationFn: (email: string) => checkEmailDuplicate(email),
 	});
 }
 
@@ -76,11 +64,29 @@ export function useUpdateCurrentUserMutation() {
 	return useMutation({
 		mutationFn: (payload: UpdateCurrentUserRequest) =>
 			updateCurrentUser(payload),
-		onSuccess: (response) => {
-			queryClient.setQueryData<UserProfile>(
+		onSuccess: (_, payload) => {
+			queryClient.setQueryData<UserProfile | undefined>(
 				authQueryKeys.currentUser,
-				response.user,
+				(current) =>
+					current
+						? {
+								...current,
+								description: payload.description.trim() || null,
+								level: payload.level,
+								nickname: payload.nickname.trim(),
+							}
+						: current,
 			);
+			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
+		},
+	});
+}
+
+export function useEditPasswordMutation() {
+	return useMutation({
+		mutationFn: (payload: EditPasswordRequest) => editPassword(payload),
+		onSuccess: () => {
+			clearAuthSession();
 		},
 	});
 }
@@ -89,8 +95,10 @@ export function useDeleteCurrentUserMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: () => deleteCurrentUser(),
+		mutationFn: (payload: DeleteCurrentUserRequest) =>
+			deleteCurrentUser(payload),
 		onSuccess: () => {
+			clearAuthSession();
 			queryClient.removeQueries({
 				queryKey: authQueryKeys.currentUser,
 			});
