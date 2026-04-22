@@ -1,22 +1,24 @@
 export interface UserProfile {
-	createdAt: string;
+	description: string | null;
 	email: string;
-	emailVerified: boolean;
-	id: string;
+	level: number;
 	nickname: string;
-	profileImageUrl: string | null;
-	verifiedAt: string | null;
-}
-
-export interface CurrentUserResponse {
-	user: UserProfile;
+	profileImage: string | null;
+	temperature: number;
 }
 
 export interface UpdateCurrentUserRequest {
+	description: string;
+	level: number;
 	nickname: string;
 	profileImage: File | null;
 }
 
-export interface UpdateCurrentUserResponse {
-	user: UserProfile;
+export interface EditPasswordRequest {
+	afterPassword: string;
+	currentPassword: string;
+}
+
+export interface DeleteCurrentUserRequest {
+	password: string;
 }

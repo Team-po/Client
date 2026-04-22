@@ -5,8 +5,10 @@ export interface LoginFormValues {
 
 export interface SignupFormValues {
 	email: string;
+	level: number;
 	nickname: string;
 	password: string;
+	passwordConfirm: string;
 	profileImage: File | null;
 }
 
@@ -16,6 +18,8 @@ export interface VerifyEmailFormValues {
 }
 
 export interface ProfileEditFormValues {
+	description: string;
+	level: number;
 	nickname: string;
 	profileImage: File | null;
 }
@@ -27,6 +31,7 @@ const minimumPasswordLength = 8;
 const minimumNicknameLength = 2;
 const maximumNicknameLength = 24;
 const maximumProfileImageSize = 5 * 1024 * 1024;
+const maximumDescriptionLength = 500;
 
 export function validateLoginForm(
 	values: LoginFormValues,
@@ -42,8 +47,13 @@ export function validateSignupForm(
 ): FormErrors<SignupFormValues> {
 	return {
 		email: getEmailError(values.email),
+		level: getLevelError(values.level),
 		nickname: getNicknameError(values.nickname),
 		password: getPasswordError(values.password),
+		passwordConfirm: getPasswordConfirmError(
+			values.password,
+			values.passwordConfirm,
+		),
 		profileImage: getProfileImageError(values.profileImage),
 	};
 }
@@ -61,6 +71,8 @@ export function validateProfileEditForm(
 	values: ProfileEditFormValues,
 ): FormErrors<ProfileEditFormValues> {
 	return {
+		description: getDescriptionError(values.description),
+		level: getLevelError(values.level),
 		nickname: getNicknameError(values.nickname),
 		profileImage: getProfileImageError(values.profileImage),
 	};
@@ -96,6 +108,18 @@ function getPasswordError(value: string) {
 	return undefined;
 }
 
+function getPasswordConfirmError(password: string, passwordConfirm: string) {
+	if (!passwordConfirm) {
+		return "비밀번호 확인을 입력해 주세요.";
+	}
+
+	if (password !== passwordConfirm) {
+		return "비밀번호가 일치하지 않아요.";
+	}
+
+	return undefined;
+}
+
 function getNicknameError(value: string) {
 	const trimmedValue = value.trim();
 
@@ -125,6 +149,26 @@ function getProfileImageError(file: File | null) {
 
 	if (file.size > maximumProfileImageSize) {
 		return "프로필 이미지는 5MB 이하만 업로드할 수 있어요.";
+	}
+
+	return undefined;
+}
+
+function getLevelError(value: number) {
+	if (!Number.isInteger(value)) {
+		return "레벨을 선택해 주세요.";
+	}
+
+	if (value < 1 || value > 5) {
+		return "레벨은 1부터 5까지 선택할 수 있어요.";
+	}
+
+	return undefined;
+}
+
+function getDescriptionError(value: string) {
+	if (value.length > maximumDescriptionLength) {
+		return "소개는 500자 이하여야 해요.";
 	}
 
 	return undefined;

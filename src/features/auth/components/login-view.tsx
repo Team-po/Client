@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,12 +21,13 @@ import { getApiErrorMessage } from "@/lib/api/client";
 
 export function LoginView() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 	const [form, setForm] = useState({
-		email: "",
+		email: searchParams.get("email") ?? "",
 		password: "",
 	});
 	const [touched, setTouched] = useState({
-		email: false,
+		email: Boolean(searchParams.get("email")),
 		password: false,
 	});
 	const loginMutation = useLoginMutation();
