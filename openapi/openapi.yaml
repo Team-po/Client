@@ -52,17 +52,17 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /users:
+  /users/sign-up:
     post:
       tags:
         - Users
       operationId: createUser
       summary: Sign up a new user
-      description: Creates a user account with email/password authentication and an optional profile image upload.
+      description: Creates a user account with email/password authentication and an optional uploaded profile image key.
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               $ref: '#/components/schemas/CreateUserRequest'
             examples:
@@ -71,29 +71,11 @@ paths:
                   email: new.dev@teampo.dev
                   password: teampo123!
                   nickname: sprintmaker
-                  profileImage: <binary image file>
+                  level: 3
+                  profileImageKey: images/sign-up/avatar.png
       responses:
-        '201':
-          description: User created and verification email queued
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateUserResponse'
-              examples:
-                success:
-                  value:
-                    user:
-                      id: usr_01HQ81GHZ4BHZSE1M6P63PQXTX
-                      email: new.dev@teampo.dev
-                      nickname: sprintmaker
-                      profileImageUrl: https://images.teampo.dev/profiles/sprintmaker.png
-                      emailVerified: false
-                      createdAt: '2026-03-08T07:00:00Z'
-                      verifiedAt: null
-                    verification:
-                      email: new.dev@teampo.dev
-                      deliveryStatus: queued
-                      resendAfterSeconds: 60
+        '200':
+          description: User created
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -165,13 +147,12 @@ paths:
                 success:
                   value:
                     user:
-                      id: usr_01HQ81GHZ4BHZSE1M6P63PQXTX
                       email: new.dev@teampo.dev
                       nickname: sprintmaker
-                      profileImageUrl: https://images.teampo.dev/profiles/sprintmaker.png
-                      emailVerified: true
-                      createdAt: '2026-03-08T07:00:00Z'
-                      verifiedAt: '2026-03-08T07:03:00Z'
+                      profileImage: https://images.teampo.dev/profiles/sprintmaker.png
+                      description: null
+                      level: 3
+                      temperature: 50
                     verifiedAt: '2026-03-08T07:03:00Z'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -194,48 +175,44 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetCurrentUserResponse'
+                $ref: '#/components/schemas/User'
               examples:
                 success:
                   value:
-                    user:
-                      id: usr_01HQ7ZJ5M3P8Q2A2F4F4Q7T3VV
-                      email: preview@teampo.dev
-                      nickname: queue_runner
-                      profileImageUrl: https://images.teampo.dev/profiles/preview.png
-                      emailVerified: true
-                      createdAt: '2026-03-05T09:00:00Z'
-                      verifiedAt: '2026-03-05T09:15:00Z'
+                    email: preview@teampo.dev
+                    nickname: queue_runner
+                    profileImage: https://images.teampo.dev/profiles/preview.png
+                    description: 빠르게 실험하고, 팀원과 맥락을 맞추는 일을 좋아합니다.
+                    level: 3
+                    temperature: 50
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    patch:
+    put:
       tags:
         - Users
       operationId: updateCurrentUser
       summary: Update the current user profile
-      description: Updates the nickname and optional profile image for the signed-in user. Email cannot be changed.
+      description: Updates the nickname, level, description, and optional uploaded profile image key for the signed-in user. Email cannot be changed.
       security:
         - bearerAuth: []
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               $ref: '#/components/schemas/UpdateCurrentUserRequest'
             examples:
               default:
                 value:
                   nickname: sprintmaker_v2
-                  profileImage: <binary image file>
+                  level: 4
+                  description: 협업 속도를 높이는 프론트엔드 개발자입니다.
+                  profileImageKey: images/users/1/avatar.png
       responses:
         '200':
           description: Current user updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UpdateCurrentUserResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -268,19 +245,13 @@ components:
       type: object
       additionalProperties: false
       required:
-        - id
         - email
         - nickname
-        - profileImageUrl
-        - emailVerified
-        - createdAt
-        - verifiedAt
+        - profileImage
+        - description
+        - level
+        - temperature
       properties:
-        id:
-          type: string
-          description: Unique user identifier
-          examples:
-            - usr_01HQ7ZJ5M3P8Q2A2F4F4Q7T3VV
         email:
           type: string
           format: email
@@ -292,23 +263,27 @@ components:
           maxLength: 24
           examples:
             - queue_runner
-        profileImageUrl:
+        profileImage:
           type:
             - string
             - 'null'
           format: uri
           examples:
             - https://images.teampo.dev/profiles/preview.png
-        emailVerified:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-        verifiedAt:
+        description:
           type:
             - string
             - 'null'
-          format: date-time
+          examples:
+            - 빠르게 실험하고, 팀원과 맥락을 맞추는 일을 좋아합니다.
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        temperature:
+          type: integer
+          minimum: 0
+          maximum: 100
     Session:
       type: object
       additionalProperties: false
@@ -347,6 +322,7 @@ components:
         - email
         - password
         - nickname
+        - level
       properties:
         email:
           type: string
@@ -359,11 +335,15 @@ components:
           type: string
           minLength: 2
           maxLength: 24
-        profileImage:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        profileImageKey:
           type:
             - string
             - 'null'
-          format: binary
+          description: Object key returned by the profile image upload-url endpoint.
     VerificationDeliveryStatus:
       type: string
       enum:
@@ -435,36 +415,34 @@ components:
           type: string
           format: date-time
     GetCurrentUserResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - user
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
+      $ref: '#/components/schemas/User'
     UpdateCurrentUserRequest:
       type: object
       additionalProperties: false
       required:
         - nickname
+        - level
+        - description
       properties:
         nickname:
           type: string
           minLength: 2
           maxLength: 24
-        profileImage:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        description:
           type:
             - string
             - 'null'
-          format: binary
+        profileImageKey:
+          type:
+            - string
+            - 'null'
+          description: Object key returned by the profile image upload-url endpoint.
     UpdateCurrentUserResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - user
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
+      $ref: '#/components/schemas/User'
     ApiError:
       type: object
       additionalProperties: false
