@@ -7,6 +7,7 @@ import { MatchPage } from "@/pages/match-page";
 import { ProfilePage } from "@/pages/profile-page";
 import { TeamPoPresentationEighthPage } from "@/pages/team-po-presentation-eighth-page";
 import { TeamPoPresentationFourthPage } from "@/pages/team-po-presentation-fourth-page";
+import { TeamPoPresentationNinthPage } from "@/pages/team-po-presentation-ninth-page";
 import { SignupPage } from "@/pages/signup-page";
 import { TeamPoPresentationPage } from "@/pages/team-po-presentation-page";
 import { TeamPoPresentationSecondPage } from "@/pages/team-po-presentation-second-page";
@@ -48,6 +49,10 @@ export function App() {
 				<Route
 					path="/deck/team-po-8"
 					element={<TeamPoPresentationEighthPage />}
+				/>
+				<Route
+					path="/deck/team-po-9"
+					element={<TeamPoPresentationNinthPage />}
 				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
