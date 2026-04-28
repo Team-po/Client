@@ -5,6 +5,7 @@ import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
 import { MatchPage } from "@/pages/match-page";
 import { ProfilePage } from "@/pages/profile-page";
+import { TeamPoPresentationEighthPage } from "@/pages/team-po-presentation-eighth-page";
 import { TeamPoPresentationFourthPage } from "@/pages/team-po-presentation-fourth-page";
 import { SignupPage } from "@/pages/signup-page";
 import { TeamPoPresentationPage } from "@/pages/team-po-presentation-page";
@@ -43,6 +44,10 @@ export function App() {
 				<Route
 					path="/deck/team-po-7"
 					element={<TeamPoPresentationSeventhPage />}
+				/>
+				<Route
+					path="/deck/team-po-8"
+					element={<TeamPoPresentationEighthPage />}
 				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
