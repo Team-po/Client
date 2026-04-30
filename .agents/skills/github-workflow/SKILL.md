@@ -10,7 +10,7 @@ Use this skill when the user wants the repository change wrapped up into GitHub 
 
 - "이슈 생성/브랜치/커밋/pr까지 진행"
 - "브랜치 이름 바꾸고 PR 열어줘"
-- "이 작업 이슈랑 커밋까지 정리해줘"
+- "이 작업 이슈랑 커밋까지 정리해"
 
 Keep the flow non-interactive and repository-safe.
 
