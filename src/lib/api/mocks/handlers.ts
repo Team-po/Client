@@ -1,7 +1,10 @@
 import { delay, http, HttpResponse } from "msw";
 
 import { apiConfig } from "@/lib/api/config";
-import { createPreviewUser, previewAuthSeed } from "@/lib/api/mocks/auth-preview";
+import {
+	createPreviewUser,
+	previewAuthSeed,
+} from "@/lib/api/mocks/auth-preview";
 import type { CreateUserRequest, LoginRequest } from "@/lib/types/auth";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { MatchStatus, ProjectRequestPayload } from "@/lib/types/match";
@@ -225,34 +228,37 @@ export const handlers = [
 		return HttpResponse.json(currentUser);
 	}),
 
-	http.post(getPath("/users/me/profile-image/upload-url"), async ({ request }) => {
-		const body = (await request.json()) as { contentType: string };
+	http.post(
+		getPath("/users/me/profile-image/upload-url"),
+		async ({ request }) => {
+			const body = (await request.json()) as { contentType: string };
 
-		if (!isSupportedImageType(body.contentType)) {
-			return buildErrorResponse(
-				400,
-				"지원하지 않는 이미지 형식입니다.",
-				"invalid_image_content_type",
-			);
-		}
+			if (!isSupportedImageType(body.contentType)) {
+				return buildErrorResponse(
+					400,
+					"지원하지 않는 이미지 형식입니다.",
+					"invalid_image_content_type",
+				);
+			}
 
-		const extension = body.contentType.split("/")[1]?.replace("jpeg", "jpg");
-		const objectKey = `images/users/1/${crypto.randomUUID()}.${extension}`;
+			const extension = body.contentType.split("/")[1]?.replace("jpeg", "jpg");
+			const objectKey = `images/users/1/${crypto.randomUUID()}.${extension}`;
 
-		return HttpResponse.json({
-			contentType: body.contentType,
-			expiresAt: "2026-04-20T12:05:00.000Z",
-			formFields: {
-				"Content-Type": body.contentType,
-				key: objectKey,
-				Policy: "mock-policy",
-				"X-Amz-Signature": "mock-signature",
-			},
-			maxFileSizeBytes: 5_242_880,
-			objectKey,
-			uploadUrl: getPath("/mock/profile-image-upload"),
-		});
-	}),
+			return HttpResponse.json({
+				contentType: body.contentType,
+				expiresAt: "2026-04-20T12:05:00.000Z",
+				formFields: {
+					"Content-Type": body.contentType,
+					key: objectKey,
+					Policy: "mock-policy",
+					"X-Amz-Signature": "mock-signature",
+				},
+				maxFileSizeBytes: 5_242_880,
+				objectKey,
+				uploadUrl: getPath("/mock/profile-image-upload"),
+			});
+		},
+	),
 
 	http.post(getPath("/mock/profile-image-upload"), async () => {
 		await delay(200);

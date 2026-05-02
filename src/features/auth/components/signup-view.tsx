@@ -324,7 +324,6 @@ export function SignupView() {
 							</FieldDescription>
 						)}
 					</Field>
-
 				</FieldGroup>
 
 				{signupMutation.error ? (

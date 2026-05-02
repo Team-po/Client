@@ -7,7 +7,8 @@ export const heroStats = [
 	{
 		value: "5단계",
 		label: "프로젝트 라이프사이클 관리",
-		caption: "forming > active > shipping > completed/paused 흐름을 명확하게 관리",
+		caption:
+			"forming > active > shipping > completed/paused 흐름을 명확하게 관리",
 	},
 	{
 		value: "주간",

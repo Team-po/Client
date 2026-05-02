@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { getAuthSession } from "@/lib/api/auth-session";
+import { clearAuthSession, getAuthSession } from "@/lib/api/auth-session";
 import { cn } from "@/lib/utils";
 
 interface SiteHeaderProps {
@@ -17,6 +17,7 @@ const authLinks = [
 
 export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const [isSignedIn, setIsSignedIn] = useState(() => Boolean(getAuthSession()));
 
 	useEffect(() => {
@@ -33,6 +34,12 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 			window.removeEventListener("focus", syncAuthState);
 		};
 	}, []);
+
+	function handleLogout() {
+		clearAuthSession();
+		setIsSignedIn(false);
+		navigate("/");
+	}
 
 	return (
 		<header className="sticky top-0 z-20 border-b border-border/50 bg-background/80 backdrop-blur-md">
@@ -54,7 +61,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 				</Link>
 
 				<div className="flex items-center gap-2">
-					{showMyPageLink ? (
+					{showMyPageLink && isSignedIn ? (
 						<div className="hidden items-center gap-4 md:flex">
 							<Link
 								className={cn(
@@ -68,6 +75,15 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 							<Link
 								className={cn(
 									"text-sm text-muted-foreground transition-colors hover:text-foreground",
+									location.pathname === "/team" && "text-foreground",
+								)}
+								to="/team"
+							>
+								팀 스페이스
+							</Link>
+							<Link
+								className={cn(
+									"text-sm text-muted-foreground transition-colors hover:text-foreground",
 									location.pathname === "/me" && "text-foreground",
 								)}
 								to="/me"
@@ -77,7 +93,11 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 						</div>
 					) : null}
 					{isSignedIn
-						? null
+						? showMyPageLink && (
+								<Button onClick={handleLogout} size="sm" variant="outline">
+									로그아웃
+								</Button>
+							)
 						: authLinks.map((item) => {
 								const isActive = location.pathname === item.to;
 								const variant =

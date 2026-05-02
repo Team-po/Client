@@ -13,8 +13,7 @@ export function EmailVerificationView() {
 		>
 			<div className="rounded-xl border border-border/70 bg-secondary/35 p-5 text-sm leading-6 text-muted-foreground">
 				<MailX className="mb-3 size-5 text-primary" />
-				프로필을 채워두면 팀원이 내 역할과 경험치를 더 쉽게 파악할 수
-				있습니다.
+				프로필을 채워두면 팀원이 내 역할과 경험치를 더 쉽게 파악할 수 있습니다.
 			</div>
 
 			<div className="mt-6 flex flex-col gap-3 sm:flex-row">

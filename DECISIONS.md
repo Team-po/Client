@@ -24,3 +24,10 @@
 
 ## 2026-04-07
 - Local PDF inspection skill: `.agents/skills/pdf-reading` documents a fallback workflow for reading PDFs in restricted environments, preferring text extraction first and Ghostscript rendering to temporary images with mandatory cleanup when visual inspection is required
+
+## 2026-05-03
+- Team space preview approach: model match offers and team-space data in `src/lib/types/team.ts` with FE-only demo data in `src/features/team/lib/demo-team-space.ts` until backend APIs are available
+- Team navigation: expose `/team` as the logged-in user's current team workspace, while keeping presentation deck routes unchanged
+- Editable workspace preview: keep team name/status, rules, checklist, GitHub setup, and messenger interactions in local React state so the UX can be validated before backend contracts exist
+- Auth/navigation UX: show app navigation and logout only for signed-in users; logged-out users can still open `/team` as a clearly labeled local preview
+- Matching preview UX: keep match offers hidden until the user requests or explicitly previews an offer, matching the intended request → offer → accept/decline flow

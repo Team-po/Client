@@ -1,4 +1,11 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import {
+	BrowserRouter,
+	Navigate,
+	Route,
+	Routes,
+	useLocation,
+} from "react-router-dom";
 
 import { EmailVerificationPage } from "@/pages/email-verification-page";
 import { LandingPage } from "@/pages/landing-page";
@@ -15,10 +22,12 @@ import { TeamPoPresentationThirdPage } from "@/pages/team-po-presentation-third-
 import { TeamPoPresentationFifthPage } from "@/pages/team-po-presentation-fifth-page";
 import { TeamPoPresentationSeventhPage } from "@/pages/team-po-presentation-seventh-page";
 import { TeamPoPresentationSixthPage } from "@/pages/team-po-presentation-sixth-page";
+import { TeamSpacePage } from "@/pages/team-space-page";
 
 export function App() {
 	return (
 		<BrowserRouter>
+			<ScrollToTop />
 			<Routes>
 				<Route path="/" element={<LandingPage />} />
 				<Route path="/deck/team-po" element={<TeamPoPresentationPage />} />
@@ -59,8 +68,21 @@ export function App() {
 				<Route path="/verify-email" element={<EmailVerificationPage />} />
 				<Route path="/me" element={<ProfilePage />} />
 				<Route path="/match" element={<MatchPage />} />
+				<Route path="/team" element={<TeamSpacePage />} />
 				<Route path="*" element={<Navigate replace to="/" />} />
 			</Routes>
 		</BrowserRouter>
 	);
+}
+
+function ScrollToTop() {
+	const { pathname } = useLocation();
+
+	useEffect(() => {
+		if (pathname) {
+			window.scrollTo({ left: 0, top: 0 });
+		}
+	}, [pathname]);
+
+	return null;
 }

@@ -21,22 +21,41 @@ export function AuthShell({
 }: AuthShellProps) {
 	return (
 		<div className="flex min-h-screen flex-col bg-secondary/20">
-			<SiteHeader />
+			<SiteHeader showMyPageLink={false} />
 
 			<main className="flex-1 py-10 md:py-16">
-				<Container className="flex justify-center">
-					<div className="flex w-full max-w-xl flex-col gap-6">
-						<div className="flex flex-col items-center gap-4 text-center">
-							<Badge variant="neutral">{badge}</Badge>
+				<Container>
+					<div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+						<section className="overflow-hidden rounded-[2rem] border border-border/70 bg-white p-6 shadow-panel md:p-8">
+							<Badge className="w-fit" variant="brand">
+								{badge}
+							</Badge>
 							<div className="flex flex-col gap-3">
-								<h1 className="font-display text-4xl leading-tight text-brand-ink md:text-[2.8rem]">
+								<h1 className="mt-5 text-balance font-display text-4xl font-semibold leading-tight text-brand-ink md:text-5xl">
 									{title}
 								</h1>
 								<p className="text-base leading-7 text-muted-foreground">
 									{description}
 								</p>
 							</div>
-						</div>
+							<div className="mt-8 grid gap-3">
+								{["프로필 준비", "매칭 요청", "팀 스페이스"].map(
+									(step, index) => (
+										<div
+											className="flex items-center gap-3 rounded-xl border border-border/70 bg-secondary/35 p-3"
+											key={step}
+										>
+											<span className="flex size-8 items-center justify-center rounded-full bg-primary/10 font-mono text-sm font-semibold text-primary">
+												{index + 1}
+											</span>
+											<span className="text-sm font-semibold text-brand-ink">
+												{step}
+											</span>
+										</div>
+									),
+								)}
+							</div>
+						</section>
 
 						<Card className="border-border/70 bg-white shadow-soft">
 							<CardContent className="p-6 md:p-8">{children}</CardContent>
