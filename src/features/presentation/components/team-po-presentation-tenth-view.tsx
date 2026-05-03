@@ -305,7 +305,7 @@ export function TeamPoPresentationTenthView() {
 					id="intro"
 				>
 					<Container className="presentation-slide-inner relative rounded-[2rem] border border-border/60 bg-white/72 px-7 py-9 shadow-panel backdrop-blur-sm md:px-10 md:py-11">
-						<div className="flex h-full flex-col gap-10">
+						<div className="flex h-full min-h-0 flex-col gap-7">
 							<div className="flex flex-wrap items-center gap-4">
 								<Badge variant="brand">전공종합설계1</Badge>
 								<Badge variant="neutral">2026. 5. 3.</Badge>
@@ -313,23 +313,23 @@ export function TeamPoPresentationTenthView() {
 							</div>
 
 							<Surface
-								className="relative flex h-full overflow-hidden border-primary/10 bg-white/90 p-10 shadow-panel md:p-12"
+								className="relative flex min-h-0 flex-1 overflow-hidden border-primary/10 bg-white/90 p-8 shadow-panel md:p-10"
 								variant="glass"
 							>
 								<div className="absolute right-0 top-0 h-48 w-48 rounded-full border border-primary/15 bg-primary/5 blur-3xl" />
 								<div className="absolute bottom-0 right-10 h-56 w-56 rounded-full border border-accent/10 bg-accent/5 blur-3xl" />
-								<div className="relative flex h-full w-full flex-col justify-between gap-10">
-									<div className="space-y-4">
+								<div className="relative flex h-full min-h-0 w-full flex-col justify-between gap-7">
+									<div className="space-y-3">
 										<p className="text-base font-semibold uppercase tracking-[0.22em] text-primary">
 											Developer Side Project Matching Service
 										</p>
-										<h1 className="text-6xl font-display leading-none md:text-[5.8rem]">
+										<h1 className="text-6xl font-display leading-none md:text-[5.35rem]">
 											<span className="ds-title-gradient">Team-po</span>
 										</h1>
-										<p className="max-w-3xl text-3xl leading-tight text-brand-ink md:text-[3.15rem]">
+										<p className="max-w-3xl text-3xl leading-tight text-brand-ink md:text-[2.85rem]">
 											주간 진행 현황
 										</p>
-										<p className="max-w-3xl text-lg leading-8 text-muted-foreground md:text-[1.3rem]">
+										<p className="max-w-3xl text-lg leading-7 text-muted-foreground md:text-[1.22rem]">
 											매칭 시스템 구현을 완료하고, 팀 스페이스 진입 전까지의
 											사용자 흐름과 코드 기반을 안정화했습니다. 현재 완료된
 											버전은 배포까지 마쳤고, 팀스페이스 협업 기능 구현을
@@ -343,24 +343,24 @@ export function TeamPoPresentationTenthView() {
 
 											return (
 												<div
-													className="rounded-[1.75rem] border border-border/60 bg-white/80 p-5"
+													className="rounded-[1.5rem] border border-border/60 bg-white/80 p-4"
 													key={item.title}
 												>
 													<div
 														className={cn(
-															"flex size-12 items-center justify-center rounded-2xl border",
+															"flex size-11 items-center justify-center rounded-[1rem] border",
 															statusToneClasses[item.tone],
 														)}
 													>
 														<Icon className="size-5" />
 													</div>
-													<p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-primary">
+													<p className="mt-4 text-sm font-semibold uppercase tracking-[0.16em] text-primary">
 														{item.title}
 													</p>
 													<h3 className="mt-2 text-2xl font-display leading-tight text-brand-ink">
 														{item.value}
 													</h3>
-													<p className="mt-3 text-sm leading-7 text-muted-foreground">
+													<p className="mt-2 text-sm leading-6 text-muted-foreground">
 														{item.description}
 													</p>
 												</div>
@@ -368,12 +368,12 @@ export function TeamPoPresentationTenthView() {
 										})}
 									</div>
 
-									<div className="flex flex-wrap items-end justify-between gap-5 rounded-[1.75rem] border border-primary/10 bg-white/70 px-6 py-5 shadow-soft">
+									<div className="flex flex-wrap items-end justify-between gap-4 rounded-[1.5rem] border border-primary/10 bg-white/70 px-6 py-4 shadow-soft">
 										<div>
 											<p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary/80">
 												Team
 											</p>
-											<div className="mt-4 flex max-w-3xl flex-wrap gap-3">
+											<div className="mt-3 flex max-w-3xl flex-wrap gap-3">
 												{teamMembers.map((member) => {
 													const isLeader = member === teamLeaderName;
 													const isFeatured = member === featuredMemberName;
@@ -381,7 +381,7 @@ export function TeamPoPresentationTenthView() {
 													return (
 														<div
 															className={cn(
-																"flex items-center gap-2 rounded-full border px-4 py-2.5 text-base font-medium",
+																"flex items-center gap-2 rounded-full border px-4 py-2 text-base font-medium",
 																isFeatured
 																	? "border-primary bg-primary/20 text-primary shadow-sm"
 																	: "border-primary/10 bg-primary/5 text-brand-ink",
