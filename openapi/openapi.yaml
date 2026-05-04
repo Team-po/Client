@@ -1,78 +1,61 @@
 openapi: 3.1.0
 info:
-  title: Team-po User API
-  version: 0.1.0
-  summary: Authentication and current-user endpoints for the Team-po frontend MVP.
-  description: |
-    Initial contract for the user-facing authentication flow used by the frontend
-    routes `/login`, `/signup`, `/verify-email`, and `/me`.
+  title: Team-po Server API
+  version: 0.2.0
+  summary: Client-facing contract mirrored from the current Spring controllers.
 servers:
   - url: /api
-    description: Local API base path
+    description: API base path
 tags:
   - name: Auth
-    description: Authentication and email verification
   - name: Users
-    description: User account resources
+  - name: Match
+  - name: ProjectGroups
 paths:
-  /users/sign-in:
+  /signup/email:
     post:
-      tags:
-        - Auth
-      operationId: signInWithEmailPassword
-      summary: Log in with email and password
-      description: Issues a session token pair for the authenticated user.
+      tags: [Auth]
+      summary: Send a signup email auth number
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
-            examples:
-              default:
-                value:
-                  email: preview@teampo.dev
-                  password: teampo123!
+              $ref: '#/components/schemas/SendEmailRequest'
       responses:
         '200':
-          description: Login completed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
-              examples:
-                success:
-                  value:
-                    accessToken: mq_access_demo_token
-                    refreshToken: mq_refresh_demo_token
-                    expiresAt: '2026-03-08T18:30:00Z'
+          description: Auth number sent
         '400':
           $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /users/sign-up:
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+  /signup/number-validation:
     post:
-      tags:
-        - Users
-      operationId: createUser
-      summary: Sign up a new user
-      description: Creates a user account with email/password authentication and an optional uploaded profile image key.
+      tags: [Auth]
+      summary: Validate a signup email auth number
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserRequest'
-            examples:
-              default:
-                value:
-                  email: new.dev@teampo.dev
-                  password: teampo123!
-                  nickname: sprintmaker
-                  level: 3
-                  profileImageKey: images/sign-up/avatar.png
+              $ref: '#/components/schemas/ValidateAuthNumberRequest'
+      responses:
+        '200':
+          description: Auth number validated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /users/sign-up:
+    post:
+      tags: [Users]
+      summary: Sign up after email auth validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
       responses:
         '200':
           description: User created
@@ -80,217 +63,441 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '409':
           $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /auth/email-verifications:
+  /users/profile-image/upload-url:
     post:
-      tags:
-        - Auth
-      operationId: resendEmailVerification
-      summary: Resend a verification email
-      description: Reissues a verification message for an existing user account.
+      tags: [Users]
+      summary: Create a signup profile image POST upload URL
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResendEmailVerificationRequest'
-            examples:
-              default:
-                value:
-                  email: new.dev@teampo.dev
+              $ref: '#/components/schemas/ProfileImageUploadUrlRequest'
       responses:
         '200':
-          description: Verification email queued
+          description: Upload URL issued
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResendEmailVerificationResponse'
-              examples:
-                success:
-                  value:
-                    email: new.dev@teampo.dev
-                    deliveryStatus: queued
-                    resendAfterSeconds: 60
+                $ref: '#/components/schemas/ProfileImageUploadUrlResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /auth/email-verifications/confirm:
+  /users/check-email:
+    get:
+      tags: [Users]
+      summary: Check whether an email is available
+      parameters:
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Email is available
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /users/sign-in:
     post:
-      tags:
-        - Auth
-      operationId: confirmEmailVerification
-      summary: Confirm an email verification token
-      description: Marks the user email as verified when a valid token is submitted.
+      tags: [Auth]
+      summary: Sign in with email and password
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConfirmEmailVerificationRequest'
-            examples:
-              default:
-                value:
-                  email: new.dev@teampo.dev
-                  token: TEAMPO-2026
+              $ref: '#/components/schemas/SignInRequest'
       responses:
         '200':
-          description: Email confirmed
+          description: Signed in
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConfirmEmailVerificationResponse'
-              examples:
-                success:
-                  value:
-                    user:
-                      email: new.dev@teampo.dev
-                      nickname: sprintmaker
-                      profileImage: https://images.teampo.dev/profiles/sprintmaker.png
-                      description: null
-                      level: 3
-                      temperature: 50
-                    verifiedAt: '2026-03-08T07:03:00Z'
+                $ref: '#/components/schemas/SignInResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Refresh an access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Access token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /users/me:
     get:
-      tags:
-        - Users
-      operationId: getCurrentUser
-      summary: Get the current user profile
-      description: Returns the authenticated user's profile for the `/me` page.
+      tags: [Users]
       security:
         - bearerAuth: []
+      summary: Get the current user's profile
       responses:
         '200':
           description: Current user profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-              examples:
-                success:
-                  value:
-                    email: preview@teampo.dev
-                    nickname: queue_runner
-                    profileImage: https://images.teampo.dev/profiles/preview.png
-                    description: 빠르게 실험하고, 팀원과 맥락을 맞추는 일을 좋아합니다.
-                    level: 3
-                    temperature: 50
+                $ref: '#/components/schemas/UserProfile'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     put:
-      tags:
-        - Users
-      operationId: updateCurrentUser
-      summary: Update the current user profile
-      description: Updates the nickname, level, description, and optional uploaded profile image key for the signed-in user. Email cannot be changed.
+      tags: [Users]
       security:
         - bearerAuth: []
+      summary: Update the current user's profile
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateCurrentUserRequest'
-            examples:
-              default:
-                value:
-                  nickname: sprintmaker_v2
-                  level: 4
-                  description: 협업 속도를 높이는 프론트엔드 개발자입니다.
-                  profileImageKey: images/users/1/avatar.png
+              $ref: '#/components/schemas/EditProfileRequest'
       responses:
         '200':
-          description: Current user updated
+          description: Profile updated
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     delete:
-      tags:
-        - Users
-      operationId: deleteCurrentUser
-      summary: Delete the current user account
-      description: Deletes the signed-in user's account.
+      tags: [Users]
       security:
         - bearerAuth: []
+      summary: Soft-delete the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteUserRequest'
       responses:
-        '204':
-          description: Account deleted
+        '200':
+          description: User deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /users/me/profile-image/upload-url:
+    post:
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      summary: Create a profile update image POST upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileImageUploadUrlRequest'
+      responses:
+        '200':
+          description: Upload URL issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileImageUploadUrlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/me/password:
+    put:
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      summary: Change the current user's password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditPasswordRequest'
+      responses:
+        '200':
+          description: Password changed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /match/request:
+    post:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Create a project matching request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+      responses:
+        '200':
+          description: Request created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /match/status:
+    get:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Get the current user's active match request status
+      responses:
+        '200':
+          description: Active status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectRequestStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /match/{matchId}/members:
+    get:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Get members in a match session
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: Match members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchMemberResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /match/{matchId}/project:
+    get:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Get the host project details for a match session
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: Match project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /match/{matchId}/accept:
+    post:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Accept a match session
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: Match accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /match/{matchId}/reject:
+    post:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Reject a match session
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: Match rejected
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /match/cancel:
+    post:
+      tags: [Match]
+      security:
+        - bearerAuth: []
+      summary: Cancel the current user's waiting or matching request
+      responses:
+        '200':
+          description: Match request canceled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /project-groups/{projectGroupId}/admins/{targetUserId}:
+    patch:
+      tags: [ProjectGroups]
+      security:
+        - bearerAuth: []
+      summary: Grant admin permission to a project group member
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/TargetUserId'
+      responses:
+        '200':
+          description: Admin permission granted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [ProjectGroups]
+      security:
+        - bearerAuth: []
+      summary: Revoke admin permission from a project group member
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/TargetUserId'
+      responses:
+        '200':
+          description: Admin permission revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  parameters:
+    MatchId:
+      in: path
+      name: matchId
+      required: true
+      schema:
+        type: integer
+        format: int64
+    ProjectGroupId:
+      in: path
+      name: projectGroupId
+      required: true
+      schema:
+        type: integer
+        format: int64
+    TargetUserId:
+      in: path
+      name: targetUserId
+      required: true
+      schema:
+        type: integer
+        format: int64
   schemas:
-    User:
+    ApiError:
       type: object
       additionalProperties: false
-      required:
-        - email
-        - nickname
-        - profileImage
-        - description
-        - level
-        - temperature
+      required: [message]
+      properties:
+        code:
+          type: string
+          examples: [INVALID_INPUT_FIELD]
+        message:
+          type: string
+        fieldErrors:
+          type:
+            - object
+            - 'null'
+          additionalProperties:
+            type: string
+    SendEmailRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
       properties:
         email:
           type: string
           format: email
-          examples:
-            - preview@teampo.dev
+    ValidateAuthNumberRequest:
+      type: object
+      additionalProperties: false
+      required: [email, authNumber]
+      properties:
+        email:
+          type: string
+          format: email
+        authNumber:
+          type: integer
+          minimum: 100000
+          maximum: 999999
+    SignUpRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, nickname, level]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
         nickname:
           type: string
-          minLength: 2
-          maxLength: 24
-          examples:
-            - queue_runner
-        profileImage:
-          type:
-            - string
-            - 'null'
-          format: uri
-          examples:
-            - https://images.teampo.dev/profiles/preview.png
-        description:
-          type:
-            - string
-            - 'null'
-          examples:
-            - 빠르게 실험하고, 팀원과 맥락을 맞추는 일을 좋아합니다.
         level:
           type: integer
           minimum: 1
           maximum: 5
-        temperature:
-          type: integer
-          minimum: 0
-          maximum: 100
-    Session:
+        profileImageKey:
+          type:
+            - string
+            - 'null'
+          pattern: '^images/(sign-up|users/\d+)/[A-Za-z0-9-]+\.(jpg|png|gif|webp)$'
+    SignInRequest:
       type: object
       additionalProperties: false
-      required:
-        - accessToken
-        - refreshToken
-        - expiresAt
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    SignInResponse:
+      type: object
+      additionalProperties: false
+      required: [accessToken, refreshToken, expiresAt]
       properties:
         accessToken:
           type: string
@@ -299,235 +506,245 @@ components:
         expiresAt:
           type: string
           format: date-time
-    LoginRequest:
+    RefreshTokenRequest:
       type: object
       additionalProperties: false
-      required:
-        - email
-        - password
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    RefreshTokenResponse:
+      type: object
+      additionalProperties: false
+      required: [accessToken, expiresAt]
+      properties:
+        accessToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    UserProfile:
+      type: object
+      additionalProperties: false
+      required: [email, profileImage, description, nickname, temperature, level]
       properties:
         email:
           type: string
           format: email
-        password:
-          type: string
-          minLength: 8
-          maxLength: 128
-    LoginResponse:
-      $ref: '#/components/schemas/Session'
-    CreateUserRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-        - password
-        - nickname
-        - level
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          minLength: 8
-          maxLength: 128
-        nickname:
-          type: string
-          minLength: 2
-          maxLength: 24
-        level:
-          type: integer
-          minimum: 1
-          maximum: 5
-        profileImageKey:
+        profileImage:
           type:
             - string
             - 'null'
-          description: Object key returned by the profile image upload-url endpoint.
-    VerificationDeliveryStatus:
-      type: string
-      enum:
-        - queued
-        - sent
-        - throttled
-    VerificationDelivery:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-        - deliveryStatus
-        - resendAfterSeconds
-      properties:
-        email:
-          type: string
-          format: email
-        deliveryStatus:
-          $ref: '#/components/schemas/VerificationDeliveryStatus'
-        resendAfterSeconds:
-          type: integer
-          minimum: 0
-    CreateUserResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - user
-        - verification
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        verification:
-          $ref: '#/components/schemas/VerificationDelivery'
-    ResendEmailVerificationRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-      properties:
-        email:
-          type: string
-          format: email
-    ResendEmailVerificationResponse:
-      $ref: '#/components/schemas/VerificationDelivery'
-    ConfirmEmailVerificationRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-        - token
-      properties:
-        email:
-          type: string
-          format: email
-        token:
-          type: string
-          minLength: 6
-          maxLength: 128
-    ConfirmEmailVerificationResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - user
-        - verifiedAt
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        verifiedAt:
-          type: string
-          format: date-time
-    GetCurrentUserResponse:
-      $ref: '#/components/schemas/User'
-    UpdateCurrentUserRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - nickname
-        - level
-        - description
-      properties:
-        nickname:
-          type: string
-          minLength: 2
-          maxLength: 24
-        level:
-          type: integer
-          minimum: 1
-          maximum: 5
         description:
           type:
             - string
             - 'null'
+        nickname:
+          type: string
+        temperature:
+          type: integer
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+    EditProfileRequest:
+      type: object
+      additionalProperties: false
+      required: [description, nickname, level]
+      properties:
+        description:
+          type:
+            - string
+            - 'null'
+        nickname:
+          type: string
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
         profileImageKey:
           type:
             - string
             - 'null'
-          description: Object key returned by the profile image upload-url endpoint.
-    UpdateCurrentUserResponse:
-      $ref: '#/components/schemas/User'
-    ApiError:
+    EditPasswordRequest:
       type: object
       additionalProperties: false
-      required:
-        - code
-        - message
+      required: [currentPassword, afterPassword]
       properties:
-        code:
+        currentPassword:
           type: string
-          examples:
-            - invalid_credentials
-        message:
+          minLength: 8
+        afterPassword:
           type: string
-          examples:
-            - Email or password is incorrect.
-        fieldErrors:
+          minLength: 8
+    DeleteUserRequest:
+      type: object
+      additionalProperties: false
+      required: [password]
+      properties:
+        password:
+          type: string
+          minLength: 8
+    ProfileImageUploadUrlRequest:
+      type: object
+      additionalProperties: false
+      required: [contentType]
+      properties:
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/gif, image/webp]
+    ProfileImageUploadUrlResponse:
+      type: object
+      additionalProperties: false
+      required: [uploadUrl, formFields, objectKey, contentType, maxFileSizeBytes, expiresAt]
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+        formFields:
           type: object
           additionalProperties:
-            type: array
-            items:
-              type: string
-          examples:
-            email:
-              - Enter a valid email address.
-            password:
-              - Password must be at least 8 characters long.
+            type: string
+        objectKey:
+          type: string
+        contentType:
+          type: string
+        maxFileSizeBytes:
+          type: integer
+          format: int64
+        expiresAt:
+          type: string
+          format: date-time
+    MatchRole:
+      type: string
+      enum: [DESIGN, BACKEND, FRONTEND]
+    MatchStatus:
+      type: string
+      enum: [WAITING, MATCHING, MATCHED, CANCELED]
+    ProjectRequest:
+      type: object
+      additionalProperties: false
+      required: [role]
+      properties:
+        role:
+          $ref: '#/components/schemas/MatchRole'
+        projectTitle:
+          type:
+            - string
+            - 'null'
+        projectDescription:
+          type:
+            - string
+            - 'null'
+        projectMvp:
+          type:
+            - string
+            - 'null'
+      description: If any project field is filled, projectTitle, projectDescription, and projectMvp must all be filled.
+    ProjectRequestStatus:
+      type: object
+      additionalProperties: false
+      required: [status, matchId]
+      properties:
+        status:
+          $ref: '#/components/schemas/MatchStatus'
+        matchId:
+          type:
+            - integer
+            - 'null'
+          format: int64
+    MatchMemberResponse:
+      type: object
+      additionalProperties: false
+      required: [matchId, members]
+      properties:
+        matchId:
+          type: integer
+          format: int64
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchMember'
+    MatchMember:
+      type: object
+      additionalProperties: false
+      required: [userId, nickname, role, level, temperature, profileImageKey, isHost, isAccepted]
+      properties:
+        userId:
+          type: integer
+          format: int64
+        nickname:
+          type: string
+        role:
+          $ref: '#/components/schemas/MatchRole'
+        level:
+          type: integer
+        temperature:
+          type: integer
+        profileImageKey:
+          type:
+            - string
+            - 'null'
+        isHost:
+          type: boolean
+        isAccepted:
+          type:
+            - boolean
+            - 'null'
+    MatchProjectResponse:
+      type: object
+      additionalProperties: false
+      required: [matchId, projectTitle, projectDescription, projectMvp]
+      properties:
+        matchId:
+          type: integer
+          format: int64
+        projectTitle:
+          type: string
+        projectDescription:
+          type: string
+        projectMvp:
+          type: string
   responses:
     BadRequest:
-      description: Validation failed or the request payload was malformed
+      description: Validation failed or business rule rejected the request
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
-          examples:
-            invalidPayload:
-              value:
-                code: validation_failed
-                message: Request validation failed.
-                fieldErrors:
-                  email:
-                    - Enter a valid email address.
     Unauthorized:
       description: Authentication failed or the caller is not signed in
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
-          examples:
-            invalidCredentials:
-              value:
-                code: invalid_credentials
-                message: Email or password is incorrect.
+    Forbidden:
+      description: The caller lacks permission for this operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
     Conflict:
       description: Resource state conflicts with the request
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
-          examples:
-            duplicateEmail:
-              value:
-                code: email_already_exists
-                message: An account with this email already exists.
-                fieldErrors:
-                  email:
-                    - Use a different email address.
     NotFound:
-      description: The requested user or verification request was not found
+      description: Requested resource was not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
-          examples:
-            missingUser:
-              value:
-                code: user_not_found
-                message: No user account matches the provided email.
+    BadGateway:
+      description: Upstream email delivery failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
     InternalServerError:
-      description: Unexpected backend failure
+      description: Server data consistency error
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
-          examples:
-            generic:
-              value:
-                code: internal_server_error
-                message: Something went wrong while processing the request.

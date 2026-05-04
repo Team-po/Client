@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { login } from "@/lib/api/auth";
+import {
+	login,
+	sendSignupEmail,
+	validateSignupAuthNumber,
+} from "@/lib/api/auth";
 import {
 	clearAuthSession,
 	getAuthSession,
@@ -14,7 +18,12 @@ import {
 	getCurrentUser,
 	updateCurrentUser,
 } from "@/lib/api/users";
-import type { CreateUserRequest, LoginRequest } from "@/lib/types/auth";
+import type {
+	CreateUserRequest,
+	LoginRequest,
+	SendSignupEmailRequest,
+	ValidateSignupAuthNumberRequest,
+} from "@/lib/types/auth";
 import type {
 	DeleteCurrentUserRequest,
 	EditPasswordRequest,
@@ -55,6 +64,19 @@ export function useSignupMutation() {
 export function useCheckEmailDuplicateMutation() {
 	return useMutation({
 		mutationFn: (email: string) => checkEmailDuplicate(email),
+	});
+}
+
+export function useSendSignupEmailMutation() {
+	return useMutation({
+		mutationFn: (payload: SendSignupEmailRequest) => sendSignupEmail(payload),
+	});
+}
+
+export function useValidateSignupAuthNumberMutation() {
+	return useMutation({
+		mutationFn: (payload: ValidateSignupAuthNumberRequest) =>
+			validateSignupAuthNumber(payload),
 	});
 }
 
