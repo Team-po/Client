@@ -3,7 +3,9 @@ import {
 	ArrowRight,
 	CheckCircle2,
 	LoaderCircle,
+	MailCheck,
 	SearchCheck,
+	ShieldCheck,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -22,18 +24,23 @@ import { ProfileImagePicker } from "@/features/auth/components/profile-image-pic
 import {
 	hasValidationErrors,
 	validateSignupForm,
+	validateVerifyEmailForm,
 } from "@/features/auth/lib/validation";
 import {
 	useCheckEmailDuplicateMutation,
+	useSendSignupEmailMutation,
 	useSignupMutation,
+	useValidateSignupAuthNumberMutation,
 } from "@/features/auth/hooks/use-auth-queries";
 import { getApiErrorMessage } from "@/lib/api/client";
 
 const levelOptions = [1, 2, 3, 4, 5] as const;
+const emailVerificationCooldownSeconds = 60;
 
 export function SignupView() {
 	const navigate = useNavigate();
 	const [form, setForm] = useState({
+		authNumber: "",
 		email: "",
 		level: 3,
 		nickname: "",
@@ -42,6 +49,7 @@ export function SignupView() {
 		profileImage: null as File | null,
 	});
 	const [touched, setTouched] = useState({
+		authNumber: false,
 		email: false,
 		level: false,
 		nickname: false,
@@ -50,15 +58,38 @@ export function SignupView() {
 		profileImage: false,
 	});
 	const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
+	const [verificationSentEmail, setVerificationSentEmail] = useState<
+		string | null
+	>(null);
+	const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+	const [verificationCooldownEndsAt, setVerificationCooldownEndsAt] = useState<
+		number | null
+	>(null);
+	const [currentTime, setCurrentTime] = useState(() => Date.now());
 	const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
 		string | null
 	>(null);
 	const signupMutation = useSignupMutation();
 	const checkEmailMutation = useCheckEmailDuplicateMutation();
+	const sendSignupEmailMutation = useSendSignupEmailMutation();
+	const validateSignupAuthNumberMutation =
+		useValidateSignupAuthNumberMutation();
 	const errors = validateSignupForm(form);
+	const verificationErrors = validateVerifyEmailForm({
+		authNumber: form.authNumber,
+		email: form.email,
+	});
+	const normalizedEmail = form.email.trim().toLowerCase();
+	const isEmailChecked = checkedEmail === normalizedEmail;
+	const isVerificationSent = verificationSentEmail === normalizedEmail;
+	const isEmailVerified = verifiedEmail === normalizedEmail;
+	const verificationCooldownRemainingSeconds = verificationCooldownEndsAt
+		? Math.max(0, Math.ceil((verificationCooldownEndsAt - currentTime) / 1000))
+		: 0;
+	const isVerificationCooldownActive =
+		verificationCooldownRemainingSeconds > 0;
 	const isSubmitDisabled =
-		signupMutation.isPending || hasValidationErrors(errors);
-	const isEmailChecked = checkedEmail === form.email.trim().toLowerCase();
+		signupMutation.isPending || hasValidationErrors(errors) || !isEmailVerified;
 
 	useEffect(() => {
 		if (!form.profileImage) {
@@ -74,6 +105,20 @@ export function SignupView() {
 		};
 	}, [form.profileImage]);
 
+	useEffect(() => {
+		if (!isVerificationCooldownActive) {
+			return;
+		}
+
+		const intervalId = window.setInterval(() => {
+			setCurrentTime(Date.now());
+		}, 1000);
+
+		return () => {
+			window.clearInterval(intervalId);
+		};
+	}, [isVerificationCooldownActive]);
+
 	function markTouched(field: keyof typeof touched) {
 		setTouched((current) => ({
 			...current,
@@ -85,6 +130,7 @@ export function SignupView() {
 		event.preventDefault();
 
 		setTouched({
+			authNumber: true,
 			email: true,
 			level: true,
 			nickname: true,
@@ -93,7 +139,7 @@ export function SignupView() {
 			profileImage: true,
 		});
 
-		if (hasValidationErrors(errors)) {
+		if (hasValidationErrors(errors) || !isEmailVerified) {
 			return;
 		}
 
@@ -110,7 +156,38 @@ export function SignupView() {
 		}
 
 		await checkEmailMutation.mutateAsync(form.email);
-		setCheckedEmail(form.email.trim().toLowerCase());
+		setCheckedEmail(normalizedEmail);
+	}
+
+	async function handleSendVerificationEmail() {
+		markTouched("email");
+
+		if (errors.email) {
+			return;
+		}
+
+		await sendSignupEmailMutation.mutateAsync({ email: form.email });
+		setCheckedEmail(normalizedEmail);
+		setVerificationSentEmail(normalizedEmail);
+		setVerifiedEmail(null);
+		setCurrentTime(Date.now());
+		setVerificationCooldownEndsAt(
+			Date.now() + emailVerificationCooldownSeconds * 1000,
+		);
+	}
+
+	async function handleValidateAuthNumber() {
+		markTouched("authNumber");
+
+		if (!isVerificationSent || verificationErrors.authNumber) {
+			return;
+		}
+
+		await validateSignupAuthNumberMutation.mutateAsync({
+			authNumber: Number(form.authNumber.trim()),
+			email: form.email,
+		});
+		setVerifiedEmail(normalizedEmail);
 	}
 
 	return (
@@ -164,8 +241,12 @@ export function SignupView() {
 								onChange={(event) => {
 									markTouched("email");
 									setCheckedEmail(null);
+									setVerificationSentEmail(null);
+									setVerifiedEmail(null);
+									setVerificationCooldownEndsAt(null);
 									setForm((current) => ({
 										...current,
+										authNumber: "",
 										email: event.target.value,
 									}));
 								}}
@@ -203,6 +284,107 @@ export function SignupView() {
 						) : isEmailChecked ? (
 							<FieldDescription>사용할 수 있는 이메일입니다.</FieldDescription>
 						) : null}
+					</Field>
+
+					<Field
+						data-invalid={Boolean(
+							(touched.authNumber && verificationErrors.authNumber) ||
+								sendSignupEmailMutation.error ||
+								validateSignupAuthNumberMutation.error,
+						)}
+					>
+						<FieldLabel htmlFor="signup-auth-number">
+							이메일 인증번호
+						</FieldLabel>
+						<div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+							<Input
+								aria-invalid={Boolean(
+									touched.authNumber && verificationErrors.authNumber,
+								)}
+								disabled={!isVerificationSent || isEmailVerified}
+								id="signup-auth-number"
+								inputMode="numeric"
+								maxLength={6}
+								onBlur={() => markTouched("authNumber")}
+								onChange={(event) => {
+									markTouched("authNumber");
+									setVerifiedEmail(null);
+									setForm((current) => ({
+										...current,
+										authNumber: event.target.value.replace(/\D/g, ""),
+									}));
+								}}
+								placeholder="6자리 숫자"
+								value={form.authNumber}
+							/>
+							<Button
+								disabled={
+									sendSignupEmailMutation.isPending ||
+									Boolean(errors.email) ||
+									isVerificationCooldownActive ||
+									isEmailVerified
+								}
+								onClick={() => void handleSendVerificationEmail()}
+								type="button"
+								variant="outline"
+							>
+								{sendSignupEmailMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : (
+									<MailCheck data-icon="inline-start" />
+								)}
+								{isVerificationCooldownActive
+									? `재발송 ${verificationCooldownRemainingSeconds}초`
+									: "번호 받기"}
+							</Button>
+							<Button
+								disabled={
+									!isVerificationSent ||
+									isEmailVerified ||
+									validateSignupAuthNumberMutation.isPending ||
+									Boolean(verificationErrors.authNumber)
+								}
+								onClick={() => void handleValidateAuthNumber()}
+								type="button"
+								variant="outline"
+							>
+								{validateSignupAuthNumberMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : isEmailVerified ? (
+									<CheckCircle2 data-icon="inline-start" />
+								) : (
+									<ShieldCheck data-icon="inline-start" />
+								)}
+								인증 확인
+							</Button>
+						</div>
+						{touched.authNumber && verificationErrors.authNumber ? (
+							<FieldError>{verificationErrors.authNumber}</FieldError>
+						) : sendSignupEmailMutation.error ? (
+							<FieldError>
+								{getApiErrorMessage(sendSignupEmailMutation.error)}
+							</FieldError>
+						) : validateSignupAuthNumberMutation.error ? (
+							<FieldError>
+								{getApiErrorMessage(validateSignupAuthNumberMutation.error)}
+							</FieldError>
+						) : isEmailVerified ? (
+							<FieldDescription>이메일 인증이 완료되었습니다.</FieldDescription>
+						) : isVerificationSent ? (
+							<FieldDescription>
+								메일로 받은 6자리 숫자를 입력해 주세요.
+							</FieldDescription>
+						) : (
+							<FieldDescription>
+								서버 회원가입은 이메일 인증 완료 후 진행됩니다.
+							</FieldDescription>
+						)}
 					</Field>
 
 					<Field data-invalid={Boolean(touched.password && errors.password)}>
@@ -324,11 +506,14 @@ export function SignupView() {
 							</FieldDescription>
 						)}
 					</Field>
-
 				</FieldGroup>
 
 				{signupMutation.error ? (
 					<FieldError>{getApiErrorMessage(signupMutation.error)}</FieldError>
+				) : touched.authNumber && !isEmailVerified ? (
+					<FieldError>
+						이메일 인증을 완료해야 회원가입할 수 있습니다.
+					</FieldError>
 				) : null}
 
 				<Button disabled={isSubmitDisabled} size="lg" type="submit">

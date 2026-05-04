@@ -24,3 +24,6 @@
 
 ## 2026-04-07
 - Local PDF inspection skill: `.agents/skills/pdf-reading` documents a fallback workflow for reading PDFs in restricted environments, preferring text extraction first and Ghostscript rendering to temporary images with mandatory cleanup when visual inspection is required
+
+## 2026-05-05
+- API contract alignment: `openapi/openapi.yaml`, API clients, hooks, and MSW mocks now mirror the current Spring server controllers for signup email auth, user profile/account APIs, matching sessions, and project-group admin permission endpoints without adding new dependencies.

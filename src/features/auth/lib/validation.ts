@@ -13,8 +13,8 @@ export interface SignupFormValues {
 }
 
 export interface VerifyEmailFormValues {
+	authNumber: string;
 	email: string;
-	token: string;
 }
 
 export interface ProfileEditFormValues {
@@ -62,8 +62,8 @@ export function validateVerifyEmailForm(
 	values: VerifyEmailFormValues,
 ): FormErrors<VerifyEmailFormValues> {
 	return {
+		authNumber: getAuthNumberError(values.authNumber),
 		email: getEmailError(values.email),
-		token: getVerificationTokenError(values.token),
 	};
 }
 
@@ -174,15 +174,15 @@ function getDescriptionError(value: string) {
 	return undefined;
 }
 
-function getVerificationTokenError(value: string) {
+function getAuthNumberError(value: string) {
 	const trimmedValue = value.trim();
 
 	if (!trimmedValue) {
-		return "인증 정보를 입력해 주세요.";
+		return "인증번호를 입력해 주세요.";
 	}
 
-	if (trimmedValue.length < 6) {
-		return "인증 정보는 6자 이상이어야 해요.";
+	if (!/^\d{6}$/.test(trimmedValue)) {
+		return "인증번호는 6자리 숫자여야 해요.";
 	}
 
 	return undefined;
