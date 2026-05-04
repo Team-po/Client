@@ -23,6 +23,7 @@ import { TeamPoPresentationFifthPage } from "@/pages/team-po-presentation-fifth-
 import { TeamPoPresentationSeventhPage } from "@/pages/team-po-presentation-seventh-page";
 import { TeamPoPresentationSixthPage } from "@/pages/team-po-presentation-sixth-page";
 import { TeamSpacePage } from "@/pages/team-space-page";
+import { TeamPoPresentationTenthPage } from "@/pages/team-po-presentation-tenth-page";
 
 export function App() {
 	return (
@@ -62,6 +63,10 @@ export function App() {
 				<Route
 					path="/deck/team-po-9"
 					element={<TeamPoPresentationNinthPage />}
+				/>
+				<Route
+					path="/deck/team-po-10"
+					element={<TeamPoPresentationTenthPage />}
 				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />

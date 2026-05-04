@@ -31,3 +31,6 @@
 - Editable workspace preview: keep team name/status, rules, checklist, GitHub setup, and messenger interactions in local React state so the UX can be validated before backend contracts exist
 - Auth/navigation UX: show app navigation and logout only for signed-in users; logged-out users can still open `/team` as a clearly labeled local preview
 - Matching preview UX: keep match offers hidden until the user requests or explicitly previews an offer, matching the intended request → offer → accept/decline flow
+
+## 2026-05-05
+- API contract alignment: `openapi/openapi.yaml`, API clients, hooks, and MSW mocks now mirror the current Spring server controllers for signup email auth, user profile/account APIs, matching sessions, and project-group admin permission endpoints without adding new dependencies.
