@@ -34,13 +34,15 @@ export function ProfileImagePicker({
 			<input
 				accept="image/jpeg,image/png,image/gif,image/webp"
 				aria-invalid={invalid}
-				className="sr-only"
+				aria-hidden="true"
+				className="hidden"
 				id={inputId}
 				onBlur={onBlur}
 				onChange={(event) => {
 					onFileChange(event.target.files?.[0] ?? null);
 				}}
 				ref={inputRef}
+				tabIndex={-1}
 				type="file"
 			/>
 			<button

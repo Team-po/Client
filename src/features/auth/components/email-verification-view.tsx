@@ -1,4 +1,4 @@
-import { ArrowRight, MailX } from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -7,14 +7,34 @@ import { AuthShell } from "@/features/auth/components/auth-shell";
 export function EmailVerificationView() {
 	return (
 		<AuthShell
-			badge="Account"
-			description="가입을 마쳤다면 로그인해서 프로필을 완성하고 매칭 요청을 시작할 수 있습니다."
-			title="이제 팀 매칭을 시작할 수 있습니다"
+			badge="Verified"
+			description="이제 로그인하고 매칭에 사용할 프로필을 확인할 수 있습니다."
+			title="계정 준비가 끝났습니다"
 		>
-			<div className="rounded-xl border border-border/70 bg-secondary/35 p-5 text-sm leading-6 text-muted-foreground">
-				<MailX className="mb-3 size-5 text-primary" />
-				프로필을 채워두면 팀원이 내 역할과 경험치를 더 쉽게 파악할 수
-				있습니다.
+			<div className="rounded-lg border border-emerald-500/25 bg-emerald-50 p-5">
+				<div className="flex items-center gap-3">
+					<div className="flex size-10 items-center justify-center rounded-lg bg-white text-emerald-700 shadow-crisp">
+						<CheckCircle2 className="size-5" />
+					</div>
+					<div>
+						<p className="font-semibold text-emerald-800">
+							이메일 인증이 완료되었습니다
+						</p>
+						<p className="mt-1 text-sm leading-6 text-emerald-800/75">
+							로그인 후 프로필을 정리하면 매칭 카드가 더 명확해집니다.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="mt-5 rounded-lg border border-border/70 bg-brand-warm p-5">
+				<div className="flex items-start gap-3">
+					<ShieldCheck className="mt-0.5 size-5 text-primary" />
+					<p className="text-sm leading-6 text-muted-foreground">
+						프로필 이미지, 닉네임, 레벨은 팀 후보가 나를 빠르게 이해하는 데
+						사용됩니다.
+					</p>
+				</div>
 			</div>
 
 			<div className="mt-6 flex flex-col gap-3 sm:flex-row">

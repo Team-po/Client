@@ -69,7 +69,7 @@
 	h6 {
 		margin: 0;
 		font-family: var(--font-display);
-		letter-spacing: -0.02em;
+		letter-spacing: 0;
 		color: hsl(var(--brand-ink));
 	}
 

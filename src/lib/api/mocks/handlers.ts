@@ -1,17 +1,17 @@
-import { delay, http, HttpResponse } from "msw";
+import { delay, HttpResponse, http } from "msw";
 
 import { apiConfig } from "@/lib/api/config";
 import {
 	createPreviewUser,
 	previewAuthSeed,
 } from "@/lib/api/mocks/auth-preview";
+import type { ApiErrorResponse } from "@/lib/types/api";
 import type {
 	CreateUserRequest,
 	LoginRequest,
 	SendSignupEmailRequest,
 	ValidateSignupAuthNumberRequest,
 } from "@/lib/types/auth";
-import type { ApiErrorResponse } from "@/lib/types/api";
 import type {
 	MatchMemberResponse,
 	MatchProjectResponse,
@@ -204,7 +204,7 @@ export const handlers = [
 		if (!isValidEmail(body.email) || body.password.length < 8) {
 			return buildErrorResponse(
 				400,
-				"입력값이 올바르지 않습니다.",
+				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
 			);
 		}
@@ -231,7 +231,7 @@ export const handlers = [
 		if (body.refreshToken !== "mock-refresh-token") {
 			return buildErrorResponse(
 				401,
-				"유효하지 않은 리프레시 토큰입니다.",
+				"로그인 세션이 만료되었습니다. 다시 로그인해 주세요.",
 				"INVALID_TOKEN",
 			);
 		}
@@ -249,7 +249,7 @@ export const handlers = [
 		if (email.trim() === "taken@teampo.dev") {
 			return buildErrorResponse(
 				409,
-				"중복된 이메일이 존재합니다.",
+				"이미 사용 중인 이메일입니다.",
 				"EMAIL_ALREADY_EXISTS",
 			);
 		}
@@ -274,10 +274,10 @@ export const handlers = [
 		if (!isValidEmail(email)) {
 			return buildErrorResponse(
 				400,
-				"입력값이 올바르지 않습니다.",
+				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
 				{
-					email: "이메일 형식이 아닙니다.",
+					email: "올바른 이메일 형식이 아니에요.",
 				},
 			);
 		}
@@ -285,7 +285,7 @@ export const handlers = [
 		if (email === "taken@teampo.dev") {
 			return buildErrorResponse(
 				409,
-				"중복된 이메일이 존재합니다.",
+				"이미 사용 중인 이메일입니다.",
 				"EMAIL_ALREADY_EXISTS",
 			);
 		}
@@ -306,7 +306,7 @@ export const handlers = [
 		) {
 			return buildErrorResponse(
 				400,
-				"입력값이 올바르지 않습니다.",
+				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
 			);
 		}
@@ -370,7 +370,7 @@ export const handlers = [
 		if (body.email.trim() === "taken@teampo.dev") {
 			return buildErrorResponse(
 				409,
-				"중복된 이메일이 존재합니다.",
+				"이미 사용 중인 이메일입니다.",
 				"EMAIL_ALREADY_EXISTS",
 			);
 		}
@@ -392,7 +392,7 @@ export const handlers = [
 		) {
 			return buildErrorResponse(
 				400,
-				"입력값이 올바르지 않습니다.",
+				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
 			);
 		}
@@ -417,7 +417,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -472,7 +472,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -480,7 +480,7 @@ export const handlers = [
 		if (body.nickname.trim().length < 2 || body.level < 1 || body.level > 5) {
 			return buildErrorResponse(
 				400,
-				"입력값이 올바르지 않습니다.",
+				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
 			);
 		}
@@ -506,7 +506,7 @@ export const handlers = [
 		if (body.currentPassword !== currentPassword) {
 			return buildErrorResponse(
 				401,
-				"현재 비밀번호와 동일하지 않습니다.",
+				"현재 비밀번호가 일치하지 않습니다.",
 				"UNMATCHED_PASSWORD",
 			);
 		}
@@ -523,7 +523,7 @@ export const handlers = [
 		if (body.password !== currentPassword) {
 			return buildErrorResponse(
 				401,
-				"현재 비밀번호와 동일하지 않습니다.",
+				"현재 비밀번호가 일치하지 않습니다.",
 				"UNMATCHED_PASSWORD",
 			);
 		}
@@ -543,7 +543,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -570,7 +570,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -586,7 +586,7 @@ export const handlers = [
 		if (!isValidMatchRole(body.role) || hasPartialProjectInfo(body)) {
 			return buildErrorResponse(
 				400,
-				"입력값이 올바르지 않습니다.",
+				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
 			);
 		}
@@ -610,7 +610,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -637,7 +637,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -662,7 +662,7 @@ export const handlers = [
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"인증된 유저를 찾을 수 없습니다.",
+				"로그인이 필요합니다.",
 				"NO_AUTHENTICATED_USER",
 			);
 		}
@@ -695,7 +695,7 @@ export const handlers = [
 		if (member.isHost) {
 			return buildErrorResponse(
 				400,
-				"매칭 세션 접근 권한이 없습니다.",
+				"이 매칭에 응답할 권한이 없습니다.",
 				"MATCH_ACCESS_DENIED",
 			);
 		}
@@ -721,7 +721,7 @@ export const handlers = [
 		if (member.isHost || member.isAccepted === true) {
 			return buildErrorResponse(
 				400,
-				"매칭 세션 접근 권한이 없습니다.",
+				"이 매칭에 응답할 권한이 없습니다.",
 				"MATCH_ACCESS_DENIED",
 			);
 		}
@@ -741,7 +741,7 @@ export const handlers = [
 			if (!currentUser) {
 				return buildErrorResponse(
 					401,
-					"인증된 유저를 찾을 수 없습니다.",
+					"로그인이 필요합니다.",
 					"NO_AUTHENTICATED_USER",
 				);
 			}
@@ -764,7 +764,7 @@ export const handlers = [
 			if (!currentUser) {
 				return buildErrorResponse(
 					401,
-					"인증된 유저를 찾을 수 없습니다.",
+					"로그인이 필요합니다.",
 					"NO_AUTHENTICATED_USER",
 				);
 			}

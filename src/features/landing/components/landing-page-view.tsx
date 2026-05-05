@@ -10,7 +10,7 @@ import { ValueSection } from "@/features/landing/components/value-section";
 export function LandingPageView() {
 	return (
 		<div className="ds-landing-bg relative flex min-h-screen flex-col">
-			<SiteHeader showMyPageLink={false} />
+			<SiteHeader />
 			<main className="flex-1">
 				<HeroSection />
 				<HowItWorksSection />

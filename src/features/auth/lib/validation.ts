@@ -194,7 +194,7 @@ export function getDeleteConfirmationError(value: string) {
 	}
 
 	if (value.trim() !== "회원 탈퇴") {
-		return "`회원 탈퇴`를 정확히 입력해 주세요.";
+		return "회원 탈퇴를 정확히 입력해 주세요.";
 	}
 
 	return undefined;

@@ -1,31 +1,33 @@
-import { useState } from "react";
 import {
 	ArrowRight,
 	CheckCircle2,
 	Clock3,
+	Code2,
 	FolderKanban,
 	LoaderCircle,
+	type LucideIcon,
+	Palette,
 	RefreshCcw,
 	Send,
+	ServerCog,
+	Sparkles,
 	Square,
 	Users,
+	UsersRound,
 	XCircle,
 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import {
+	AppPanel,
+	AppPanelHeader,
+	AppShell,
+	MetricCard,
+} from "@/components/app-shell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Container } from "@/components/ui/container";
 import {
 	Field,
 	FieldDescription,
@@ -34,6 +36,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { getProfileFallback } from "@/features/auth/constants";
 import {
 	useAcceptMatchMutation,
 	useCancelProjectRequestMutation,
@@ -43,34 +46,40 @@ import {
 	useProjectRequestStatusQuery,
 	useRejectMatchMutation,
 } from "@/features/match/hooks/use-match-queries";
-import { getProfileFallback } from "@/features/auth/constants";
+import { demoMatchOffer } from "@/features/team/lib/demo-team-space";
 import { getAuthSession, getAuthSessionUserId } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { apiConfig } from "@/lib/api/config";
 import type {
 	MatchMember,
 	MatchProjectResponse,
 	MatchRole,
 	MatchStatus,
 } from "@/lib/types/match";
+import type { MatchDecisionStatus } from "@/lib/types/team";
 import { cn } from "@/lib/utils";
 
 const roleOptions: Array<{
 	description: string;
+	icon: LucideIcon;
 	label: string;
 	value: MatchRole;
 }> = [
 	{
-		description: "인증, 저장, 배포처럼 서비스의 기반을 맡습니다.",
+		description: "인증, 데이터 저장, 배포 등 서비스 기반을 맡습니다.",
+		icon: ServerCog,
 		label: "Backend",
 		value: "BACKEND",
 	},
 	{
 		description: "화면, 상태 관리, 사용자 흐름을 구현합니다.",
+		icon: Code2,
 		label: "Frontend",
 		value: "FRONTEND",
 	},
 	{
-		description: "문제 정의, UX, 시각 시스템을 정리합니다.",
+		description: "문제 정의, UX 흐름, 화면 디자인을 정리합니다.",
+		icon: Palette,
 		label: "Design",
 		value: "DESIGN",
 	},
@@ -86,9 +95,9 @@ const statusMeta: Record<
 		tone: "border-muted-foreground/20 bg-secondary text-muted-foreground",
 	},
 	MATCHED: {
-		description: "팀 구성이 완료된 상태입니다.",
+		description: "팀 구성이 완료되었습니다. 팀 스페이스에서 협업을 시작하세요.",
 		label: "매칭 완료",
-		tone: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
+		tone: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
 	},
 	MATCHING: {
 		description: "조건에 맞는 팀원을 찾고 있습니다.",
@@ -98,7 +107,7 @@ const statusMeta: Record<
 	WAITING: {
 		description: "요청이 접수되어 대기열에 올라갔습니다.",
 		label: "대기 중",
-		tone: "border-amber-500/25 bg-amber-500/10 text-amber-700",
+		tone: "border-amber-500/25 bg-amber-50 text-amber-700",
 	},
 };
 
@@ -120,6 +129,9 @@ export function MatchRequestView() {
 		projectTitle: "",
 		role: "FRONTEND" as MatchRole,
 	});
+	const [offerStatus, setOfferStatus] = useState<
+		"hidden" | "offered" | "accepted" | "declined"
+	>("hidden");
 	const projectInfoError = getProjectInfoError(form);
 	const noActiveRequest = statusQuery.data === null;
 	const status = statusQuery.data?.status;
@@ -135,7 +147,9 @@ export function MatchRequestView() {
 					(member) => member.userId === currentUserId,
 				)
 			: undefined;
-	const canCancel = status === "WAITING" || status === "MATCHING";
+	const hasAcceptedTeam = offerStatus === "accepted";
+	const canCancel =
+		!hasAcceptedTeam && (status === "WAITING" || status === "MATCHING");
 	const canRespondToMatch = Boolean(
 		activeMatchId &&
 			(!currentMatchMember ||
@@ -143,6 +157,7 @@ export function MatchRequestView() {
 	);
 	const isSubmitDisabled =
 		!isSignedIn ||
+		hasAcceptedTeam ||
 		createMutation.isPending ||
 		Boolean(status && canCancel) ||
 		Boolean(projectInfoError);
@@ -160,66 +175,124 @@ export function MatchRequestView() {
 			projectTitle: emptyToNull(form.projectTitle),
 			role: form.role,
 		});
+		setOfferStatus(apiConfig.useMocks ? "offered" : "hidden");
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col bg-secondary/20">
-			<SiteHeader />
-			<main className="flex-1 py-10 md:py-16">
-				<Container className="flex flex-col gap-6">
-					<section className="overflow-hidden rounded-[2rem] border border-border/60 bg-white p-8 shadow-panel">
-						<div className="flex flex-col gap-4">
-							<Badge className="w-fit" variant="brand">
-								Matching
-							</Badge>
-							<div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-								<div className="flex flex-col gap-4">
-									<h1 className="font-display text-4xl text-brand-ink md:text-5xl">
-										프로젝트 매칭을 요청하세요
-									</h1>
-									<p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
-										내 역할과 만들고 싶은 프로젝트 방향을 남기면 대기열에
-										등록됩니다.
-									</p>
-								</div>
-								<Button asChild variant="outline">
-									<Link to="/me">
-										<ArrowRight data-icon="inline-start" />내 프로필 확인
-									</Link>
-								</Button>
-							</div>
-						</div>
-					</section>
+		<AppShell
+			actions={
+				<>
+					<Button asChild variant="outline">
+						<Link to="/me">
+							<ArrowRight data-icon="inline-start" />내 프로필
+						</Link>
+					</Button>
+					<Button asChild>
+						<Link to="/team">
+							<UsersRound data-icon="inline-start" />팀 스페이스
+						</Link>
+					</Button>
+				</>
+			}
+			description="역할을 고르고 프로젝트 힌트를 더하면 조건에 맞는 팀 후보를 찾습니다."
+			eyebrow="Matching"
+			title="매칭 요청"
+		>
+			<div className="grid gap-5">
+				<div className="grid gap-4 md:grid-cols-4">
+					<MetricCard
+						label="요청 상태"
+						tone={
+							hasAcceptedTeam
+								? "emerald"
+								: status === "MATCHING"
+									? "primary"
+									: "amber"
+						}
+						trend={
+							hasAcceptedTeam
+								? "팀 스페이스 열림"
+								: status
+									? statusMeta[status].description
+									: undefined
+						}
+						value={
+							hasAcceptedTeam
+								? "팀 소속"
+								: status
+									? statusMeta[status].label
+									: "없음"
+						}
+					/>
+					<MetricCard label="선택 역할" value={roleLabels[form.role]} />
+					<MetricCard
+						label="제안 상태"
+						tone={offerStatus === "accepted" ? "emerald" : "primary"}
+						value={
+							offerStatus === "accepted"
+								? "수락 완료"
+								: offerStatus === "hidden"
+									? "대기"
+									: "도착"
+						}
+					/>
+					<MetricCard
+						label="팀 생성"
+						tone={hasAcceptedTeam ? "emerald" : "primary"}
+						trend={hasAcceptedTeam ? "팀으로 이동 가능" : "수락 후 생성"}
+						value={hasAcceptedTeam ? "가능" : "대기"}
+					/>
+				</div>
 
-					{!isSignedIn ? (
-						<Card className="border-border/60 bg-white/90 shadow-soft">
-							<CardHeader>
-								<CardTitle>로그인이 필요합니다</CardTitle>
-								<CardDescription>
+				{!isSignedIn ? (
+					<AppPanel>
+						<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+							<div>
+								<h2 className="text-xl font-semibold text-brand-ink">
+									로그인이 필요합니다
+								</h2>
+								<p className="mt-1 text-sm leading-6 text-muted-foreground">
 									매칭 요청은 로그인한 사용자만 등록할 수 있습니다.
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<Button asChild>
-									<Link to="/login">
-										<ArrowRight data-icon="inline-start" />
-										로그인
-									</Link>
-								</Button>
-							</CardContent>
-						</Card>
-					) : null}
+								</p>
+							</div>
+							<Button asChild>
+								<Link to="/login">
+									<ArrowRight data-icon="inline-start" />
+									로그인
+								</Link>
+							</Button>
+						</div>
+					</AppPanel>
+				) : null}
 
-					<div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
-						<Card className="border-border/60 bg-white shadow-soft">
-							<CardHeader>
-								<CardTitle>현재 매칭 상태</CardTitle>
-								<CardDescription>
-									진행 중인 요청이 있으면 여기에서 확인하고 취소할 수 있습니다.
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="flex flex-col gap-4">
-								{statusQuery.isLoading ? (
+				<div className="grid gap-5 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
+					<div className="grid gap-5">
+						<AppPanel>
+							<AppPanelHeader
+								action={
+									<Button
+										disabled={!isSignedIn || statusQuery.isFetching}
+										onClick={() => void statusQuery.refetch()}
+										type="button"
+										variant="outline"
+									>
+										<RefreshCcw data-icon="inline-start" />
+										새로고침
+									</Button>
+								}
+								description="이미 팀이 있거나 진행 중인 요청이 있으면 새 신청 대신 현재 흐름을 먼저 마무리합니다."
+								eyebrow="Queue status"
+								title="내 매칭 상태"
+							/>
+							<div className="grid gap-4 p-5">
+								{hasAcceptedTeam ? (
+									<StatusPanel
+										description="전원 수락이 완료되어 팀 스페이스가 열렸습니다."
+										icon={<CheckCircle2 />}
+										label="팀 소속"
+										tone="border-emerald-500/25 bg-emerald-50 text-emerald-700"
+									/>
+								) : statusQuery.isLoading ? (
 									<StatusPanel
 										description="내 요청이 대기 중인지 확인하고 있습니다."
 										icon={<LoaderCircle className="animate-spin" />}
@@ -245,208 +318,244 @@ export function MatchRequestView() {
 									/>
 								) : null}
 
-								<div className="flex flex-col gap-3 sm:flex-row">
-									<Button
-										disabled={!isSignedIn || statusQuery.isFetching}
-										onClick={() => void statusQuery.refetch()}
-										type="button"
-										variant="outline"
-									>
-										<RefreshCcw data-icon="inline-start" />
-										상태 새로고침
-									</Button>
-									<Button
-										disabled={!canCancel || cancelMutation.isPending}
-										onClick={() => void cancelMutation.mutateAsync()}
-										type="button"
-										variant="outline"
-									>
-										{cancelMutation.isPending ? (
-											<LoaderCircle
-												className="animate-spin"
-												data-icon="inline-start"
-											/>
-										) : (
-											<Square data-icon="inline-start" />
-										)}
-										요청 취소
-									</Button>
-								</div>
+								<Button
+									disabled={!canCancel || cancelMutation.isPending}
+									onClick={() => {
+										setOfferStatus("hidden");
+										void cancelMutation.mutateAsync();
+									}}
+									type="button"
+									variant="outline"
+								>
+									{cancelMutation.isPending ? (
+										<LoaderCircle
+											className="animate-spin"
+											data-icon="inline-start"
+										/>
+									) : (
+										<Square data-icon="inline-start" />
+									)}
+									요청 취소
+								</Button>
 
 								{cancelMutation.error ? (
 									<FieldError>
 										{getApiErrorMessage(cancelMutation.error)}
 									</FieldError>
 								) : null}
-							</CardContent>
-						</Card>
+							</div>
+						</AppPanel>
 
-						<Card className="border-border/60 bg-white shadow-panel">
-							<CardHeader>
-								<CardTitle>매칭 요청 작성</CardTitle>
-								<CardDescription>
-									역할만 선택해도 요청할 수 있고, 프로젝트 정보는 세 항목을 함께
-									입력하면 호스트 요청이 됩니다.
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<form
-									className="flex flex-col gap-6"
-									onSubmit={(event) => void handleSubmit(event)}
-								>
-									<FieldGroup>
-										<Field>
-											<FieldLabel>
-												참여 역할
-												<Badge className="ml-2 font-display" variant="brand">
-													필수
-												</Badge>
-											</FieldLabel>
-											<div className="grid gap-3 md:grid-cols-3">
-												{roleOptions.map((role) => (
-													<button
-														aria-pressed={form.role === role.value}
-														className={cn(
-															"min-h-28 rounded-xl border bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-soft",
-															form.role === role.value
-																? "border-primary bg-primary/5 shadow-soft"
-																: "border-border/70",
-														)}
-														key={role.value}
-														onClick={() =>
-															setForm((current) => ({
-																...current,
-																role: role.value,
-															}))
-														}
-														type="button"
-													>
-														<span className="text-sm font-semibold text-brand-ink">
-															{role.label}
-														</span>
-														<span className="mt-2 block text-sm leading-6 text-muted-foreground">
-															{role.description}
-														</span>
-													</button>
-												))}
-											</div>
-										</Field>
-
-										<Field>
-											<FieldLabel htmlFor="project-title">
-												프로젝트 제목
-												<Badge className="ml-2 font-display" variant="neutral">
-													선택
-												</Badge>
-											</FieldLabel>
-											<Input
-												id="project-title"
-												onChange={(event) =>
-													setForm((current) => ({
-														...current,
-														projectTitle: event.target.value,
-													}))
-												}
-												placeholder="선택 입력: 예: 개발자 사이드 프로젝트 팀빌딩 서비스"
-												value={form.projectTitle}
-											/>
-										</Field>
-
-										<Field>
-											<FieldLabel htmlFor="project-description">
-												프로젝트 설명
-												<Badge className="ml-2 font-display" variant="neutral">
-													선택
-												</Badge>
-											</FieldLabel>
-											<textarea
-												className="min-h-28 rounded-lg border border-input bg-white/90 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-												id="project-description"
-												onChange={(event) =>
-													setForm((current) => ({
-														...current,
-														projectDescription: event.target.value,
-													}))
-												}
-												placeholder="선택 입력: 어떤 문제를 해결하고 싶은지 간단히 적어주세요."
-												value={form.projectDescription}
-											/>
-										</Field>
-
-										<Field>
-											<FieldLabel htmlFor="project-mvp">
-												MVP 범위
-												<Badge className="ml-2 font-display" variant="neutral">
-													선택
-												</Badge>
-											</FieldLabel>
-											<textarea
-												className="min-h-24 rounded-lg border border-input bg-white/90 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-												id="project-mvp"
-												onChange={(event) =>
-													setForm((current) => ({
-														...current,
-														projectMvp: event.target.value,
-													}))
-												}
-												placeholder="선택 입력: 첫 버전에서 꼭 만들고 싶은 기능을 적어주세요."
-												value={form.projectMvp}
-											/>
-											<FieldDescription>
-												프로젝트 정보는 모두 비우거나 제목, 설명, MVP를 모두
-												입력해 주세요.
-											</FieldDescription>
-											{projectInfoError ? (
-												<FieldError>{projectInfoError}</FieldError>
-											) : null}
-										</Field>
-									</FieldGroup>
-
-									{createMutation.error ? (
-										<FieldError>
-											{getApiErrorMessage(createMutation.error)}
-										</FieldError>
-									) : null}
-
-									<Button disabled={isSubmitDisabled} size="lg" type="submit">
-										{createMutation.isPending ? (
-											<LoaderCircle
-												className="animate-spin"
-												data-icon="inline-start"
-											/>
-										) : (
-											<Send data-icon="inline-start" />
-										)}
-										매칭 요청 보내기
-									</Button>
-								</form>
-							</CardContent>
-						</Card>
+						{apiConfig.useMocks && offerStatus !== "hidden" ? (
+							<MatchOfferPanel
+								onAccept={() => setOfferStatus("accepted")}
+								onDecline={() => setOfferStatus("declined")}
+								onReset={() => setOfferStatus("offered")}
+								status={offerStatus}
+							/>
+						) : (
+							<MatchOfferPlaceholder
+								canPreview={isSignedIn && apiConfig.useMocks}
+								onPreview={() => setOfferStatus("offered")}
+								showPreviewAction={apiConfig.useMocks}
+							/>
+						)}
 					</div>
 
-					{activeMatchId ? (
-						<MatchSessionCard
-							canRespond={canRespondToMatch}
-							currentMember={currentMatchMember}
-							matchId={activeMatchId}
-							members={matchMembersQuery.data?.members}
-							membersError={matchMembersQuery.error}
-							membersLoading={matchMembersQuery.isLoading}
-							onAccept={() => void acceptMutation.mutateAsync()}
-							onReject={() => void rejectMutation.mutateAsync()}
-							project={matchProjectQuery.data}
-							projectError={matchProjectQuery.error}
-							projectLoading={matchProjectQuery.isLoading}
-							responseError={acceptMutation.error ?? rejectMutation.error}
-							responsePending={
-								acceptMutation.isPending || rejectMutation.isPending
-							}
+					<AppPanel>
+						<AppPanelHeader
+							description="역할만 선택해도 대기열에 등록됩니다. 프로젝트를 제안하려면 제목, 설명, MVP를 모두 입력해 주세요."
+							eyebrow="Request"
+							title="매칭 요청 작성"
 						/>
-					) : null}
-				</Container>
-			</main>
-			<SiteFooter />
-		</div>
+						<form
+							className="grid gap-6 p-5"
+							onSubmit={(event) => void handleSubmit(event)}
+						>
+							<FieldGroup>
+								<Field>
+									<FieldLabel>참여 역할</FieldLabel>
+									<div className="grid gap-3 lg:grid-cols-3">
+										{roleOptions.map((role) => (
+											<RoleCard
+												active={form.role === role.value}
+												key={role.value}
+												onClick={() =>
+													setForm((current) => ({
+														...current,
+														role: role.value,
+													}))
+												}
+												role={role}
+											/>
+										))}
+									</div>
+								</Field>
+
+								<Field>
+									<FieldLabel htmlFor="project-title">
+										프로젝트 제목
+										<Badge
+											aria-hidden="true"
+											className="ml-2 font-display"
+											variant="neutral"
+										>
+											선택
+										</Badge>
+									</FieldLabel>
+									<Input
+										className="h-11 bg-white"
+										id="project-title"
+										onChange={(event) =>
+											setForm((current) => ({
+												...current,
+												projectTitle: event.target.value,
+											}))
+										}
+										placeholder="예: 개발자 사이드 프로젝트 팀빌딩 서비스"
+										value={form.projectTitle}
+									/>
+								</Field>
+
+								<Field>
+									<FieldLabel htmlFor="project-description">
+										프로젝트 설명
+										<Badge
+											aria-hidden="true"
+											className="ml-2 font-display"
+											variant="neutral"
+										>
+											선택
+										</Badge>
+									</FieldLabel>
+									<textarea
+										className="min-h-28 rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+										id="project-description"
+										onChange={(event) =>
+											setForm((current) => ({
+												...current,
+												projectDescription: event.target.value,
+											}))
+										}
+										placeholder="어떤 문제를 해결하고 싶은지 간단히 적어주세요."
+										value={form.projectDescription}
+									/>
+								</Field>
+
+								<Field>
+									<FieldLabel htmlFor="project-mvp">
+										MVP 범위
+										<Badge
+											aria-hidden="true"
+											className="ml-2 font-display"
+											variant="neutral"
+										>
+											선택
+										</Badge>
+									</FieldLabel>
+									<textarea
+										className="min-h-24 rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+										id="project-mvp"
+										onChange={(event) =>
+											setForm((current) => ({
+												...current,
+												projectMvp: event.target.value,
+											}))
+										}
+										placeholder="첫 버전에서 꼭 만들고 싶은 기능을 적어주세요."
+										value={form.projectMvp}
+									/>
+									<FieldDescription>
+										프로젝트 정보는 모두 비우거나 제목, 설명, MVP를 모두 입력해
+										주세요.
+									</FieldDescription>
+									{projectInfoError ? (
+										<FieldError>{projectInfoError}</FieldError>
+									) : null}
+								</Field>
+							</FieldGroup>
+
+							{createMutation.error ? (
+								<FieldError>
+									{getApiErrorMessage(createMutation.error)}
+								</FieldError>
+							) : null}
+
+							<Button disabled={isSubmitDisabled} size="lg" type="submit">
+								{createMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : (
+									<Send data-icon="inline-start" />
+								)}
+								{hasAcceptedTeam
+									? "이미 팀에 참여 중입니다"
+									: "매칭 요청 보내기"}
+							</Button>
+						</form>
+					</AppPanel>
+				</div>
+
+				{activeMatchId ? (
+					<MatchSessionCard
+						canRespond={canRespondToMatch}
+						currentMember={currentMatchMember}
+						matchId={activeMatchId}
+						members={matchMembersQuery.data?.members}
+						membersError={matchMembersQuery.error}
+						membersLoading={matchMembersQuery.isLoading}
+						onAccept={() => void acceptMutation.mutateAsync()}
+						onReject={() => void rejectMutation.mutateAsync()}
+						project={matchProjectQuery.data}
+						projectError={matchProjectQuery.error}
+						projectLoading={matchProjectQuery.isLoading}
+						responseError={acceptMutation.error ?? rejectMutation.error}
+						responsePending={
+							acceptMutation.isPending || rejectMutation.isPending
+						}
+					/>
+				) : null}
+			</div>
+		</AppShell>
+	);
+}
+
+function RoleCard({
+	active,
+	onClick,
+	role,
+}: {
+	active: boolean;
+	onClick: () => void;
+	role: (typeof roleOptions)[number];
+}) {
+	const Icon = role.icon;
+
+	return (
+		<button
+			aria-pressed={active}
+			className={cn(
+				"min-h-32 rounded-lg border bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-soft",
+				active ? "border-primary bg-primary/5 shadow-soft" : "border-border/70",
+			)}
+			onClick={onClick}
+			type="button"
+		>
+			<div className="flex items-center justify-between">
+				<span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+					<Icon className="size-5" />
+				</span>
+				{active ? <CheckCircle2 className="size-4 text-primary" /> : null}
+			</div>
+			<span className="mt-4 block text-sm font-semibold text-brand-ink">
+				{role.label}
+			</span>
+			<span className="mt-2 block text-sm leading-6 text-muted-foreground">
+				{role.description}
+			</span>
+		</button>
 	);
 }
 
@@ -473,6 +582,190 @@ function getProjectInfoError(values: {
 	}
 
 	return null;
+}
+
+interface MatchOfferPlaceholderProps {
+	canPreview: boolean;
+	onPreview: () => void;
+	showPreviewAction: boolean;
+}
+
+function MatchOfferPlaceholder({
+	canPreview,
+	onPreview,
+	showPreviewAction,
+}: MatchOfferPlaceholderProps) {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="요청 후 팀 후보가 잡히면 여기에서 팀원과 주제를 확인합니다."
+				eyebrow="Offer"
+				title="매칭 제안"
+			/>
+			<div className="grid gap-4 p-5">
+				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+					현재 도착한 제안은 없습니다. 요청을 보내면 이 영역에서 팀 후보와 다음
+					단계를 확인하게 됩니다.
+				</div>
+				{showPreviewAction ? (
+					<Button disabled={!canPreview} onClick={onPreview} type="button">
+						<Sparkles data-icon="inline-start" />
+						매칭 제안 미리보기
+					</Button>
+				) : null}
+			</div>
+		</AppPanel>
+	);
+}
+
+interface MatchOfferPanelProps {
+	onAccept: () => void;
+	onDecline: () => void;
+	onReset: () => void;
+	status: "offered" | "accepted" | "declined";
+}
+
+function MatchOfferPanel({
+	onAccept,
+	onDecline,
+	onReset,
+	status,
+}: MatchOfferPanelProps) {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={
+					<Badge variant={status === "accepted" ? "brand" : "neutral"}>
+						{status === "accepted"
+							? "수락 완료"
+							: status === "declined"
+								? "거절됨"
+								: "응답 대기"}
+					</Badge>
+				}
+				description="모두가 수락해야 팀이 생성되고, 거절하면 다시 매칭 대기열로 돌아갑니다."
+				eyebrow="Offer arrived"
+				title="도착한 매칭 제안"
+			/>
+			<div className="grid gap-5 p-5">
+				<div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+					<div className="flex items-center gap-2">
+						<Sparkles className="size-4 text-primary" />
+						<p className="text-sm font-semibold text-primary">
+							{demoMatchOffer.teamNamePreview}
+						</p>
+					</div>
+					<h3 className="mt-3 text-xl font-semibold text-brand-ink">
+						{demoMatchOffer.projectTitle}
+					</h3>
+					<p className="mt-2 text-sm leading-6 text-muted-foreground">
+						{demoMatchOffer.projectDescription}
+					</p>
+					<p className="mt-3 text-sm leading-6 text-brand-ink">
+						{demoMatchOffer.recommendedNextStep}
+					</p>
+				</div>
+
+				<div className="grid gap-3 md:grid-cols-3">
+					{demoMatchOffer.teammates.map((member) => (
+						<div
+							className="rounded-lg border border-border/70 bg-white p-4 shadow-crisp"
+							key={member.id}
+						>
+							<div className="flex items-center justify-between gap-3">
+								<p className="font-semibold text-brand-ink">{member.name}</p>
+								<DecisionBadge
+									decision={
+										status === "accepted" ? "accepted" : member.decision
+									}
+								/>
+							</div>
+							<p className="mt-1 text-sm text-muted-foreground">
+								{member.role}
+							</p>
+							<p className="mt-3 text-sm leading-6 text-muted-foreground">
+								{member.responsibility}
+							</p>
+						</div>
+					))}
+				</div>
+
+				{status === "accepted" ? (
+					<div className="rounded-lg border border-emerald-500/25 bg-emerald-50 p-4">
+						<p className="font-semibold text-emerald-700">
+							팀이 생성되었습니다.
+						</p>
+						<p className="mt-1 text-sm leading-6 text-emerald-700/80">
+							이제 팀 스페이스에서 규칙, 체크리스트, GitHub 요약을 확인하세요.
+						</p>
+					</div>
+				) : status === "declined" ? (
+					<div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4">
+						<p className="font-semibold text-destructive">
+							제안을 거절했습니다.
+						</p>
+						<p className="mt-1 text-sm leading-6 text-destructive/80">
+							재매칭이 필요하면 새 요청을 보내 더 맞는 팀을 찾아볼 수 있습니다.
+						</p>
+					</div>
+				) : null}
+
+				<div className="flex flex-col gap-3 sm:flex-row">
+					<Button
+						className="sm:flex-1"
+						disabled={status !== "offered"}
+						onClick={onAccept}
+						type="button"
+					>
+						<CheckCircle2 data-icon="inline-start" />
+						수락
+					</Button>
+					<Button
+						className="sm:flex-1"
+						disabled={status !== "offered"}
+						onClick={onDecline}
+						type="button"
+						variant="outline"
+					>
+						<XCircle data-icon="inline-start" />
+						거절
+					</Button>
+					{status === "accepted" ? (
+						<Button asChild className="sm:flex-1" variant="outline">
+							<Link to="/team">
+								<ArrowRight data-icon="inline-start" />
+								팀으로 이동
+							</Link>
+						</Button>
+					) : status === "declined" ? (
+						<Button
+							className="sm:flex-1"
+							onClick={onReset}
+							type="button"
+							variant="outline"
+						>
+							<RefreshCcw data-icon="inline-start" />
+							제안 다시 보기
+						</Button>
+					) : null}
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function DecisionBadge({ decision }: { decision: MatchDecisionStatus }) {
+	const label = {
+		accepted: "수락",
+		declined: "거절",
+		pending: "대기",
+	}[decision];
+
+	return (
+		<Badge variant={decision === "accepted" ? "brand" : "neutral"}>
+			{label}
+		</Badge>
+	);
 }
 
 interface MatchSessionCardProps {
@@ -507,22 +800,15 @@ function MatchSessionCard({
 	responsePending,
 }: MatchSessionCardProps) {
 	return (
-		<Card className="border-primary/20 bg-white shadow-panel">
-			<CardHeader>
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex flex-col gap-2">
-						<CardTitle>매칭 세션</CardTitle>
-						<CardDescription>
-							팀원과 프로젝트 정보를 확인한 뒤 수락 또는 거절할 수 있습니다.
-						</CardDescription>
-					</div>
-					<Badge className="w-fit" variant="brand">
-						#{matchId}
-					</Badge>
-				</div>
-			</CardHeader>
-			<CardContent className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-				<div className="rounded-xl border border-border/60 bg-secondary/25 p-5">
+		<AppPanel className="border-primary/20">
+			<AppPanelHeader
+				action={<Badge variant="brand">#{matchId}</Badge>}
+				description="팀원과 프로젝트 정보를 확인한 뒤 수락 또는 거절할 수 있습니다."
+				eyebrow="Live session"
+				title="매칭 세션"
+			/>
+			<div className="grid gap-5 p-5 lg:grid-cols-[0.9fr_1.1fr]">
+				<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 					<div className="flex items-center gap-2 font-semibold text-brand-ink">
 						<FolderKanban className="size-4" />
 						프로젝트
@@ -533,14 +819,14 @@ function MatchSessionCard({
 							프로젝트 정보를 불러오는 중입니다.
 						</p>
 					) : project ? (
-						<div className="mt-4 flex flex-col gap-3">
-							<p className="font-display text-2xl text-brand-ink">
+						<div className="mt-4 grid gap-3">
+							<p className="text-2xl font-semibold text-brand-ink">
 								{project.projectTitle}
 							</p>
 							<p className="text-sm leading-6 text-muted-foreground">
 								{project.projectDescription}
 							</p>
-							<div className="rounded-lg border border-border/60 bg-white/80 p-3">
+							<div className="rounded-lg border border-border/70 bg-white p-3">
 								<p className="text-xs font-semibold uppercase text-muted-foreground">
 									MVP
 								</p>
@@ -554,7 +840,7 @@ function MatchSessionCard({
 					) : null}
 				</div>
 
-				<div className="flex flex-col gap-4 rounded-xl border border-border/60 bg-white p-5">
+				<div className="grid gap-4 rounded-lg border border-border/70 bg-white p-5">
 					<div className="flex items-center gap-2 font-semibold text-brand-ink">
 						<Users className="size-4" />
 						팀원
@@ -577,7 +863,7 @@ function MatchSessionCard({
 					<div className="flex flex-col gap-3 border-border/60 border-t pt-4">
 						{currentMember?.isHost ? (
 							<FieldDescription>
-								호스트는 서버에서 자동 수락 상태로 처리됩니다.
+								프로젝트 제안자는 자동으로 수락 처리됩니다.
 							</FieldDescription>
 						) : currentMember?.isAccepted === true ? (
 							<FieldDescription>이미 이 매칭을 수락했습니다.</FieldDescription>
@@ -613,8 +899,8 @@ function MatchSessionCard({
 						) : null}
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -638,7 +924,8 @@ function MatchMemberItem({ member }: { member: MatchMember }) {
 					{member.isHost ? <Badge variant="warm">Host</Badge> : null}
 				</div>
 				<p className="mt-1 text-sm text-muted-foreground">
-					{roleLabels[member.role]} · Lv.{member.level} · {member.temperature}도
+					{roleLabels[member.role]} · Lv.{member.level} · 온도{" "}
+					{member.temperature.toFixed(1)}℃
 				</p>
 				<p className="mt-1 text-xs text-muted-foreground">{acceptedLabel}</p>
 			</div>
@@ -656,7 +943,7 @@ function getMemberImageSrc(profileImageKey: string | null) {
 
 function getAcceptedLabel(member: MatchMember) {
 	if (member.isHost) {
-		return "호스트 자동 수락";
+		return "제안자 자동 수락";
 	}
 
 	if (member.isAccepted === true) {
@@ -684,7 +971,7 @@ function StatusPanel({
 	tone = "border-border/70 bg-secondary/40 text-brand-ink",
 }: StatusPanelProps) {
 	return (
-		<div className={cn("rounded-xl border p-4", tone)}>
+		<div className={cn("rounded-lg border p-4", tone)}>
 			<div className="flex items-center gap-2 font-semibold">
 				<span className="[&_svg]:size-4">{icon}</span>
 				{label}
