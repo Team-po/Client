@@ -116,13 +116,6 @@ const roleLabels: Record<MatchRole, string> = {
 	FRONTEND: "Frontend",
 };
 
-const flowSteps = [
-	"역할과 프로젝트 힌트 입력",
-	"매칭 제안 확인",
-	"팀원별 수락/거절",
-	"전원 수락 시 팀 스페이스 열기",
-];
-
 export function MatchRequestView() {
 	const statusQuery = useProjectRequestStatusQuery();
 	const createMutation = useCreateProjectRequestMutation();
@@ -202,13 +195,6 @@ export function MatchRequestView() {
 			}
 			description="역할을 고르고, 프로젝트 힌트를 더하고, 제안이 오면 바로 수락 여부를 결정합니다."
 			eyebrow="Matching"
-			rail={
-				<MatchRail
-					hasAcceptedTeam={hasAcceptedTeam}
-					isSignedIn={isSignedIn}
-					status={status}
-				/>
-			}
 			title="매칭 큐"
 		>
 			<div className="grid gap-5">
@@ -227,7 +213,7 @@ export function MatchRequestView() {
 								? "팀 스페이스 열림"
 								: status
 									? statusMeta[status].description
-									: "새 요청 가능"
+									: undefined
 						}
 						value={
 							hasAcceptedTeam
@@ -237,15 +223,10 @@ export function MatchRequestView() {
 									: "없음"
 						}
 					/>
-					<MetricCard
-						label="선택 역할"
-						trend="매칭 균형에 사용"
-						value={roleLabels[form.role]}
-					/>
+					<MetricCard label="선택 역할" value={roleLabels[form.role]} />
 					<MetricCard
 						label="제안 상태"
 						tone={offerStatus === "accepted" ? "emerald" : "primary"}
-						trend="프리뷰 제안 포함"
 						value={
 							offerStatus === "accepted"
 								? "수락 완료"
@@ -257,7 +238,7 @@ export function MatchRequestView() {
 					<MetricCard
 						label="팀 생성"
 						tone={hasAcceptedTeam ? "emerald" : "primary"}
-						trend="전원 수락 시 열림"
+						trend={hasAcceptedTeam ? "팀으로 이동 가능" : "수락 후 생성"}
 						value={hasAcceptedTeam ? "Ready" : "Soon"}
 					/>
 				</div>
@@ -935,53 +916,6 @@ function MatchMemberItem({ member }: { member: MatchMember }) {
 				<p className="mt-1 text-xs text-muted-foreground">{acceptedLabel}</p>
 			</div>
 		</div>
-	);
-}
-
-function MatchRail({
-	hasAcceptedTeam,
-	isSignedIn,
-	status,
-}: {
-	hasAcceptedTeam: boolean;
-	isSignedIn: boolean;
-	status?: MatchStatus;
-}) {
-	return (
-		<AppPanel>
-			<div className="p-5">
-				<div className="flex items-center gap-3">
-					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-						<Sparkles className="size-5" />
-					</div>
-					<div>
-						<p className="text-sm font-semibold text-brand-ink">매칭 플로우</p>
-						<p className="text-xs text-muted-foreground">
-							{hasAcceptedTeam
-								? "팀 생성 완료"
-								: isSignedIn
-									? status
-										? statusMeta[status].label
-										: "요청 가능"
-									: "로그인 필요"}
-						</p>
-					</div>
-				</div>
-				<div className="mt-5 grid gap-3">
-					{flowSteps.map((step, index) => (
-						<div
-							className="flex items-center gap-3 rounded-lg border border-border/70 bg-white p-3"
-							key={step}
-						>
-							<span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 font-mono text-xs font-semibold text-primary">
-								{index + 1}
-							</span>
-							<p className="text-sm font-semibold text-brand-ink">{step}</p>
-						</div>
-					))}
-				</div>
-			</div>
-		</AppPanel>
 	);
 }
 

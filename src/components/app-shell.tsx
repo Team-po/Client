@@ -132,7 +132,7 @@ export function MetricCard({
 }: {
 	label: string;
 	tone?: "amber" | "emerald" | "primary" | "rose";
-	trend: string;
+	trend?: string;
 	value: string;
 }) {
 	const toneClass = {
@@ -153,7 +153,9 @@ export function MetricCard({
 				{label}
 			</div>
 			<p className="font-mono text-3xl font-semibold text-brand-ink">{value}</p>
-			<p className="mt-1 text-xs leading-5 text-muted-foreground">{trend}</p>
+			{trend ? (
+				<p className="mt-1 text-xs leading-5 text-muted-foreground">{trend}</p>
+			) : null}
 		</div>
 	);
 }

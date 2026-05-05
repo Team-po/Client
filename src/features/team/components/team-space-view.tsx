@@ -1114,7 +1114,6 @@ function getTeamMetrics(checklist: TeamChecklistItem[]) {
 		{
 			label: "팀 온도",
 			tone: "emerald" as const,
-			trend: "안정적",
 			value: "41.2",
 		},
 	];

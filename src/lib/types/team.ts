@@ -35,7 +35,7 @@ export interface MatchOffer {
 
 export interface TeamMetric {
 	label: string;
-	trend: string;
+	trend?: string;
 	value: string;
 }
 

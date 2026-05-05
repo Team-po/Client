@@ -192,7 +192,7 @@ export const demoTeamSpace: TeamSpace = {
 		{ label: "스프린트 진행률", trend: "이번 주 +14%", value: "62%" },
 		{ label: "완료 체크리스트", trend: "3 / 8 완료", value: "3" },
 		{ label: "오픈 PR", trend: "리뷰 필요", value: "3" },
-		{ label: "팀 온도", trend: "안정적", value: "41.2" },
+		{ label: "팀 온도", value: "41.2" },
 	],
 	name: "Blue Sprint",
 	nextMeetingLabel: "오늘 21:00 첫 룰 정하기",

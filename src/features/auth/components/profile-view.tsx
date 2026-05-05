@@ -7,7 +7,6 @@ import {
 	RefreshCcw,
 	ShieldAlert,
 	Trash2,
-	UserRound,
 	UsersRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -215,8 +214,7 @@ export function ProfileView() {
 			}
 			description="팀원이 보는 정보, 진행 중인 팀, 계정 보안을 한 화면에서 정리합니다."
 			eyebrow="Profile"
-			rail={<ProfileRail isSignedIn={isSignedIn} />}
-			title={isSignedIn ? "내 프로필 준비도" : "로그인 후 프로필을 관리하세요"}
+			title={isSignedIn ? "내 정보" : "로그인 후 프로필을 관리하세요"}
 		>
 			<div className="grid gap-5">
 				{currentUserQuery.isLoading ? (
@@ -273,15 +271,10 @@ export function ProfileView() {
 				{currentUser ? (
 					<>
 						<div className="grid gap-4 md:grid-cols-4">
-							<MetricCard
-								label="개발 레벨"
-								trend="매칭 우선순위 입력값"
-								value={`Lv.${currentUser.level}`}
-							/>
+							<MetricCard label="개발 레벨" value={`Lv.${currentUser.level}`} />
 							<MetricCard
 								label="매너 온도"
 								tone="emerald"
-								trend="최근 팀 피드백 기준"
 								value={`${currentUser.temperature.toFixed(1)}`}
 							/>
 							<MetricCard
@@ -290,7 +283,7 @@ export function ProfileView() {
 								trend={
 									currentUser.description ? "소개 작성됨" : "소개를 채워주세요"
 								}
-								value={currentUser.description ? "Ready" : "Need"}
+								value={currentUser.description ? "완료" : "보완"}
 							/>
 							<MetricCard
 								label="현재 팀"
@@ -793,42 +786,6 @@ function DangerPanel({
 				</Button>
 			</form>
 		</AppPanel>
-	);
-}
-
-function ProfileRail({ isSignedIn }: { isSignedIn: boolean }) {
-	return (
-		<AppPanel>
-			<div className="p-5">
-				<div className="flex items-center gap-3">
-					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-						<UserRound className="size-5" />
-					</div>
-					<div>
-						<p className="text-sm font-semibold text-brand-ink">
-							프로필 체크리스트
-						</p>
-						<p className="text-xs text-muted-foreground">
-							{isSignedIn ? "매칭 전 확인" : "로그인 필요"}
-						</p>
-					</div>
-				</div>
-				<div className="mt-5 grid gap-3">
-					<RailItem label="이메일 인증" state={isSignedIn ? "완료" : "대기"} />
-					<RailItem label="닉네임/레벨" state={isSignedIn ? "확인" : "대기"} />
-					<RailItem label="팀 스페이스" state="데모 가능" />
-				</div>
-			</div>
-		</AppPanel>
-	);
-}
-
-function RailItem({ label, state }: { label: string; state: string }) {
-	return (
-		<div className="flex items-center justify-between rounded-lg border border-border/70 bg-white px-3 py-2">
-			<span className="text-sm text-muted-foreground">{label}</span>
-			<span className="text-xs font-semibold text-primary">{state}</span>
-		</div>
 	);
 }
 
