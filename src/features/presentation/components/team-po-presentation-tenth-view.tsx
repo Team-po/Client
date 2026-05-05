@@ -26,7 +26,7 @@ import "./team-po-presentation-view.css";
 
 const teamMembers = ["장다은", "김황조", "박상혁", "정종우"];
 const teamLeaderName = "장다은";
-const featuredMemberName = "박상혁";
+const featuredMemberName = "정종우";
 const CAPTURE_SCROLL_OFFSET = 2;
 
 const tocSections: PresentationSectionLink[] = [
@@ -79,7 +79,7 @@ const summaryCards = [
 	},
 	{
 		title: "진행 중",
-		value: "3 Items",
+		value: "4 Items",
 		description:
 			"팀스페이스에서 개발 가이드라인, 체크리스트, GitHub 연동 기능을 구현하고 있습니다.",
 		icon: Clock3,
@@ -136,6 +136,13 @@ const inProgressItems = [
 			"프로젝트 저장소와 팀스페이스를 연결해 개발 활동을 서비스 흐름 안에서 확인할 수 있도록 GitHub 연동을 진행하고 있습니다.",
 		icon: Github,
 		keywords: ["GitHub", "Repository", "Integration"],
+	},
+	{
+		title: "팀스페이스 조회 기능",
+		description:
+			"팀스페이스에서 프로젝트 정보와 현재 진행 상태를 한눈에 확인할 수 있는 조회 기능을 구현하고 있습니다.",
+		icon: FolderKanban,
+		keywords: ["Team Space", "Overview", "Status"],
 	},
 ] as const;
 
@@ -308,7 +315,7 @@ export function TeamPoPresentationTenthView() {
 						<div className="flex h-full min-h-0 flex-col gap-7">
 							<div className="flex flex-wrap items-center gap-4">
 								<Badge variant="brand">전공종합설계1</Badge>
-								<Badge variant="neutral">2026. 5. 3.</Badge>
+								<Badge variant="neutral">2026. 5. 6.</Badge>
 								<Badge variant="neutral">5조 githug</Badge>
 							</div>
 
@@ -533,13 +540,13 @@ export function TeamPoPresentationTenthView() {
 					pageLabel={getPageLabel("in-progress")}
 					title="진행 중"
 				>
-					<div className="grid gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
+					<div className="grid gap-3 xl:grid-cols-[21rem_minmax(0,1fr)]">
 						<Surface
-							className="relative overflow-hidden border-amber-300/40 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-5"
+							className="relative overflow-hidden border-amber-300/40 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4"
 							variant="glass"
 						>
 							<div className="absolute -right-10 top-6 size-36 rounded-full border border-amber-200/60 bg-amber-200/40 blur-3xl" />
-							<div className="relative flex h-full flex-col justify-between gap-5">
+							<div className="relative flex h-full flex-col justify-between gap-4">
 								<div>
 									<p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">
 										Current Build
@@ -548,26 +555,26 @@ export function TeamPoPresentationTenthView() {
 										진행 중
 									</h3>
 									<p className="mt-4 text-2xl font-display text-amber-950">
-										3 Items
+										4 Items
 									</p>
-									<p className="mt-4 text-base leading-7 text-amber-950/80">
+									<p className="mt-3 text-sm leading-6 text-amber-950/80">
 										지금은 팀스페이스 안에서 개발 흐름을 실제로 도와주는 협업
 										기능을 구현하는 단계입니다.
 									</p>
 								</div>
 
-								<div className="grid gap-3">
+								<div className="grid gap-2.5">
 									{inProgressItems.map((item, index) => (
 										<div
-											className="grid items-center gap-3 rounded-[1.25rem] border border-white/80 bg-white/80 px-4 py-4 md:grid-cols-[3rem_minmax(0,1fr)]"
+											className="grid items-center gap-2.5 rounded-[1rem] border border-white/80 bg-white/80 px-3 py-2.5 md:grid-cols-[2.75rem_minmax(0,1fr)]"
 											key={item.title}
 										>
-											<div className="flex size-11 items-center justify-center rounded-[0.9rem] bg-amber-100 text-amber-700">
+											<div className="flex size-10 items-center justify-center rounded-[0.8rem] bg-amber-100 text-amber-700">
 												<span className="text-sm font-semibold">
 													0{index + 1}
 												</span>
 											</div>
-											<p className="text-base leading-7 text-brand-ink">
+											<p className="text-sm leading-6 text-brand-ink">
 												{item.title}
 											</p>
 										</div>
@@ -576,35 +583,35 @@ export function TeamPoPresentationTenthView() {
 							</div>
 						</Surface>
 
-						<div className="grid auto-rows-fr gap-3">
+						<div className="grid auto-rows-fr gap-2.5 xl:grid-cols-2">
 							{inProgressItems.map((item) => {
 								const Icon = item.icon;
 
 								return (
 									<div
-										className="rounded-[1.5rem] border border-amber-200/70 bg-white px-5 py-5 shadow-soft"
+										className="rounded-[1.25rem] border border-amber-200/70 bg-white px-4 py-3.5 shadow-soft"
 										key={item.title}
 									>
-										<div className="flex items-center gap-3">
-											<div className="flex size-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-												<Icon className="size-5" />
+										<div className="flex items-center gap-2.5">
+											<div className="flex size-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+												<Icon className="size-4.5" />
 											</div>
 											<div>
-												<p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">
+												<p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
 													In Progress
 												</p>
-												<h3 className="mt-1 text-[1.55rem] font-display leading-tight text-brand-ink">
+												<h3 className="mt-1 text-[1.25rem] font-display leading-tight text-brand-ink">
 													{item.title}
 												</h3>
 											</div>
 										</div>
-										<p className="mt-4 text-sm leading-7 text-slate-800">
+										<p className="mt-2.5 text-sm leading-6 text-slate-800">
 											{item.description}
 										</p>
-										<div className="mt-4 flex flex-wrap gap-2.5">
+										<div className="mt-2.5 flex flex-wrap gap-2">
 											{item.keywords.map((keyword) => (
 												<div
-													className="rounded-full border border-border/60 bg-background/80 px-4 py-2 text-sm text-brand-ink/85"
+													className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs text-brand-ink/85"
 													key={keyword}
 												>
 													{keyword}
