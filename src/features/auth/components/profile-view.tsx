@@ -5,23 +5,22 @@ import {
 	KeyRound,
 	LoaderCircle,
 	RefreshCcw,
+	ShieldAlert,
 	Trash2,
+	UserRound,
+	UsersRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import {
+	AppPanel,
+	AppPanelHeader,
+	AppShell,
+	MetricCard,
+} from "@/components/app-shell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Container } from "@/components/ui/container";
 import {
 	Field,
 	FieldDescription,
@@ -30,23 +29,23 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { getProfileFallback } from "@/features/auth/constants";
 import { ProfileImagePicker } from "@/features/auth/components/profile-image-picker";
-import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
-import {
-	getDeleteConfirmationError,
-	hasValidationErrors,
-	validateProfileEditForm,
-} from "@/features/auth/lib/validation";
+import { getProfileFallback } from "@/features/auth/constants";
 import {
 	useCurrentUserQuery,
 	useDeleteCurrentUserMutation,
 	useEditPasswordMutation,
 	useUpdateCurrentUserMutation,
 } from "@/features/auth/hooks/use-auth-queries";
+import {
+	getDeleteConfirmationError,
+	hasValidationErrors,
+	validateProfileEditForm,
+} from "@/features/auth/lib/validation";
+import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 const levelOptions = [1, 2, 3, 4, 5] as const;
 
@@ -117,6 +116,8 @@ export function ProfileView() {
 		profileImage: form.profileImage,
 	});
 	const deleteConfirmError = getDeleteConfirmationError(deleteForm.confirm);
+	const visibleDeleteConfirmError =
+		deleteForm.confirm.length > 0 ? deleteConfirmError : undefined;
 	const currentUser = currentUserQuery.data;
 	const isProfileDirty = currentUser
 		? form.description.trim() !== (currentUser.description ?? "") ||
@@ -196,54 +197,47 @@ export function ProfileView() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col bg-secondary/20">
-			<SiteHeader />
-			<main className="flex-1 py-10 md:py-16">
-				<Container className="flex flex-col gap-6">
-					<section className="overflow-hidden rounded-[2rem] border border-border/60 bg-white p-8 shadow-panel">
-						<div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-							<div className="flex flex-col gap-4">
-								<Badge className="w-fit" variant="brand">
-									Account
-								</Badge>
-								<h1 className="font-display text-4xl text-brand-ink md:text-5xl">
-									{isSignedIn
-										? "내 계정과 팀을 한 번에 관리하세요"
-										: "로그인 후 내 계정과 팀을 관리하세요"}
-								</h1>
-								<p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
-									{isSignedIn
-										? "팀원에게 보일 소개와 레벨을 정리하고, 진행 중인 팀이 있다면 바로 팀 스페이스로 이동할 수 있습니다."
-										: "프로필 관리는 로그인 후 사용할 수 있고, 팀 스페이스는 샘플 데모로 먼저 둘러볼 수 있습니다."}
+		<AppShell
+			actions={
+				<>
+					<Button asChild variant="outline">
+						<Link to="/match">
+							<ArrowRight data-icon="inline-start" />
+							매칭 요청
+						</Link>
+					</Button>
+					<Button asChild>
+						<Link to="/team">
+							<UsersRound data-icon="inline-start" />팀 스페이스
+						</Link>
+					</Button>
+				</>
+			}
+			description="팀원이 보는 정보, 진행 중인 팀, 계정 보안을 한 화면에서 정리합니다."
+			eyebrow="Profile"
+			rail={<ProfileRail isSignedIn={isSignedIn} />}
+			title={isSignedIn ? "내 프로필 준비도" : "로그인 후 프로필을 관리하세요"}
+		>
+			<div className="grid gap-5">
+				{currentUserQuery.isLoading ? (
+					<NoticePanel
+						description="서버에서 내 프로필과 팀 상태를 확인하고 있습니다."
+						title="내 정보를 불러오는 중입니다"
+					/>
+				) : null}
+
+				{currentUserQuery.isError ? (
+					<AppPanel>
+						<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+							<div>
+								<h2 className="text-xl font-semibold text-brand-ink">
+									내 정보 조회에 실패했습니다
+								</h2>
+								<p className="mt-1 text-sm leading-6 text-muted-foreground">
+									로그인이 만료되었거나 서버 응답을 받을 수 없습니다.
 								</p>
 							</div>
-							<Button asChild size="lg">
-								<Link to="/team">
-									<ArrowRight data-icon="inline-start" />
-									{isSignedIn ? "팀 스페이스" : "팀 스페이스 데모 보기"}
-								</Link>
-							</Button>
-						</div>
-					</section>
-
-					{currentUserQuery.isLoading ? (
-						<Card className="border-border/60 bg-white/90 shadow-soft">
-							<CardHeader>
-								<CardTitle>내 정보를 불러오는 중입니다</CardTitle>
-								<CardDescription>잠시만 기다려 주세요.</CardDescription>
-							</CardHeader>
-						</Card>
-					) : null}
-
-					{currentUserQuery.isError ? (
-						<Card className="border-destructive/30 bg-white/90 shadow-soft">
-							<CardHeader>
-								<CardTitle>내 정보 조회에 실패했습니다</CardTitle>
-								<CardDescription>
-									로그인이 만료되었거나 서버 응답을 받을 수 없습니다.
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="flex flex-wrap gap-3">
+							<div className="flex flex-wrap gap-2">
 								<Button
 									onClick={() => void currentUserQuery.refetch()}
 									variant="outline"
@@ -252,72 +246,66 @@ export function ProfileView() {
 									다시 불러오기
 								</Button>
 								<Button asChild>
-									<Link to="/login">로그인으로 이동</Link>
+									<Link to="/login">로그인</Link>
 								</Button>
-							</CardContent>
-						</Card>
-					) : null}
+							</div>
+						</div>
+					</AppPanel>
+				) : null}
 
-					{!currentUserQuery.isLoading &&
-					!currentUserQuery.isError &&
-					!currentUserQuery.data ? (
-						<Card className="border-border/60 bg-white/90 shadow-soft">
-							<CardHeader>
-								<CardTitle>로그인이 필요합니다</CardTitle>
-								<CardDescription>
-									프로필을 관리하려면 먼저 로그인해 주세요.
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<Button asChild>
-									<Link to="/login">
-										<ArrowRight data-icon="inline-start" />
-										로그인
-									</Link>
-								</Button>
-							</CardContent>
-						</Card>
-					) : null}
+				{!currentUserQuery.isLoading &&
+				!currentUserQuery.isError &&
+				!currentUser ? (
+					<NoticePanel
+						action={
+							<Button asChild>
+								<Link to="/login">
+									<ArrowRight data-icon="inline-start" />
+									로그인
+								</Link>
+							</Button>
+						}
+						description="팀 스페이스 데모는 볼 수 있지만, 프로필 수정과 실제 매칭 요청은 로그인 후 사용할 수 있습니다."
+						title="로그인이 필요합니다"
+					/>
+				) : null}
 
-					{currentUser ? (
-						<>
-							<Card className="border-border/60 bg-white shadow-soft">
-								<CardHeader>
-									<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-										<div>
-											<CardTitle>진행 중인 팀</CardTitle>
-											<CardDescription>
-												한 번에 한 팀만 참여할 수 있으므로, 팀이 있으면 이
-												공간이 기본 작업대가 됩니다.
-											</CardDescription>
-										</div>
-										<Badge variant="brand">진행 중</Badge>
-									</div>
-								</CardHeader>
-								<CardContent className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-									<div>
-										<p className="text-xl font-semibold text-brand-ink">
-											{demoTeamSpace.name}
-										</p>
-										<p className="mt-2 text-sm leading-6 text-muted-foreground">
-											{demoTeamSpace.projectTitle} ·{" "}
-											{demoTeamSpace.nextMeetingLabel}
-										</p>
-									</div>
-									<Button asChild variant="outline">
-										<Link to="/team">
-											<ArrowRight data-icon="inline-start" />
-											열기
-										</Link>
-									</Button>
-								</CardContent>
-							</Card>
+				{currentUser ? (
+					<>
+						<div className="grid gap-4 md:grid-cols-4">
+							<MetricCard
+								label="개발 레벨"
+								trend="매칭 우선순위 입력값"
+								value={`Lv.${currentUser.level}`}
+							/>
+							<MetricCard
+								label="매너 온도"
+								tone="emerald"
+								trend="최근 팀 피드백 기준"
+								value={`${currentUser.temperature.toFixed(1)}`}
+							/>
+							<MetricCard
+								label="프로필"
+								tone={currentUser.description ? "emerald" : "amber"}
+								trend={
+									currentUser.description ? "소개 작성됨" : "소개를 채워주세요"
+								}
+								value={currentUser.description ? "Ready" : "Need"}
+							/>
+							<MetricCard
+								label="현재 팀"
+								tone="primary"
+								trend={demoTeamSpace.nextMeetingLabel}
+								value="1"
+							/>
+						</div>
 
-							<div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-								<Card className="border-border/60 bg-white/92 shadow-panel">
-									<CardHeader className="gap-5">
-										<div className="flex flex-col gap-4 md:flex-row md:items-center">
-											<Avatar className="size-24 border border-border/70 shadow-soft">
+						<div className="grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
+							<AppPanel>
+								<div className="p-5">
+									<div className="flex flex-col gap-5">
+										<div className="flex items-center gap-4">
+											<Avatar className="size-20 border border-border/70 shadow-soft">
 												<AvatarImage
 													alt={currentUser.nickname}
 													src={currentUser.profileImage ?? undefined}
@@ -326,28 +314,17 @@ export function ProfileView() {
 													{getProfileFallback(currentUser.nickname)}
 												</AvatarFallback>
 											</Avatar>
-											<div className="flex flex-col gap-3">
-												<CardTitle className="font-display text-3xl text-brand-ink">
+											<div className="min-w-0">
+												<Badge variant="brand">매칭 카드 미리보기</Badge>
+												<h2 className="mt-2 text-2xl font-semibold text-brand-ink">
 													{currentUser.nickname}
-												</CardTitle>
-												<CardDescription className="text-base">
+												</h2>
+												<p className="mt-1 text-sm text-muted-foreground">
 													{currentUser.email}
-												</CardDescription>
+												</p>
 											</div>
 										</div>
-									</CardHeader>
-									<CardContent className="flex flex-col gap-5">
-										<div className="grid gap-3 md:grid-cols-2">
-											<InfoCard
-												label="개발 레벨"
-												value={`Lv.${currentUser.level}`}
-											/>
-											<InfoCard
-												label="매너 온도"
-												value={`${currentUser.temperature}도`}
-											/>
-										</div>
-										<div className="rounded-xl border border-border/60 bg-secondary/30 p-4">
+										<div className="rounded-lg border border-border/70 bg-brand-warm p-4">
 											<p className="text-sm font-semibold text-brand-ink">
 												소개
 											</p>
@@ -355,382 +332,539 @@ export function ProfileView() {
 												{currentUser.description || "아직 소개가 없습니다."}
 											</p>
 										</div>
-										<Separator />
-										<Button asChild>
-											<Link to="/match">
+										<div className="grid gap-3 sm:grid-cols-2">
+											<InfoTile label="역할 힌트" value="FE 중심 협업" />
+											<InfoTile label="팀 상태" value={demoTeamSpace.name} />
+										</div>
+									</div>
+								</div>
+							</AppPanel>
+
+							<AppPanel>
+								<AppPanelHeader
+									action={
+										<Button asChild variant="outline">
+											<Link to="/team">
 												<ArrowRight data-icon="inline-start" />
-												매칭 요청하러 가기
+												열기
 											</Link>
 										</Button>
-									</CardContent>
-								</Card>
-
-								<div className="flex flex-col gap-6">
-									<Card className="border-border/60 bg-white shadow-soft">
-										<CardHeader>
-											<CardTitle>내 정보 수정</CardTitle>
-											<CardDescription>
-												닉네임, 소개, 레벨, 프로필 이미지를 수정합니다.
-											</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<form
-												className="flex flex-col gap-5"
-												onSubmit={(event) => void handleProfileSubmit(event)}
-											>
-												<div className="flex items-center gap-4 rounded-xl border border-border/70 bg-secondary/30 p-4">
-													<ProfileImagePicker
-														alt={form.nickname || "프로필"}
-														fallback={getProfileFallback(
-															form.nickname || form.email,
-														)}
-														inputId="profile-image"
-														invalid={Boolean(
-															touched.profileImage && formErrors.profileImage,
-														)}
-														onBlur={() => markTouched("profileImage")}
-														onFileChange={(file) => {
-															markTouched("profileImage");
-															setForm((current) => ({
-																...current,
-																profileImage: file,
-															}));
-														}}
-														previewUrl={
-															profileImagePreviewUrl ?? currentUser.profileImage
-														}
-													/>
-													<div className="flex flex-col gap-1">
-														<p className="font-semibold text-brand-ink">
-															{form.nickname || currentUser.nickname}
-														</p>
-														<p className="text-sm text-muted-foreground">
-															팀원이 처음 확인하는 이름과 이미지를 다듬어
-															보세요.
-														</p>
-														{touched.profileImage && formErrors.profileImage ? (
-															<FieldError>{formErrors.profileImage}</FieldError>
-														) : null}
-													</div>
-												</div>
-
-												<FieldGroup>
-													<Field>
-														<FieldLabel htmlFor="profile-email">
-															이메일
-														</FieldLabel>
-														<Input
-															disabled
-															id="profile-email"
-															type="email"
-															value={form.email}
-														/>
-													</Field>
-
-													<Field
-														data-invalid={Boolean(
-															touched.nickname && formErrors.nickname,
-														)}
-													>
-														<FieldLabel htmlFor="profile-nickname">
-															닉네임
-														</FieldLabel>
-														<Input
-															aria-invalid={Boolean(
-																touched.nickname && formErrors.nickname,
-															)}
-															id="profile-nickname"
-															maxLength={24}
-															onBlur={() => markTouched("nickname")}
-															onChange={(event) => {
-																markTouched("nickname");
-																setForm((current) => ({
-																	...current,
-																	nickname: event.target.value,
-																}));
-															}}
-															value={form.nickname}
-														/>
-														{touched.nickname && formErrors.nickname ? (
-															<FieldError>{formErrors.nickname}</FieldError>
-														) : null}
-													</Field>
-
-													<Field
-														data-invalid={Boolean(
-															touched.description && formErrors.description,
-														)}
-													>
-														<FieldLabel htmlFor="profile-description">
-															소개
-														</FieldLabel>
-														<textarea
-															aria-invalid={Boolean(
-																touched.description && formErrors.description,
-															)}
-															className="min-h-28 rounded-lg border border-input bg-white/90 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-															id="profile-description"
-															maxLength={500}
-															onBlur={() => markTouched("description")}
-															onChange={(event) => {
-																markTouched("description");
-																setForm((current) => ({
-																	...current,
-																	description: event.target.value,
-																}));
-															}}
-															placeholder="함께 일할 팀원에게 보여줄 소개를 입력하세요."
-															value={form.description}
-														/>
-														{touched.description && formErrors.description ? (
-															<FieldError>{formErrors.description}</FieldError>
-														) : (
-															<FieldDescription>
-																{form.description.length}/500
-															</FieldDescription>
-														)}
-													</Field>
-
-													<Field
-														data-invalid={Boolean(
-															touched.level && formErrors.level,
-														)}
-													>
-														<FieldLabel>개발 레벨</FieldLabel>
-														<div className="grid grid-cols-5 gap-2">
-															{levelOptions.map((level) => (
-																<Button
-																	aria-pressed={form.level === level}
-																	key={level}
-																	onClick={() => {
-																		markTouched("level");
-																		setForm((current) => ({
-																			...current,
-																			level,
-																		}));
-																	}}
-																	type="button"
-																	variant={
-																		form.level === level ? "default" : "outline"
-																	}
-																>
-																	Lv.{level}
-																</Button>
-															))}
-														</div>
-														<div className="flex justify-between text-xs text-muted-foreground">
-															<span>배우는 중</span>
-															<span>익숙하게 구현</span>
-														</div>
-													</Field>
-												</FieldGroup>
-
-												{updateCurrentUserMutation.error ? (
-													<FieldError>
-														{getApiErrorMessage(
-															updateCurrentUserMutation.error,
-														)}
-													</FieldError>
-												) : null}
-
-												{updateCurrentUserMutation.isSuccess ? (
-													<div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-700">
-														프로필 정보가 저장되었습니다.
-													</div>
-												) : null}
-
-												<Button
-													disabled={isProfileSubmitDisabled}
-													type="submit"
-												>
-													{updateCurrentUserMutation.isPending ? (
-														<LoaderCircle
-															className="animate-spin"
-															data-icon="inline-start"
-														/>
-													) : (
-														<Camera data-icon="inline-start" />
-													)}
-													변경사항 저장
-												</Button>
-											</form>
-										</CardContent>
-									</Card>
-
-									<Card className="border-border/60 bg-white shadow-soft">
-										<CardHeader>
-											<CardTitle>비밀번호 변경</CardTitle>
-											<CardDescription>
-												변경 후에는 다시 로그인해야 합니다.
-											</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<form
-												className="flex flex-col gap-4"
-												onSubmit={(event) => void handlePasswordSubmit(event)}
-											>
-												<FieldGroup>
-													<Field>
-														<FieldLabel htmlFor="current-password">
-															현재 비밀번호
-														</FieldLabel>
-														<Input
-															id="current-password"
-															minLength={8}
-															onChange={(event) =>
-																setPasswordForm((current) => ({
-																	...current,
-																	currentPassword: event.target.value,
-																}))
-															}
-															type="password"
-															value={passwordForm.currentPassword}
-														/>
-													</Field>
-													<Field>
-														<FieldLabel htmlFor="after-password">
-															새 비밀번호
-														</FieldLabel>
-														<Input
-															id="after-password"
-															minLength={8}
-															onChange={(event) =>
-																setPasswordForm((current) => ({
-																	...current,
-																	afterPassword: event.target.value,
-																}))
-															}
-															type="password"
-															value={passwordForm.afterPassword}
-														/>
-													</Field>
-												</FieldGroup>
-
-												{editPasswordMutation.error ? (
-													<FieldError>
-														{getApiErrorMessage(editPasswordMutation.error)}
-													</FieldError>
-												) : null}
-
-												<Button
-													disabled={isPasswordSubmitDisabled}
-													type="submit"
-												>
-													{editPasswordMutation.isPending ? (
-														<LoaderCircle
-															className="animate-spin"
-															data-icon="inline-start"
-														/>
-													) : (
-														<KeyRound data-icon="inline-start" />
-													)}
-													비밀번호 변경
-												</Button>
-											</form>
-										</CardContent>
-									</Card>
-
-									<Card className="border-destructive/20 bg-white shadow-soft">
-										<CardHeader>
-											<CardTitle>회원 탈퇴</CardTitle>
-											<CardDescription>
-												비밀번호 확인 후 계정을 삭제합니다.
-											</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<form
-												className="flex flex-col gap-4"
-												onSubmit={(event) => void handleDeleteSubmit(event)}
-											>
-												<FieldGroup>
-													<Field data-invalid={Boolean(deleteConfirmError)}>
-														<FieldLabel htmlFor="delete-account-confirm">
-															확인 문구
-														</FieldLabel>
-														<Input
-															aria-invalid={Boolean(deleteConfirmError)}
-															id="delete-account-confirm"
-															onChange={(event) =>
-																setDeleteForm((current) => ({
-																	...current,
-																	confirm: event.target.value,
-																}))
-															}
-															placeholder="회원 탈퇴"
-															value={deleteForm.confirm}
-														/>
-														{deleteConfirmError ? (
-															<FieldError>{deleteConfirmError}</FieldError>
-														) : null}
-													</Field>
-													<Field>
-														<FieldLabel htmlFor="delete-password">
-															비밀번호
-														</FieldLabel>
-														<Input
-															id="delete-password"
-															minLength={8}
-															onChange={(event) =>
-																setDeleteForm((current) => ({
-																	...current,
-																	password: event.target.value,
-																}))
-															}
-															type="password"
-															value={deleteForm.password}
-														/>
-													</Field>
-												</FieldGroup>
-
-												{deleteCurrentUserMutation.error ? (
-													<FieldError>
-														{getApiErrorMessage(
-															deleteCurrentUserMutation.error,
-														)}
-													</FieldError>
-												) : null}
-
-												<Button
-													disabled={isDeleteDisabled}
-													type="submit"
-													variant="outline"
-												>
-													{deleteCurrentUserMutation.isPending ? (
-														<LoaderCircle
-															className="animate-spin"
-															data-icon="inline-start"
-														/>
-													) : (
-														<Trash2 data-icon="inline-start" />
-													)}
-													회원 탈퇴
-												</Button>
-											</form>
-										</CardContent>
-									</Card>
+									}
+									description="한 번에 한 팀만 참여하는 구조라 현재 팀을 가장 먼저 보여줍니다."
+									eyebrow="Current team"
+									title={demoTeamSpace.name}
+								/>
+								<div className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+									<div>
+										<p className="text-lg font-semibold text-brand-ink">
+											{demoTeamSpace.projectTitle}
+										</p>
+										<p className="mt-2 text-sm leading-6 text-muted-foreground">
+											{demoTeamSpace.projectDescription}
+										</p>
+									</div>
+									<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
+										<p className="font-mono text-3xl font-semibold text-primary">
+											3
+										</p>
+										<p className="mt-1 text-xs font-semibold text-primary">
+											team members
+										</p>
+									</div>
 								</div>
+							</AppPanel>
+						</div>
+
+						<div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+							<EditableProfilePanel
+								currentUserProfileImage={currentUser.profileImage}
+								form={form}
+								formErrors={formErrors}
+								isProfileSubmitDisabled={isProfileSubmitDisabled}
+								markTouched={markTouched}
+								onSubmit={handleProfileSubmit}
+								profileImagePreviewUrl={profileImagePreviewUrl}
+								setForm={setForm}
+								touched={touched}
+								updateCurrentUserMutation={updateCurrentUserMutation}
+							/>
+
+							<div className="grid gap-5">
+								<SecurityPanel
+									editPasswordMutation={editPasswordMutation}
+									isPasswordSubmitDisabled={isPasswordSubmitDisabled}
+									onSubmit={handlePasswordSubmit}
+									passwordForm={passwordForm}
+									setPasswordForm={setPasswordForm}
+								/>
+								<DangerPanel
+									deleteConfirmError={visibleDeleteConfirmError}
+									deleteCurrentUserMutation={deleteCurrentUserMutation}
+									deleteForm={deleteForm}
+									isDeleteDisabled={isDeleteDisabled}
+									onSubmit={handleDeleteSubmit}
+									setDeleteForm={setDeleteForm}
+								/>
 							</div>
-						</>
-					) : null}
-				</Container>
-			</main>
-			<SiteFooter />
+						</div>
+					</>
+				) : null}
+			</div>
+		</AppShell>
+	);
+}
+
+interface EditableProfilePanelProps {
+	currentUserProfileImage: string | null;
+	form: {
+		description: string;
+		email: string;
+		level: number;
+		nickname: string;
+		profileImage: File | null;
+	};
+	formErrors: ReturnType<typeof validateProfileEditForm>;
+	isProfileSubmitDisabled: boolean;
+	markTouched: (
+		field: "description" | "level" | "nickname" | "profileImage",
+	) => void;
+	onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+	profileImagePreviewUrl: string | null;
+	setForm: React.Dispatch<
+		React.SetStateAction<{
+			description: string;
+			email: string;
+			level: number;
+			nickname: string;
+			profileImage: File | null;
+		}>
+	>;
+	touched: {
+		description: boolean;
+		level: boolean;
+		nickname: boolean;
+		profileImage: boolean;
+	};
+	updateCurrentUserMutation: ReturnType<typeof useUpdateCurrentUserMutation>;
+}
+
+function EditableProfilePanel({
+	currentUserProfileImage,
+	form,
+	formErrors,
+	isProfileSubmitDisabled,
+	markTouched,
+	onSubmit,
+	profileImagePreviewUrl,
+	setForm,
+	touched,
+	updateCurrentUserMutation,
+}: EditableProfilePanelProps) {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="팀원이 먼저 확인하는 이름, 소개, 레벨을 다듬습니다."
+				eyebrow="Profile editor"
+				title="내 정보 수정"
+			/>
+			<form
+				className="grid gap-5 p-5"
+				onSubmit={(event) => void onSubmit(event)}
+			>
+				<div className="flex items-center gap-4 rounded-lg border border-border/70 bg-brand-warm p-4">
+					<ProfileImagePicker
+						alt={form.nickname || "프로필"}
+						fallback={getProfileFallback(form.nickname || form.email)}
+						inputId="profile-image"
+						invalid={Boolean(touched.profileImage && formErrors.profileImage)}
+						onBlur={() => markTouched("profileImage")}
+						onFileChange={(file) => {
+							markTouched("profileImage");
+							setForm((current) => ({
+								...current,
+								profileImage: file,
+							}));
+						}}
+						previewUrl={profileImagePreviewUrl ?? currentUserProfileImage}
+					/>
+					<div className="min-w-0">
+						<p className="font-semibold text-brand-ink">
+							{form.nickname || "닉네임"}
+						</p>
+						<p className="mt-1 text-sm leading-6 text-muted-foreground">
+							프로필 이미지는 매칭 제안 카드와 팀원 목록에 함께 표시됩니다.
+						</p>
+						{touched.profileImage && formErrors.profileImage ? (
+							<FieldError>{formErrors.profileImage}</FieldError>
+						) : null}
+					</div>
+				</div>
+
+				<FieldGroup>
+					<Field>
+						<FieldLabel htmlFor="profile-email">이메일</FieldLabel>
+						<Input
+							className="h-11 bg-secondary/40"
+							disabled
+							id="profile-email"
+							type="email"
+							value={form.email}
+						/>
+					</Field>
+
+					<Field
+						data-invalid={Boolean(touched.nickname && formErrors.nickname)}
+					>
+						<FieldLabel htmlFor="profile-nickname">닉네임</FieldLabel>
+						<Input
+							aria-invalid={Boolean(touched.nickname && formErrors.nickname)}
+							className="h-11 bg-white"
+							id="profile-nickname"
+							maxLength={24}
+							onBlur={() => markTouched("nickname")}
+							onChange={(event) => {
+								markTouched("nickname");
+								setForm((current) => ({
+									...current,
+									nickname: event.target.value,
+								}));
+							}}
+							value={form.nickname}
+						/>
+						{touched.nickname && formErrors.nickname ? (
+							<FieldError>{formErrors.nickname}</FieldError>
+						) : null}
+					</Field>
+
+					<Field
+						data-invalid={Boolean(
+							touched.description && formErrors.description,
+						)}
+					>
+						<FieldLabel htmlFor="profile-description">소개</FieldLabel>
+						<textarea
+							aria-invalid={Boolean(
+								touched.description && formErrors.description,
+							)}
+							className="min-h-32 rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+							id="profile-description"
+							maxLength={500}
+							onBlur={() => markTouched("description")}
+							onChange={(event) => {
+								markTouched("description");
+								setForm((current) => ({
+									...current,
+									description: event.target.value,
+								}));
+							}}
+							placeholder="함께 일할 팀원에게 보여줄 소개를 입력하세요."
+							value={form.description}
+						/>
+						{touched.description && formErrors.description ? (
+							<FieldError>{formErrors.description}</FieldError>
+						) : (
+							<FieldDescription>{form.description.length}/500</FieldDescription>
+						)}
+					</Field>
+
+					<Field data-invalid={Boolean(touched.level && formErrors.level)}>
+						<FieldLabel>개발 레벨</FieldLabel>
+						<div className="grid grid-cols-5 gap-2">
+							{levelOptions.map((level) => (
+								<button
+									aria-pressed={form.level === level}
+									className={cn(
+										"h-11 rounded-lg border text-sm font-semibold transition-colors",
+										form.level === level
+											? "border-primary bg-primary text-primary-foreground shadow-soft"
+											: "border-border/70 bg-white text-muted-foreground hover:bg-secondary hover:text-foreground",
+									)}
+									key={level}
+									onClick={() => {
+										markTouched("level");
+										setForm((current) => ({
+											...current,
+											level,
+										}));
+									}}
+									type="button"
+								>
+									Lv.{level}
+								</button>
+							))}
+						</div>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<span>배우는 중</span>
+							<span>익숙하게 구현</span>
+						</div>
+					</Field>
+				</FieldGroup>
+
+				{updateCurrentUserMutation.error ? (
+					<FieldError>
+						{getApiErrorMessage(updateCurrentUserMutation.error)}
+					</FieldError>
+				) : null}
+
+				{updateCurrentUserMutation.isSuccess ? (
+					<div className="rounded-lg border border-emerald-500/25 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
+						프로필 정보가 저장되었습니다.
+					</div>
+				) : null}
+
+				<Button disabled={isProfileSubmitDisabled} type="submit">
+					{updateCurrentUserMutation.isPending ? (
+						<LoaderCircle className="animate-spin" data-icon="inline-start" />
+					) : (
+						<Camera data-icon="inline-start" />
+					)}
+					변경사항 저장
+				</Button>
+			</form>
+		</AppPanel>
+	);
+}
+
+function SecurityPanel({
+	editPasswordMutation,
+	isPasswordSubmitDisabled,
+	onSubmit,
+	passwordForm,
+	setPasswordForm,
+}: {
+	editPasswordMutation: ReturnType<typeof useEditPasswordMutation>;
+	isPasswordSubmitDisabled: boolean;
+	onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+	passwordForm: { afterPassword: string; currentPassword: string };
+	setPasswordForm: React.Dispatch<
+		React.SetStateAction<{ afterPassword: string; currentPassword: string }>
+	>;
+}) {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="변경 후에는 다시 로그인해야 합니다."
+				eyebrow="Security"
+				title="비밀번호 변경"
+			/>
+			<form
+				className="grid gap-4 p-5"
+				onSubmit={(event) => void onSubmit(event)}
+			>
+				<FieldGroup>
+					<Field>
+						<FieldLabel htmlFor="current-password">현재 비밀번호</FieldLabel>
+						<Input
+							className="h-11 bg-white"
+							id="current-password"
+							minLength={8}
+							onChange={(event) =>
+								setPasswordForm((current) => ({
+									...current,
+									currentPassword: event.target.value,
+								}))
+							}
+							type="password"
+							value={passwordForm.currentPassword}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="after-password">새 비밀번호</FieldLabel>
+						<Input
+							className="h-11 bg-white"
+							id="after-password"
+							minLength={8}
+							onChange={(event) =>
+								setPasswordForm((current) => ({
+									...current,
+									afterPassword: event.target.value,
+								}))
+							}
+							type="password"
+							value={passwordForm.afterPassword}
+						/>
+					</Field>
+				</FieldGroup>
+
+				{editPasswordMutation.error ? (
+					<FieldError>
+						{getApiErrorMessage(editPasswordMutation.error)}
+					</FieldError>
+				) : null}
+
+				<Button disabled={isPasswordSubmitDisabled} type="submit">
+					{editPasswordMutation.isPending ? (
+						<LoaderCircle className="animate-spin" data-icon="inline-start" />
+					) : (
+						<KeyRound data-icon="inline-start" />
+					)}
+					비밀번호 변경
+				</Button>
+			</form>
+		</AppPanel>
+	);
+}
+
+function DangerPanel({
+	deleteConfirmError,
+	deleteCurrentUserMutation,
+	deleteForm,
+	isDeleteDisabled,
+	onSubmit,
+	setDeleteForm,
+}: {
+	deleteConfirmError: string | undefined;
+	deleteCurrentUserMutation: ReturnType<typeof useDeleteCurrentUserMutation>;
+	deleteForm: { confirm: string; password: string };
+	isDeleteDisabled: boolean;
+	onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+	setDeleteForm: React.Dispatch<
+		React.SetStateAction<{ confirm: string; password: string }>
+	>;
+}) {
+	return (
+		<AppPanel className="border-rose-200">
+			<AppPanelHeader
+				description="비밀번호 확인 후 계정을 삭제합니다."
+				eyebrow="Danger zone"
+				title="회원 탈퇴"
+			/>
+			<form
+				className="grid gap-4 p-5"
+				onSubmit={(event) => void onSubmit(event)}
+			>
+				<div className="flex gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-rose-700">
+					<ShieldAlert className="mt-0.5 size-4 shrink-0" />
+					<p className="text-sm leading-6">
+						삭제 후에는 프로필, 매칭 요청, 팀 연결 정보를 되돌릴 수 없습니다.
+					</p>
+				</div>
+				<FieldGroup>
+					<Field data-invalid={Boolean(deleteConfirmError)}>
+						<FieldLabel htmlFor="delete-account-confirm">확인 문구</FieldLabel>
+						<Input
+							aria-invalid={Boolean(deleteConfirmError)}
+							className="h-11 bg-white"
+							id="delete-account-confirm"
+							onChange={(event) =>
+								setDeleteForm((current) => ({
+									...current,
+									confirm: event.target.value,
+								}))
+							}
+							placeholder="회원 탈퇴"
+							value={deleteForm.confirm}
+						/>
+						{deleteConfirmError ? (
+							<FieldError>{deleteConfirmError}</FieldError>
+						) : null}
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="delete-password">비밀번호</FieldLabel>
+						<Input
+							className="h-11 bg-white"
+							id="delete-password"
+							minLength={8}
+							onChange={(event) =>
+								setDeleteForm((current) => ({
+									...current,
+									password: event.target.value,
+								}))
+							}
+							type="password"
+							value={deleteForm.password}
+						/>
+					</Field>
+				</FieldGroup>
+
+				{deleteCurrentUserMutation.error ? (
+					<FieldError>
+						{getApiErrorMessage(deleteCurrentUserMutation.error)}
+					</FieldError>
+				) : null}
+
+				<Button disabled={isDeleteDisabled} type="submit" variant="outline">
+					{deleteCurrentUserMutation.isPending ? (
+						<LoaderCircle className="animate-spin" data-icon="inline-start" />
+					) : (
+						<Trash2 data-icon="inline-start" />
+					)}
+					회원 탈퇴
+				</Button>
+			</form>
+		</AppPanel>
+	);
+}
+
+function ProfileRail({ isSignedIn }: { isSignedIn: boolean }) {
+	return (
+		<AppPanel>
+			<div className="p-5">
+				<div className="flex items-center gap-3">
+					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+						<UserRound className="size-5" />
+					</div>
+					<div>
+						<p className="text-sm font-semibold text-brand-ink">
+							프로필 체크리스트
+						</p>
+						<p className="text-xs text-muted-foreground">
+							{isSignedIn ? "매칭 전 확인" : "로그인 필요"}
+						</p>
+					</div>
+				</div>
+				<div className="mt-5 grid gap-3">
+					<RailItem label="이메일 인증" state={isSignedIn ? "완료" : "대기"} />
+					<RailItem label="닉네임/레벨" state={isSignedIn ? "확인" : "대기"} />
+					<RailItem label="팀 스페이스" state="데모 가능" />
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RailItem({ label, state }: { label: string; state: string }) {
+	return (
+		<div className="flex items-center justify-between rounded-lg border border-border/70 bg-white px-3 py-2">
+			<span className="text-sm text-muted-foreground">{label}</span>
+			<span className="text-xs font-semibold text-primary">{state}</span>
 		</div>
 	);
 }
 
-interface InfoCardProps {
-	label: string;
-	value: string;
-}
-
-function InfoCard({ label, value }: InfoCardProps) {
+function InfoTile({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="rounded-xl border border-border/60 bg-white/80 px-4 py-3">
-			<p className="text-sm text-muted-foreground">{label}</p>
+		<div className="rounded-lg border border-border/70 bg-white p-3 shadow-crisp">
+			<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+				{label}
+			</p>
 			<p className="mt-2 text-sm font-semibold leading-6 text-brand-ink">
 				{value}
 			</p>
 		</div>
+	);
+}
+
+function NoticePanel({
+	action,
+	description,
+	title,
+}: {
+	action?: React.ReactNode;
+	description: string;
+	title: string;
+}) {
+	return (
+		<AppPanel>
+			<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+				<div>
+					<h2 className="text-xl font-semibold text-brand-ink">{title}</h2>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						{description}
+					</p>
+				</div>
+				{action ? <div className="shrink-0">{action}</div> : null}
+			</div>
+		</AppPanel>
 	);
 }

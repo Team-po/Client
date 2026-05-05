@@ -34,3 +34,4 @@
 
 ## 2026-05-05
 - API contract alignment: `openapi/openapi.yaml`, API clients, hooks, and MSW mocks now mirror the current Spring server controllers for signup email auth, user profile/account APIs, matching sessions, and project-group admin permission endpoints without adding new dependencies.
+- Internal app redesign approach: use LazyWeb-informed, decision-first SaaS dashboard patterns for `/login`, `/signup`, `/verify-email`, `/me`, `/match`, and `/team`, while preserving the landing page and `/deck/*` presentation routes. Keep the existing CSS variable color system, avoid new dependencies, and introduce `src/components/app-shell.tsx` as the shared internal app chrome.

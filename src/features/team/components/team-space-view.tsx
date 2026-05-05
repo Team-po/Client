@@ -1,6 +1,6 @@
 import {
-	useMemo,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 	type ComponentType,
@@ -9,29 +9,28 @@ import {
 } from "react";
 import {
 	BookOpenText,
-	CalendarClock,
 	CheckCircle2,
-	ChevronRight,
 	GitBranch,
 	GitPullRequest,
 	Github,
+	Home,
 	MessageSquareText,
 	PencilLine,
 	Plus,
-	Radio,
 	Save,
 	SendHorizontal,
 	Sparkles,
 	Trash2,
-	UsersRound,
 } from "lucide-react";
 
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import {
+	AppPanel,
+	AppPanelHeader,
+	AppShell,
+	MetricCard,
+} from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Container } from "@/components/ui/container";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
 import type {
@@ -63,7 +62,7 @@ const tabs: Array<{
 	id: TeamTab;
 	label: string;
 }> = [
-	{ icon: Radio, id: "overview", label: "홈" },
+	{ icon: Home, id: "overview", label: "홈" },
 	{ icon: Sparkles, id: "guide", label: "가이드" },
 	{ icon: BookOpenText, id: "rules", label: "룰" },
 	{ icon: CheckCircle2, id: "checklist", label: "체크리스트" },
@@ -73,7 +72,7 @@ const tabs: Array<{
 
 const checklistTone: Record<TeamChecklistItem["status"], string> = {
 	doing: "border-primary/25 bg-primary/10 text-primary",
-	done: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700",
+	done: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
 	todo: "border-border bg-secondary/45 text-muted-foreground",
 };
 
@@ -84,11 +83,11 @@ const checklistLabels: Record<TeamChecklistItem["status"], string> = {
 };
 
 const contributionLevelClass = [
-	"bg-secondary shadow-inner",
-	"bg-emerald-100 shadow-[inset_0_-8px_14px_rgba(16,185,129,0.12)]",
-	"bg-emerald-300 shadow-[inset_0_-10px_14px_rgba(5,150,105,0.18)]",
-	"bg-emerald-500 shadow-[inset_0_-12px_16px_rgba(4,120,87,0.24)]",
-	"bg-emerald-700 shadow-[inset_0_-14px_18px_rgba(6,78,59,0.3)]",
+	"bg-secondary",
+	"bg-emerald-100",
+	"bg-emerald-300",
+	"bg-emerald-500",
+	"bg-emerald-700",
 ] as const;
 
 export function TeamSpaceView() {
@@ -106,6 +105,7 @@ export function TeamSpaceView() {
 		() => lifecycleSteps.findIndex((step) => step.status === lifecycleStatus),
 		[lifecycleStatus],
 	);
+	const metrics = getTeamMetrics(checklist);
 
 	function handleChecklistStatusChange(
 		itemId: string,
@@ -150,192 +150,199 @@ export function TeamSpaceView() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col bg-secondary/20">
-			<SiteHeader />
-			<main className="flex-1 py-8 md:py-12">
-				<Container className="flex flex-col gap-6">
-					<section className="overflow-hidden rounded-[2rem] border border-border/70 bg-white shadow-panel">
-						<div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-							<div className="flex flex-col gap-6 p-6 md:p-8">
-								<div className="flex flex-wrap items-center gap-2">
-									<Badge variant="brand">
-										{isSignedIn ? "Team Space" : "Team Space Preview"}
-									</Badge>
-									<Badge variant="neutral">
-										{demoTeamSpace.nextMeetingLabel}
-									</Badge>
+		<AppShell
+			description={demoTeamSpace.projectDescription}
+			eyebrow={isSignedIn ? "Team workspace" : "Team workspace preview"}
+			rail={
+				<TeamRail
+					activeStepIndex={activeStepIndex}
+					isSignedIn={isSignedIn}
+					lifecycleStatus={lifecycleStatus}
+					setLifecycleStatus={setLifecycleStatus}
+					setTeamName={setTeamName}
+					teamName={teamName}
+				/>
+			}
+			title={teamName}
+		>
+			<div className="grid gap-5">
+				<div className="grid gap-4 md:grid-cols-4">
+					{metrics.map((metric) => (
+						<MetricCard
+							key={metric.label}
+							label={metric.label}
+							tone={metric.tone}
+							trend={metric.trend}
+							value={metric.value}
+						/>
+					))}
+				</div>
+
+				{!isSignedIn ? (
+					<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-primary">
+						지금은 샘플 팀 스페이스를 둘러보는 프리뷰입니다. 로그인하면 내 팀
+						기준으로 룰, 체크리스트, 메신저를 이어서 관리할 수 있습니다.
+					</div>
+				) : null}
+
+				<AppPanel>
+					<div className="flex gap-2 overflow-x-auto p-2">
+						{tabs.map((tab) => {
+							const Icon = tab.icon;
+
+							return (
+								<button
+									className={cn(
+										"flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors",
+										selectedTab === tab.id
+											? "bg-primary text-primary-foreground shadow-soft"
+											: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+									)}
+									key={tab.id}
+									onClick={() => setSelectedTab(tab.id)}
+									type="button"
+								>
+									<Icon className="size-4" />
+									{tab.label}
+								</button>
+							);
+						})}
+					</div>
+				</AppPanel>
+
+				<section className="min-w-0">
+					{selectedTab === "overview" ? (
+						<OverviewPanel checklist={checklist} />
+					) : null}
+					{selectedTab === "guide" ? <GuidePanel /> : null}
+					{selectedTab === "rules" ? (
+						<RulesPanel
+							onRulesChange={setRulesMarkdown}
+							rulesMarkdown={rulesMarkdown}
+						/>
+					) : null}
+					{selectedTab === "checklist" ? (
+						<ChecklistPanel
+							checklist={checklist}
+							onAdd={handleChecklistAdd}
+							onDelete={handleChecklistDelete}
+							onStatusChange={handleChecklistStatusChange}
+						/>
+					) : null}
+					{selectedTab === "github" ? <GithubPanel /> : null}
+					{selectedTab === "chat" ? (
+						<ChatPanel messages={messages} onSend={handleSendMessage} />
+					) : null}
+				</section>
+			</div>
+		</AppShell>
+	);
+}
+
+function TeamRail({
+	activeStepIndex,
+	isSignedIn,
+	lifecycleStatus,
+	setLifecycleStatus,
+	setTeamName,
+	teamName,
+}: {
+	activeStepIndex: number;
+	isSignedIn: boolean;
+	lifecycleStatus: ProjectLifecycleStatus;
+	setLifecycleStatus: (status: ProjectLifecycleStatus) => void;
+	setTeamName: (name: string) => void;
+	teamName: string;
+}) {
+	return (
+		<div className="grid gap-5">
+			<AppPanel>
+				<AppPanelHeader
+					description={demoTeamSpace.nextMeetingLabel}
+					eyebrow="Lifecycle"
+					title="프로젝트 단계"
+				/>
+				<div className="grid gap-4 p-5">
+					{lifecycleSteps.map((step, index) => {
+						const isDone = activeStepIndex >= 0 && index < activeStepIndex;
+						const isActive = index === activeStepIndex;
+
+						return (
+							<div className="flex items-start gap-3" key={step.status}>
+								<div
+									className={cn(
+										"flex size-8 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold",
+										isActive
+											? "border-primary bg-primary text-primary-foreground"
+											: isDone
+												? "border-emerald-500 bg-emerald-500 text-white"
+												: "border-border bg-white text-muted-foreground",
+									)}
+								>
+									{index + 1}
 								</div>
-								<div className="flex flex-col gap-3">
-									<h1 className="text-balance font-display text-4xl font-semibold leading-tight text-brand-ink md:text-5xl">
-										{teamName}
-									</h1>
-									<p className="max-w-3xl text-base leading-7 text-muted-foreground">
-										{demoTeamSpace.projectDescription}
+								<div className="min-w-0">
+									<p className="font-semibold text-brand-ink">{step.label}</p>
+									<p className="mt-1 text-sm leading-6 text-muted-foreground">
+										{isActive
+											? "현재 단계입니다."
+											: isDone
+												? "완료된 단계입니다."
+												: "다음에 이동할 단계입니다."}
 									</p>
 								</div>
-								<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-									{getTeamMetrics(checklist).map((metric) => (
-										<div
-											className="rounded-xl border border-border/70 bg-secondary/35 p-4"
-											key={metric.label}
-										>
-											<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-												{metric.label}
-											</p>
-											<p className="mt-2 font-mono text-3xl font-semibold text-brand-ink">
-												{metric.value}
-											</p>
-											<p className="mt-1 text-xs text-muted-foreground">
-												{metric.trend}
-											</p>
-										</div>
-									))}
-								</div>
-								{!isSignedIn ? (
-									<div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-sm leading-6 text-primary">
-										지금은 샘플 팀 스페이스를 둘러보는 프리뷰입니다. 로그인하면
-										내 팀 기준으로 룰, 체크리스트, 메신저를 이어서 관리할 수
-										있습니다.
-									</div>
-								) : null}
 							</div>
-							<div className="border-t border-border/70 bg-brand-warm p-6 md:p-8 lg:border-l lg:border-t-0">
-								<p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-									Project lifecycle
-								</p>
-								<div className="mt-5 flex flex-col gap-4">
-									{lifecycleSteps.map((step, index) => {
-										const isDone = index < activeStepIndex;
-										const isActive = index === activeStepIndex;
-
-										return (
-											<div
-												className="flex items-center gap-3"
-												key={step.status}
-											>
-												<div
-													className={cn(
-														"flex size-8 items-center justify-center rounded-full border text-xs font-semibold",
-														isActive
-															? "border-primary bg-primary text-primary-foreground"
-															: isDone
-																? "border-emerald-500 bg-emerald-500 text-white"
-																: "border-border bg-white text-muted-foreground",
-													)}
-												>
-													{index + 1}
-												</div>
-												<div className="min-w-0 flex-1">
-													<p className="font-semibold text-brand-ink">
-														{step.label}
-													</p>
-													<p className="text-sm text-muted-foreground">
-														{isActive
-															? "지금 팀이 머무는 단계입니다."
-															: isDone
-																? "완료된 단계입니다."
-																: "다음에 이동할 단계입니다."}
-													</p>
-												</div>
-											</div>
-										);
-									})}
-								</div>
-								<div className="mt-6 grid gap-4 rounded-xl border border-border/70 bg-white p-4">
-									<label
-										className="grid gap-2 text-sm font-semibold text-brand-ink"
-										htmlFor="team-name"
-									>
-										팀 이름
-										<input
-											className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-											id="team-name"
-											onChange={(event) => setTeamName(event.target.value)}
-											value={teamName}
-										/>
-									</label>
-									<label
-										className="grid gap-2 text-sm font-semibold text-brand-ink"
-										htmlFor="team-status"
-									>
-										프로젝트 상태
-										<select
-											className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-											id="team-status"
-											onChange={(event) =>
-												setLifecycleStatus(
-													event.target.value as ProjectLifecycleStatus,
-												)
-											}
-											value={lifecycleStatus}
-										>
-											{lifecycleOptions.map((option) => (
-												<option key={option.status} value={option.status}>
-													{option.label}
-												</option>
-											))}
-										</select>
-									</label>
-								</div>
-							</div>
+						);
+					})}
+					{lifecycleStatus === "paused" ? (
+						<div className="rounded-lg border border-amber-500/25 bg-amber-50 p-3 text-sm font-semibold text-amber-700">
+							프로젝트가 일시 중지 상태입니다.
 						</div>
-					</section>
+					) : null}
+				</div>
+			</AppPanel>
 
-					<div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
-						<nav className="h-fit rounded-2xl border border-border/70 bg-white p-2 shadow-soft">
-							{tabs.map((tab) => {
-								const Icon = tab.icon;
-
-								return (
-									<button
-										className={cn(
-											"flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors",
-											selectedTab === tab.id
-												? "bg-primary text-primary-foreground shadow-soft"
-												: "text-muted-foreground hover:bg-secondary hover:text-foreground",
-										)}
-										key={tab.id}
-										onClick={() => setSelectedTab(tab.id)}
-										type="button"
-									>
-										<span className="flex items-center gap-2">
-											<Icon className="size-4" />
-											{tab.label}
-										</span>
-										<ChevronRight className="size-4" />
-									</button>
-								);
-							})}
-						</nav>
-
-						<section className="min-w-0">
-							{selectedTab === "overview" ? (
-								<OverviewPanel checklist={checklist} />
-							) : null}
-							{selectedTab === "guide" ? <GuidePanel /> : null}
-							{selectedTab === "rules" ? (
-								<RulesPanel
-									onRulesChange={setRulesMarkdown}
-									rulesMarkdown={rulesMarkdown}
-								/>
-							) : null}
-							{selectedTab === "checklist" ? (
-								<ChecklistPanel
-									checklist={checklist}
-									onAdd={handleChecklistAdd}
-									onDelete={handleChecklistDelete}
-									onStatusChange={handleChecklistStatusChange}
-								/>
-							) : null}
-							{selectedTab === "github" ? <GithubPanel /> : null}
-							{selectedTab === "chat" ? (
-								<ChatPanel messages={messages} onSend={handleSendMessage} />
-							) : null}
-						</section>
-					</div>
-				</Container>
-			</main>
-			<SiteFooter />
+			<AppPanel>
+				<AppPanelHeader
+					description={isSignedIn ? "내 팀 설정" : "프리뷰 설정"}
+					eyebrow="Controls"
+					title="팀 상태 편집"
+				/>
+				<div className="grid gap-4 p-5">
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="team-name"
+					>
+						팀 이름
+						<input
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							id="team-name"
+							onChange={(event) => setTeamName(event.target.value)}
+							value={teamName}
+						/>
+					</label>
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="team-status"
+					>
+						프로젝트 상태
+						<select
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							id="team-status"
+							onChange={(event) =>
+								setLifecycleStatus(event.target.value as ProjectLifecycleStatus)
+							}
+							value={lifecycleStatus}
+						>
+							{lifecycleOptions.map((option) => (
+								<option key={option.status} value={option.status}>
+									{option.label}
+								</option>
+							))}
+						</select>
+					</label>
+				</div>
+			</AppPanel>
 		</div>
 	);
 }
@@ -349,15 +356,15 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 	const doneTasks = checklist.filter((item) => item.status === "done").length;
 
 	return (
-		<div className="grid gap-6 xl:grid-cols-[1fr_0.86fr]">
-			<Card className="border-border/70 bg-white shadow-soft">
-				<CardContent className="space-y-5 p-6">
-					<PanelTitle
-						description="회의록에서 정리된 팀 스페이스 기능을 한 화면에 모았습니다."
-						icon={UsersRound}
-						title={demoTeamSpace.projectTitle}
-					/>
-					<div className="rounded-xl border border-border/70 bg-secondary/35 p-4">
+		<div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
+			<AppPanel>
+				<AppPanelHeader
+					description="프로젝트 의도, MVP, 팀원 역할을 한 번에 확인합니다."
+					eyebrow="Project"
+					title={demoTeamSpace.projectTitle}
+				/>
+				<div className="grid gap-5 p-5">
+					<div className="rounded-lg border border-border/70 bg-brand-warm p-4">
 						<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
 							MVP
 						</p>
@@ -368,11 +375,11 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 					<div className="grid gap-3">
 						{demoTeamSpace.members.map((member) => (
 							<article
-								className="grid min-w-0 gap-4 rounded-xl border border-border/70 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_minmax(10rem,0.9fr)] md:items-center"
+								className="grid gap-4 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-[minmax(0,1fr)_minmax(10rem,0.9fr)] md:items-center"
 								key={member.id}
 							>
 								<div className="flex min-w-0 items-center gap-3">
-									<div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+									<div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
 										{member.name.slice(0, 1)}
 									</div>
 									<div className="min-w-0 flex-1">
@@ -401,17 +408,17 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 							</article>
 						))}
 					</div>
-				</CardContent>
-			</Card>
+				</div>
+			</AppPanel>
 
-			<Card className="border-border/70 bg-white shadow-soft">
-				<CardContent className="space-y-4 p-6">
-					<PanelTitle
-						description="오늘 바로 결정하면 좋은 항목입니다."
-						icon={CalendarClock}
-						title="오늘의 진행"
-					/>
-					<div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
+			<AppPanel>
+				<AppPanelHeader
+					description="오늘 바로 결정하면 좋은 항목입니다."
+					eyebrow="Today"
+					title="오늘의 진행"
+				/>
+				<div className="grid gap-4 p-5">
+					<div className="rounded-lg border border-primary/15 bg-primary/5 p-4">
 						<p className="text-sm font-semibold text-brand-ink">
 							체크리스트 {doneTasks}/{totalTasks} 완료
 						</p>
@@ -424,12 +431,12 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 					</div>
 					{checklist.slice(0, 3).map((item) => (
 						<div
-							className="flex flex-col gap-3 rounded-xl border border-border/70 bg-secondary/30 p-4 sm:flex-row sm:items-start"
+							className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-start"
 							key={item.id}
 						>
 							<span
 								className={cn(
-									"w-fit rounded-full border px-2 py-0.5 text-xs font-semibold",
+									"w-fit rounded-md border px-2 py-0.5 text-xs font-semibold",
 									checklistTone[item.status],
 								)}
 							>
@@ -443,24 +450,24 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 							</div>
 						</div>
 					))}
-				</CardContent>
-			</Card>
+				</div>
+			</AppPanel>
 		</div>
 	);
 }
 
 function GuidePanel() {
 	return (
-		<Card className="border-border/70 bg-white shadow-soft">
-			<CardContent className="space-y-5 p-6">
-				<PanelTitle
-					description="주제와 MVP만 보고 팀이 논의할 방향을 잡아주는 문서 영역입니다."
-					icon={Sparkles}
-					title={demoTeamSpace.guideline.title}
-				/>
+		<AppPanel>
+			<AppPanelHeader
+				description="주제와 MVP만 보고 팀이 논의할 방향을 잡아주는 문서 영역입니다."
+				eyebrow="Guide"
+				title={demoTeamSpace.guideline.title}
+			/>
+			<div className="grid gap-4 p-5 md:grid-cols-3">
 				{demoTeamSpace.guideline.sections.map((section) => (
 					<div
-						className="rounded-xl border border-border/70 bg-secondary/30 p-5"
+						className="rounded-lg border border-border/70 bg-brand-warm p-5"
 						key={section.id}
 					>
 						<h3 className="text-lg font-semibold">{section.title}</h3>
@@ -469,8 +476,8 @@ function GuidePanel() {
 						</p>
 					</div>
 				))}
-			</CardContent>
-		</Card>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -498,15 +505,10 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 	}
 
 	return (
-		<Card className="border-border/70 bg-white shadow-soft">
-			<CardContent className="space-y-5 p-6">
-				<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-					<PanelTitle
-						description="Markdown 템플릿을 팀원이 함께 다듬는 공간입니다."
-						icon={BookOpenText}
-						title="팀 룰"
-					/>
-					{isEditing ? (
+		<AppPanel>
+			<AppPanelHeader
+				action={
+					isEditing ? (
 						<div className="flex flex-wrap gap-2">
 							<Button onClick={handleSave} type="button">
 								<Save data-icon="inline-start" />
@@ -528,8 +530,13 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 						>
 							<PencilLine data-icon="inline-start" />룰 수정
 						</Button>
-					)}
-				</div>
+					)
+				}
+				description="Markdown 템플릿을 팀원이 함께 다듬는 공간입니다."
+				eyebrow="Rulebook"
+				title="팀 룰"
+			/>
+			<div className="p-5">
 				{isEditing ? (
 					<div className="grid gap-3">
 						<label
@@ -539,7 +546,7 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 							Markdown 편집
 						</label>
 						<textarea
-							className="min-h-72 rounded-xl border border-input bg-white px-4 py-3 font-mono text-sm leading-7 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className="min-h-72 rounded-lg border border-input bg-white px-4 py-3 font-mono text-sm leading-7 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="team-rules"
 							onChange={(event) => setDraftRules(event.target.value)}
 							value={draftRules}
@@ -549,7 +556,7 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 						</p>
 					</div>
 				) : (
-					<div className="rounded-xl border border-border/70 bg-secondary/30 p-5">
+					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 						<div className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
 							<div>
 								<p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -564,10 +571,10 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 						<div className="mt-4 grid gap-3">
 							{renderedRules.items.map((item, index) => (
 								<div
-									className="flex gap-3 rounded-xl border border-border/70 bg-white p-4"
+									className="flex gap-3 rounded-lg border border-border/70 bg-white p-4"
 									key={item}
 								>
-									<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-xs font-semibold text-primary">
+									<span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 font-mono text-xs font-semibold text-primary">
 										{index + 1}
 									</span>
 									<p className="min-w-0 text-sm leading-6 text-brand-ink">
@@ -578,8 +585,8 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 						</div>
 					</div>
 				)}
-			</CardContent>
-		</Card>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -618,15 +625,15 @@ function ChecklistPanel({
 	}
 
 	return (
-		<Card className="border-border/70 bg-white shadow-soft">
-			<CardContent className="space-y-5 p-6">
-				<PanelTitle
-					description="할 일을 적으면 작업 플로우와 고려사항을 받을 수 있게 연결될 영역입니다."
-					icon={CheckCircle2}
-					title="체크리스트"
-				/>
+		<AppPanel>
+			<AppPanelHeader
+				description="할 일을 적으면 작업 플로우와 고려사항을 받을 수 있게 연결될 영역입니다."
+				eyebrow="Tasks"
+				title="체크리스트"
+			/>
+			<div className="grid gap-5 p-5">
 				<form
-					className="grid gap-4 rounded-xl border border-border/70 bg-secondary/30 p-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto] lg:items-end"
+					className="grid gap-4 rounded-lg border border-border/70 bg-brand-warm p-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto] lg:items-end"
 					onSubmit={handleSubmit}
 				>
 					<label
@@ -635,7 +642,7 @@ function ChecklistPanel({
 					>
 						새 작업
 						<input
-							className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="new-task-title"
 							onChange={(event) =>
 								setNewItem((current) => ({
@@ -653,7 +660,7 @@ function ChecklistPanel({
 					>
 						담당자
 						<select
-							className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="new-task-assignee"
 							onChange={(event) =>
 								setNewItem((current) => ({
@@ -676,7 +683,7 @@ function ChecklistPanel({
 					>
 						기한
 						<input
-							className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="new-task-due"
 							onChange={(event) =>
 								setNewItem((current) => ({
@@ -695,14 +702,14 @@ function ChecklistPanel({
 				<div className="space-y-3">
 					{checklist.map((item) => (
 						<div
-							className="grid gap-4 rounded-xl border border-border/70 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+							className="grid gap-4 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
 							key={item.id}
 						>
 							<div className="min-w-0">
 								<div className="flex flex-wrap items-center gap-2">
 									<span
 										className={cn(
-											"rounded-full border px-2 py-0.5 text-xs font-semibold",
+											"rounded-md border px-2 py-0.5 text-xs font-semibold",
 											checklistTone[item.status],
 										)}
 									>
@@ -756,8 +763,8 @@ function ChecklistPanel({
 						</div>
 					))}
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -781,15 +788,15 @@ function GithubPanel() {
 	}
 
 	return (
-		<Card className="border-border/70 bg-white shadow-soft">
-			<CardContent className="space-y-5 p-6">
-				<PanelTitle
-					description="방장이 GitHub OAuth로 로그인한 뒤 org/repo를 연결하면 팀원별 기여 흐름을 봅니다."
-					icon={GitPullRequest}
-					title="GitHub 운영 요약"
-				/>
+		<AppPanel>
+			<AppPanelHeader
+				description="방장이 GitHub OAuth로 로그인한 뒤 org/repo를 연결하면 팀원별 기여 흐름을 봅니다."
+				eyebrow="Repository"
+				title="GitHub 운영 요약"
+			/>
+			<div className="grid gap-5 p-5">
 				<div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-					<div className="rounded-xl border border-border/70 bg-secondary/30 p-5">
+					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
@@ -818,12 +825,12 @@ function GithubPanel() {
 								: "GitHub로 로그인"}
 						</Button>
 					</div>
-					<div className="rounded-xl border border-border/70 bg-white p-5 shadow-sm">
+					<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
 						<p className="text-sm font-semibold text-brand-ink">
 							연결된 저장소
 						</p>
 						{connectedRepo ? (
-							<div className="mt-3 flex flex-col gap-2 rounded-xl border border-primary/15 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+							<div className="mt-3 flex flex-col gap-2 rounded-lg border border-primary/15 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
 								<div className="min-w-0">
 									<p className="truncate font-mono text-sm font-semibold text-primary">
 										{connectedRepo.owner}/{connectedRepo.name}
@@ -844,7 +851,7 @@ function GithubPanel() {
 					</div>
 				</div>
 				<form
-					className="grid gap-3 rounded-xl border border-border/70 bg-secondary/30 p-4 md:grid-cols-[1fr_auto]"
+					className="grid gap-3 rounded-lg border border-border/70 bg-brand-warm p-4 md:grid-cols-[1fr_auto]"
 					onSubmit={handleConnect}
 				>
 					<label
@@ -853,7 +860,7 @@ function GithubPanel() {
 					>
 						org/repo 또는 저장소 URL
 						<input
-							className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="github-repo-url"
 							onChange={(event) => setRepoUrl(event.target.value)}
 							placeholder="team-po/app 또는 https://github.com/team-po/app"
@@ -868,7 +875,7 @@ function GithubPanel() {
 					</div>
 				</form>
 				<div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-					<div className="rounded-xl border border-border/70 bg-white p-5 shadow-sm">
+					<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
 						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
@@ -886,7 +893,7 @@ function GithubPanel() {
 							{demoTeamSpace.githubSummary.contributionDays.map((day) => (
 								<div
 									className={cn(
-										"aspect-square rounded-[38%_62%_45%_55%/54%_42%_58%_46%] transition-transform hover:scale-110",
+										"aspect-square rounded-sm transition-transform hover:scale-110",
 										contributionLevelClass[day.level],
 									)}
 									key={day.id}
@@ -898,7 +905,7 @@ function GithubPanel() {
 							{demoTeamSpace.githubSummary.weeklySummary}
 						</p>
 					</div>
-					<div className="rounded-xl border border-border/70 bg-secondary/30 p-5">
+					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 						<p className="text-sm font-semibold text-brand-ink">팀원별 기여</p>
 						<div className="mt-4 grid gap-3">
 							{demoTeamSpace.githubSummary.memberContributions.map(
@@ -913,7 +920,7 @@ function GithubPanel() {
 
 									return (
 										<div
-											className="rounded-xl border border-border/70 bg-white p-4"
+											className="rounded-lg border border-border/70 bg-white p-4"
 											key={contribution.memberId}
 										>
 											<div className="flex items-center justify-between gap-3">
@@ -922,7 +929,7 @@ function GithubPanel() {
 												</p>
 												<span
 													className={cn(
-														"size-4 rounded-full",
+														"size-4 rounded-sm",
 														contributionLevelClass[contribution.level],
 													)}
 												/>
@@ -938,12 +945,12 @@ function GithubPanel() {
 						</div>
 					</div>
 				</div>
-				<div className="rounded-xl border border-border/70 bg-secondary/30 p-5">
+				<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 					<p className="text-sm font-semibold text-brand-ink">최근 활동</p>
 					<div className="mt-4 grid gap-3 md:grid-cols-3">
 						{demoTeamSpace.githubSummary.recentActivities.map((activity) => (
 							<div
-								className="rounded-xl border border-border/70 bg-white p-4"
+								className="rounded-lg border border-border/70 bg-white p-4"
 								key={activity.id}
 							>
 								<p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
@@ -959,8 +966,8 @@ function GithubPanel() {
 						))}
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -996,15 +1003,15 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 	}
 
 	return (
-		<Card className="border-border/70 bg-white shadow-soft">
-			<CardContent className="flex h-[34rem] flex-col gap-5 p-6">
-				<PanelTitle
-					description="팀원이 빠르게 공유할 내용을 남기는 공간입니다."
-					icon={MessageSquareText}
-					title="팀 메신저"
-				/>
+		<AppPanel>
+			<AppPanelHeader
+				description="팀원이 빠르게 공유할 내용을 남기는 공간입니다."
+				eyebrow="Messages"
+				title="팀 메신저"
+			/>
+			<div className="flex h-[34rem] flex-col gap-5 p-5">
 				<div
-					className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border/70 bg-secondary/30 p-4"
+					className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-brand-warm p-4"
 					ref={messageListRef}
 				>
 					{messages.map((message) => (
@@ -1017,7 +1024,7 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 						>
 							<div
 								className={cn(
-									"max-w-[min(34rem,88%)] rounded-2xl border p-4 shadow-sm",
+									"max-w-[min(34rem,88%)] rounded-lg border p-4 shadow-crisp",
 									message.author === "나"
 										? "border-primary/20 bg-primary text-primary-foreground"
 										: "border-border/70 bg-white text-brand-ink",
@@ -1051,7 +1058,7 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 					))}
 				</div>
 				<form
-					className="grid shrink-0 gap-3 rounded-xl border border-border/70 bg-white p-4 shadow-sm md:grid-cols-[1fr_auto]"
+					className="grid shrink-0 gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-[1fr_auto]"
 					onSubmit={handleSubmit}
 				>
 					<label
@@ -1060,7 +1067,7 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 					>
 						메시지
 						<input
-							className="h-10 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="team-message"
 							onChange={(event) => setDraftMessage(event.target.value)}
 							placeholder="팀에게 공유할 내용을 입력하세요"
@@ -1074,8 +1081,8 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 						</Button>
 					</div>
 				</form>
-			</CardContent>
-		</Card>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -1088,16 +1095,28 @@ function getTeamMetrics(checklist: TeamChecklistItem[]) {
 	return [
 		{
 			label: "스프린트 진행률",
+			tone: "primary" as const,
 			trend: "이번 주 +14%",
 			value: `${progress}%`,
 		},
 		{
 			label: "완료 체크리스트",
+			tone: "emerald" as const,
 			trend: `${doneCount} / ${checklist.length} 완료`,
 			value: `${doneCount}`,
 		},
-		{ label: "오픈 PR", trend: "리뷰 필요", value: "3" },
-		{ label: "팀 온도", trend: "안정적", value: "41.2" },
+		{
+			label: "오픈 PR",
+			tone: "amber" as const,
+			trend: "리뷰 필요",
+			value: "3",
+		},
+		{
+			label: "팀 온도",
+			tone: "emerald" as const,
+			trend: "안정적",
+			value: "41.2",
+		},
 	];
 }
 
@@ -1156,26 +1175,4 @@ function parseGithubRepo(input: string) {
 		url: `https://github.com/${owner}/${name}`,
 		visibility: "private" as const,
 	};
-}
-
-interface PanelTitleProps {
-	description: string;
-	icon: ComponentType<{ className?: string }>;
-	title: string;
-}
-
-function PanelTitle({ description, icon: Icon, title }: PanelTitleProps) {
-	return (
-		<div className="flex items-start gap-3">
-			<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-				<Icon className="size-5" />
-			</div>
-			<div>
-				<h2 className="text-2xl font-semibold text-brand-ink">{title}</h2>
-				<p className="mt-1 text-sm leading-6 text-muted-foreground">
-					{description}
-				</p>
-			</div>
-		</div>
-	);
 }

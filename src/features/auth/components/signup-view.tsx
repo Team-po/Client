@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
 	ArrowRight,
 	CheckCircle2,
+	ImagePlus,
 	LoaderCircle,
 	MailCheck,
 	SearchCheck,
@@ -18,21 +19,22 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { ProfileImagePicker } from "@/features/auth/components/profile-image-picker";
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { getProfileFallback } from "@/features/auth/constants";
-import { ProfileImagePicker } from "@/features/auth/components/profile-image-picker";
-import {
-	hasValidationErrors,
-	validateSignupForm,
-	validateVerifyEmailForm,
-} from "@/features/auth/lib/validation";
 import {
 	useCheckEmailDuplicateMutation,
 	useSendSignupEmailMutation,
 	useSignupMutation,
 	useValidateSignupAuthNumberMutation,
 } from "@/features/auth/hooks/use-auth-queries";
+import {
+	hasValidationErrors,
+	validateSignupForm,
+	validateVerifyEmailForm,
+} from "@/features/auth/lib/validation";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 const levelOptions = [1, 2, 3, 4, 5] as const;
 const emailVerificationCooldownSeconds = 60;
@@ -86,8 +88,7 @@ export function SignupView() {
 	const verificationCooldownRemainingSeconds = verificationCooldownEndsAt
 		? Math.max(0, Math.ceil((verificationCooldownEndsAt - currentTime) / 1000))
 		: 0;
-	const isVerificationCooldownActive =
-		verificationCooldownRemainingSeconds > 0;
+	const isVerificationCooldownActive = verificationCooldownRemainingSeconds > 0;
 	const isSubmitDisabled =
 		signupMutation.isPending || hasValidationErrors(errors) || !isEmailVerified;
 
@@ -162,7 +163,7 @@ export function SignupView() {
 	async function handleSendVerificationEmail() {
 		markTouched("email");
 
-		if (errors.email) {
+		if (errors.email || !isEmailChecked) {
 			return;
 		}
 
@@ -193,35 +194,58 @@ export function SignupView() {
 	return (
 		<AuthShell
 			badge="Signup"
-			description="팀 매칭에 사용할 이메일, 비밀번호, 닉네임을 입력해 주세요."
-			title="회원가입"
+			description="계정, 인증, 프로필을 한 화면에서 끝내고 바로 매칭 대기열로 갈 수 있게 구성했습니다."
+			title="매칭될 준비를 먼저 끝내요"
 		>
-			<div className="mb-6 flex items-center gap-4 rounded-2xl border border-border/70 bg-secondary/35 p-4">
-				<ProfileImagePicker
-					alt={form.nickname || "프로필"}
-					fallback={getProfileFallback(form.nickname || form.email)}
-					inputId="signup-profile-image"
-					invalid={Boolean(touched.profileImage && errors.profileImage)}
-					onBlur={() => markTouched("profileImage")}
-					onFileChange={(file) => {
-						markTouched("profileImage");
-						setForm((current) => ({
-							...current,
-							profileImage: file,
-						}));
-					}}
-					previewUrl={profileImagePreviewUrl}
+			<div className="mb-6 grid gap-3 sm:grid-cols-3">
+				<SetupStatus
+					active={Boolean(form.email)}
+					done={isEmailChecked}
+					label="이메일 확인"
 				/>
-				<div className="flex flex-col gap-1">
-					<p className="font-semibold text-brand-ink">
-						{form.nickname || "닉네임 미리보기"}
-					</p>
-					<p className="text-sm text-muted-foreground">
-						팀원에게 보일 프로필을 미리 확인하세요.
-					</p>
-					{touched.profileImage && errors.profileImage ? (
-						<FieldError>{errors.profileImage}</FieldError>
-					) : null}
+				<SetupStatus
+					active={isVerificationSent}
+					done={isEmailVerified}
+					label="인증 완료"
+				/>
+				<SetupStatus
+					active={Boolean(form.nickname)}
+					done={Boolean(form.nickname && !errors.nickname)}
+					label="프로필 준비"
+				/>
+			</div>
+
+			<div className="mb-6 rounded-lg border border-border/70 bg-brand-warm p-4">
+				<div className="flex items-center gap-4">
+					<ProfileImagePicker
+						alt={form.nickname || "프로필"}
+						fallback={getProfileFallback(form.nickname || form.email)}
+						inputId="signup-profile-image"
+						invalid={Boolean(touched.profileImage && errors.profileImage)}
+						onBlur={() => markTouched("profileImage")}
+						onFileChange={(file) => {
+							markTouched("profileImage");
+							setForm((current) => ({
+								...current,
+								profileImage: file,
+							}));
+						}}
+						previewUrl={profileImagePreviewUrl}
+					/>
+					<div className="min-w-0">
+						<div className="flex items-center gap-2">
+							<ImagePlus className="size-4 text-primary" />
+							<p className="font-semibold text-brand-ink">
+								{form.nickname || "팀원에게 보일 프로필"}
+							</p>
+						</div>
+						<p className="mt-1 text-sm leading-6 text-muted-foreground">
+							닉네임과 레벨은 매칭 카드에서 가장 먼저 보입니다.
+						</p>
+						{touched.profileImage && errors.profileImage ? (
+							<FieldError>{errors.profileImage}</FieldError>
+						) : null}
+					</div>
 				</div>
 			</div>
 
@@ -232,14 +256,18 @@ export function SignupView() {
 				<FieldGroup>
 					<Field data-invalid={Boolean(touched.email && errors.email)}>
 						<FieldLabel htmlFor="signup-email">이메일</FieldLabel>
-						<div className="flex flex-col gap-2 sm:flex-row">
+						<div className="grid gap-2 sm:grid-cols-[1fr_auto]">
 							<Input
 								aria-invalid={Boolean(touched.email && errors.email)}
 								autoComplete="email"
+								className="h-11 bg-white"
 								id="signup-email"
 								onBlur={() => markTouched("email")}
 								onChange={(event) => {
 									markTouched("email");
+									checkEmailMutation.reset();
+									sendSignupEmailMutation.reset();
+									validateSignupAuthNumberMutation.reset();
 									setCheckedEmail(null);
 									setVerificationSentEmail(null);
 									setVerifiedEmail(null);
@@ -256,7 +284,7 @@ export function SignupView() {
 								value={form.email}
 							/>
 							<Button
-								className="shrink-0"
+								className="h-11 shrink-0"
 								disabled={checkEmailMutation.isPending || Boolean(errors.email)}
 								onClick={() => void handleCheckEmail()}
 								type="button"
@@ -296,11 +324,12 @@ export function SignupView() {
 						<FieldLabel htmlFor="signup-auth-number">
 							이메일 인증번호
 						</FieldLabel>
-						<div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+						<div className="grid gap-2 lg:grid-cols-[1fr_auto_auto]">
 							<Input
 								aria-invalid={Boolean(
 									touched.authNumber && verificationErrors.authNumber,
 								)}
+								className="h-11 bg-white"
 								disabled={!isVerificationSent || isEmailVerified}
 								id="signup-auth-number"
 								inputMode="numeric"
@@ -318,9 +347,11 @@ export function SignupView() {
 								value={form.authNumber}
 							/>
 							<Button
+								className="h-11"
 								disabled={
 									sendSignupEmailMutation.isPending ||
 									Boolean(errors.email) ||
+									!isEmailChecked ||
 									isVerificationCooldownActive ||
 									isEmailVerified
 								}
@@ -341,6 +372,7 @@ export function SignupView() {
 									: "번호 받기"}
 							</Button>
 							<Button
+								className="h-11"
 								disabled={
 									!isVerificationSent ||
 									isEmailVerified ||
@@ -380,6 +412,10 @@ export function SignupView() {
 							<FieldDescription>
 								메일로 받은 6자리 숫자를 입력해 주세요.
 							</FieldDescription>
+						) : !isEmailChecked ? (
+							<FieldDescription>
+								중복 확인 후 인증번호를 받을 수 있습니다.
+							</FieldDescription>
 						) : (
 							<FieldDescription>
 								서버 회원가입은 이메일 인증 완료 후 진행됩니다.
@@ -387,69 +423,74 @@ export function SignupView() {
 						)}
 					</Field>
 
-					<Field data-invalid={Boolean(touched.password && errors.password)}>
-						<FieldLabel htmlFor="signup-password">비밀번호</FieldLabel>
-						<Input
-							aria-invalid={Boolean(touched.password && errors.password)}
-							autoComplete="new-password"
-							id="signup-password"
-							minLength={8}
-							onBlur={() => markTouched("password")}
-							onChange={(event) => {
-								markTouched("password");
-								setForm((current) => ({
-									...current,
-									password: event.target.value,
-								}));
-							}}
-							placeholder="8자 이상으로 입력하세요"
-							required
-							type="password"
-							value={form.password}
-						/>
-						{touched.password && errors.password ? (
-							<FieldError>{errors.password}</FieldError>
-						) : null}
-					</Field>
+					<div className="grid gap-4 md:grid-cols-2">
+						<Field data-invalid={Boolean(touched.password && errors.password)}>
+							<FieldLabel htmlFor="signup-password">비밀번호</FieldLabel>
+							<Input
+								aria-invalid={Boolean(touched.password && errors.password)}
+								autoComplete="new-password"
+								className="h-11 bg-white"
+								id="signup-password"
+								minLength={8}
+								onBlur={() => markTouched("password")}
+								onChange={(event) => {
+									markTouched("password");
+									setForm((current) => ({
+										...current,
+										password: event.target.value,
+									}));
+								}}
+								placeholder="8자 이상"
+								required
+								type="password"
+								value={form.password}
+							/>
+							{touched.password && errors.password ? (
+								<FieldError>{errors.password}</FieldError>
+							) : null}
+						</Field>
 
-					<Field
-						data-invalid={Boolean(
-							touched.passwordConfirm && errors.passwordConfirm,
-						)}
-					>
-						<FieldLabel htmlFor="signup-password-confirm">
-							비밀번호 확인
-						</FieldLabel>
-						<Input
-							aria-invalid={Boolean(
+						<Field
+							data-invalid={Boolean(
 								touched.passwordConfirm && errors.passwordConfirm,
 							)}
-							autoComplete="new-password"
-							id="signup-password-confirm"
-							minLength={8}
-							onBlur={() => markTouched("passwordConfirm")}
-							onChange={(event) => {
-								markTouched("passwordConfirm");
-								setForm((current) => ({
-									...current,
-									passwordConfirm: event.target.value,
-								}));
-							}}
-							placeholder="비밀번호를 한 번 더 입력하세요"
-							required
-							type="password"
-							value={form.passwordConfirm}
-						/>
-						{touched.passwordConfirm && errors.passwordConfirm ? (
-							<FieldError>{errors.passwordConfirm}</FieldError>
-						) : null}
-					</Field>
+						>
+							<FieldLabel htmlFor="signup-password-confirm">
+								비밀번호 확인
+							</FieldLabel>
+							<Input
+								aria-invalid={Boolean(
+									touched.passwordConfirm && errors.passwordConfirm,
+								)}
+								autoComplete="new-password"
+								className="h-11 bg-white"
+								id="signup-password-confirm"
+								minLength={8}
+								onBlur={() => markTouched("passwordConfirm")}
+								onChange={(event) => {
+									markTouched("passwordConfirm");
+									setForm((current) => ({
+										...current,
+										passwordConfirm: event.target.value,
+									}));
+								}}
+								placeholder="한 번 더 입력"
+								required
+								type="password"
+								value={form.passwordConfirm}
+							/>
+							{touched.passwordConfirm && errors.passwordConfirm ? (
+								<FieldError>{errors.passwordConfirm}</FieldError>
+							) : null}
+						</Field>
+					</div>
 
 					<Field data-invalid={Boolean(touched.nickname && errors.nickname)}>
 						<FieldLabel htmlFor="signup-nickname">닉네임</FieldLabel>
 						<Input
 							aria-invalid={Boolean(touched.nickname && errors.nickname)}
 							autoComplete="nickname"
+							className="h-11 bg-white"
 							id="signup-nickname"
 							maxLength={24}
 							onBlur={() => markTouched("nickname")}
@@ -468,7 +509,7 @@ export function SignupView() {
 							<FieldError>{errors.nickname}</FieldError>
 						) : (
 							<FieldDescription>
-								팀 매칭과 진행 대시보드에서 표시되는 이름입니다.
+								팀 매칭 카드와 팀 스페이스에서 표시되는 이름입니다.
 							</FieldDescription>
 						)}
 					</Field>
@@ -477,8 +518,14 @@ export function SignupView() {
 						<FieldLabel>개발 레벨</FieldLabel>
 						<div className="grid grid-cols-5 gap-2">
 							{levelOptions.map((level) => (
-								<Button
+								<button
 									aria-pressed={form.level === level}
+									className={cn(
+										"h-12 rounded-lg border text-sm font-semibold transition-colors",
+										form.level === level
+											? "border-primary bg-primary text-primary-foreground shadow-soft"
+											: "border-border/70 bg-white text-muted-foreground hover:bg-secondary hover:text-foreground",
+									)}
 									key={level}
 									onClick={() => {
 										markTouched("level");
@@ -488,10 +535,9 @@ export function SignupView() {
 										}));
 									}}
 									type="button"
-									variant={form.level === level ? "default" : "outline"}
 								>
 									Lv.{level}
-								</Button>
+								</button>
 							))}
 						</div>
 						<div className="flex justify-between text-xs text-muted-foreground">
@@ -500,11 +546,7 @@ export function SignupView() {
 						</div>
 						{touched.level && errors.level ? (
 							<FieldError>{errors.level}</FieldError>
-						) : (
-							<FieldDescription>
-								현재 경험치에 가까운 레벨을 선택해 주세요.
-							</FieldDescription>
-						)}
+						) : null}
 					</Field>
 				</FieldGroup>
 
@@ -522,18 +564,55 @@ export function SignupView() {
 					) : (
 						<ArrowRight data-icon="inline-start" />
 					)}
-					회원가입
+					계정 만들고 로그인하기
 				</Button>
 			</form>
 
-			<div className="mt-6 flex flex-col gap-2 text-sm">
+			<div className="mt-6 rounded-lg border border-border/70 bg-brand-warm p-4 text-sm">
 				<p className="text-muted-foreground">
-					이미 계정이 있다면 바로 로그인하세요.
+					이미 계정이 있다면 로그인해서 매칭 흐름을 이어가세요.
 				</p>
-				<Button asChild className="h-auto justify-start px-0" variant="link">
+				<Button
+					asChild
+					className="mt-2 h-auto justify-start px-0"
+					variant="link"
+				>
 					<Link to="/login">로그인으로 이동</Link>
 				</Button>
 			</div>
 		</AuthShell>
+	);
+}
+
+function SetupStatus({
+	active,
+	done,
+	label,
+}: {
+	active: boolean;
+	done: boolean;
+	label: string;
+}) {
+	return (
+		<div
+			className={cn(
+				"rounded-lg border p-3",
+				done
+					? "border-emerald-500/25 bg-emerald-50"
+					: active
+						? "border-primary/25 bg-primary/5"
+						: "border-border/70 bg-white",
+			)}
+		>
+			<div className="flex items-center gap-2">
+				<span
+					className={cn(
+						"size-2 rounded-full",
+						done ? "bg-emerald-500" : active ? "bg-primary" : "bg-border",
+					)}
+				/>
+				<p className="text-sm font-semibold text-brand-ink">{label}</p>
+			</div>
+		</div>
 	);
 }
