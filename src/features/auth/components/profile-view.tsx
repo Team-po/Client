@@ -44,6 +44,7 @@ import {
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { apiConfig } from "@/lib/api/config";
 import { cn } from "@/lib/utils";
 
 const levelOptions = [1, 2, 3, 4, 5] as const;
@@ -51,6 +52,7 @@ const levelOptions = [1, 2, 3, 4, 5] as const;
 export function ProfileView() {
 	const navigate = useNavigate();
 	const isSignedIn = Boolean(getAuthSession());
+	const showMockTeamPreview = apiConfig.useMocks;
 	const currentUserQuery = useCurrentUserQuery();
 	const updateCurrentUserMutation = useUpdateCurrentUserMutation();
 	const editPasswordMutation = useEditPasswordMutation();
@@ -212,14 +214,22 @@ export function ProfileView() {
 					</Button>
 				</>
 			}
-			description="팀 후보에게 보이는 정보와 현재 팀, 계정 보안을 한 화면에서 관리합니다."
+			description={
+				showMockTeamPreview
+					? "팀 후보에게 보이는 정보와 현재 팀, 계정 보안을 한 화면에서 관리합니다."
+					: "팀 후보에게 보이는 정보와 계정 보안을 한 화면에서 관리합니다."
+			}
 			eyebrow="Profile"
 			title={isSignedIn ? "내 정보" : "로그인 후 프로필을 관리하세요"}
 		>
 			<div className="grid gap-5">
 				{currentUserQuery.isLoading ? (
 					<NoticePanel
-						description="내 프로필과 팀 상태를 불러오고 있습니다."
+						description={
+							showMockTeamPreview
+								? "내 프로필과 팀 상태를 불러오고 있습니다."
+								: "내 프로필을 불러오고 있습니다."
+						}
 						title="내 정보를 불러오는 중입니다"
 					/>
 				) : null}
@@ -263,14 +273,23 @@ export function ProfileView() {
 								</Link>
 							</Button>
 						}
-						description="샘플 팀 스페이스는 둘러볼 수 있지만, 프로필 수정과 매칭 요청은 로그인 후 사용할 수 있습니다."
+						description={
+							showMockTeamPreview
+								? "샘플 팀 스페이스는 둘러볼 수 있지만, 프로필 수정과 매칭 요청은 로그인 후 사용할 수 있습니다."
+								: "프로필 수정과 매칭 요청은 로그인 후 사용할 수 있습니다."
+						}
 						title="로그인이 필요합니다"
 					/>
 				) : null}
 
 				{currentUser ? (
 					<>
-						<div className="grid gap-4 md:grid-cols-4">
+						<div
+							className={cn(
+								"grid gap-4",
+								showMockTeamPreview ? "md:grid-cols-4" : "md:grid-cols-3",
+							)}
+						>
 							<MetricCard label="개발 레벨" value={`Lv.${currentUser.level}`} />
 							<MetricCard
 								label="매너 온도"
@@ -285,12 +304,14 @@ export function ProfileView() {
 								}
 								value={currentUser.description ? "완료" : "보완"}
 							/>
-							<MetricCard
-								label="현재 팀"
-								tone="primary"
-								trend={demoTeamSpace.nextMeetingLabel}
-								value="1"
-							/>
+							{showMockTeamPreview ? (
+								<MetricCard
+									label="현재 팀"
+									tone="primary"
+									trend={demoTeamSpace.nextMeetingLabel}
+									value="1"
+								/>
+							) : null}
 						</div>
 
 						<div className="grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
@@ -327,45 +348,24 @@ export function ProfileView() {
 										</div>
 										<div className="grid gap-3 sm:grid-cols-2">
 											<InfoTile label="역할 힌트" value="FE 중심 협업" />
-											<InfoTile label="팀 상태" value={demoTeamSpace.name} />
+											<InfoTile
+												label={showMockTeamPreview ? "팀 상태" : "팀 정보"}
+												value={
+													showMockTeamPreview
+														? demoTeamSpace.name
+														: "연결 준비 중"
+												}
+											/>
 										</div>
 									</div>
 								</div>
 							</AppPanel>
 
-							<AppPanel>
-								<AppPanelHeader
-									action={
-										<Button asChild variant="outline">
-											<Link to="/team">
-												<ArrowRight data-icon="inline-start" />
-												열기
-											</Link>
-										</Button>
-									}
-									description="참여 중인 팀과 다음 일정을 바로 확인하세요."
-									eyebrow="Current team"
-									title={demoTeamSpace.name}
-								/>
-								<div className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
-									<div>
-										<p className="text-lg font-semibold text-brand-ink">
-											{demoTeamSpace.projectTitle}
-										</p>
-										<p className="mt-2 text-sm leading-6 text-muted-foreground">
-											{demoTeamSpace.projectDescription}
-										</p>
-									</div>
-									<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
-										<p className="font-mono text-3xl font-semibold text-primary">
-											3
-										</p>
-										<p className="mt-1 text-xs font-semibold text-primary">
-											팀원
-										</p>
-									</div>
-								</div>
-							</AppPanel>
+							{showMockTeamPreview ? (
+								<MockCurrentTeamPanel />
+							) : (
+								<RealTeamStatusPanel />
+							)}
 						</div>
 
 						<div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
@@ -404,6 +404,72 @@ export function ProfileView() {
 				) : null}
 			</div>
 		</AppShell>
+	);
+}
+
+function MockCurrentTeamPanel() {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={
+					<Button asChild variant="outline">
+						<Link to="/team">
+							<ArrowRight data-icon="inline-start" />
+							열기
+						</Link>
+					</Button>
+				}
+				description="참여 중인 팀과 다음 일정을 바로 확인하세요."
+				eyebrow="Current team"
+				title={demoTeamSpace.name}
+			/>
+			<div className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+				<div>
+					<p className="text-lg font-semibold text-brand-ink">
+						{demoTeamSpace.projectTitle}
+					</p>
+					<p className="mt-2 text-sm leading-6 text-muted-foreground">
+						{demoTeamSpace.projectDescription}
+					</p>
+				</div>
+				<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
+					<p className="font-mono text-3xl font-semibold text-primary">3</p>
+					<p className="mt-1 text-xs font-semibold text-primary">팀원</p>
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealTeamStatusPanel() {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={
+					<Button asChild variant="outline">
+						<Link to="/team">
+							<ArrowRight data-icon="inline-start" />
+							상태 보기
+						</Link>
+					</Button>
+				}
+				description="팀 조회 API가 연결되면 이 영역에서 실제 팀 정보를 확인할 수 있습니다."
+				eyebrow="Team workspace"
+				title="팀 정보 연결 준비 중"
+			/>
+			<div className="grid gap-4 p-5">
+				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+					현재 서버에는 내 팀을 조회하는 API가 없어 실제 팀 정보를 표시하지
+					않습니다. 매칭 상태는 매칭 화면에서 확인할 수 있습니다.
+				</div>
+				<Button asChild className="w-fit">
+					<Link to="/match">
+						<ArrowRight data-icon="inline-start" />
+						매칭 상태 확인
+					</Link>
+				</Button>
+			</div>
+		</AppPanel>
 	);
 }
 
