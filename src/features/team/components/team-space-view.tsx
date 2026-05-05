@@ -1,18 +1,10 @@
 import {
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-	type ComponentType,
-	type FormEvent,
-	type ReactNode,
-} from "react";
-import {
+	ArrowRight,
 	BookOpenText,
 	CheckCircle2,
 	GitBranch,
-	GitPullRequest,
 	Github,
+	GitPullRequest,
 	Home,
 	MessageSquareText,
 	PencilLine,
@@ -22,6 +14,16 @@ import {
 	Sparkles,
 	Trash2,
 } from "lucide-react";
+import {
+	type ComponentType,
+	type FormEvent,
+	type ReactNode,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { Link } from "react-router-dom";
 
 import {
 	AppPanel,
@@ -33,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
+import { apiConfig } from "@/lib/api/config";
 import type {
 	ProjectLifecycleStatus,
 	TeamChecklistItem,
@@ -64,10 +67,10 @@ const tabs: Array<{
 }> = [
 	{ icon: Home, id: "overview", label: "홈" },
 	{ icon: Sparkles, id: "guide", label: "가이드" },
-	{ icon: BookOpenText, id: "rules", label: "룰" },
+	{ icon: BookOpenText, id: "rules", label: "규칙" },
 	{ icon: CheckCircle2, id: "checklist", label: "체크리스트" },
 	{ icon: GitPullRequest, id: "github", label: "GitHub" },
-	{ icon: MessageSquareText, id: "chat", label: "메신저" },
+	{ icon: MessageSquareText, id: "chat", label: "채팅" },
 ];
 
 const checklistTone: Record<TeamChecklistItem["status"], string> = {
@@ -92,6 +95,93 @@ const contributionLevelClass = [
 
 export function TeamSpaceView() {
 	const [isSignedIn] = useState(() => Boolean(getAuthSession()));
+
+	if (!apiConfig.useMocks) {
+		return <RealTeamSpaceView isSignedIn={isSignedIn} />;
+	}
+
+	return <MockTeamSpaceView isSignedIn={isSignedIn} />;
+}
+
+function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
+	return (
+		<AppShell
+			actions={
+				<>
+					<Button asChild variant="outline">
+						<Link to={isSignedIn ? "/me" : "/login"}>
+							<ArrowRight data-icon="inline-start" />
+							{isSignedIn ? "내 정보" : "로그인"}
+						</Link>
+					</Button>
+					<Button asChild>
+						<Link to="/match">
+							<Sparkles data-icon="inline-start" />
+							매칭 화면
+						</Link>
+					</Button>
+				</>
+			}
+			description="팀 생성과 팀스페이스 조회 API가 연결되면 이 화면에서 내 팀 정보를 확인할 수 있습니다."
+			eyebrow="Team workspace"
+			title="팀 스페이스"
+		>
+			<div className="grid gap-5">
+				<AppPanel className="border-primary/20">
+					<AppPanelHeader
+						action={<Badge variant="neutral">준비 중</Badge>}
+						description="현재 서버에는 매칭 요청, 매칭 세션 조회, 수락/거절 흐름까지만 연결되어 있습니다."
+						eyebrow="Status"
+						title="팀 스페이스를 준비하고 있습니다"
+					/>
+					<div className="grid gap-4 p-5">
+						<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+							실제 팀 데이터를 불러오는 API가 아직 없어 샘플 팀 화면은 표시하지
+							않습니다. 매칭이 완료된 뒤 팀 조회 API가 연결되면 이곳에서 내 팀
+							공간을 열 수 있습니다.
+						</div>
+						<div className="flex flex-col gap-3 sm:flex-row">
+							<Button asChild className="sm:w-fit">
+								<Link to="/match">
+									<ArrowRight data-icon="inline-start" />
+									매칭 상태 확인
+								</Link>
+							</Button>
+							{!isSignedIn ? (
+								<Button asChild className="sm:w-fit" variant="outline">
+									<Link to="/login">로그인</Link>
+								</Button>
+							) : null}
+						</div>
+					</div>
+				</AppPanel>
+
+				<div className="grid gap-4 md:grid-cols-3">
+					<MetricCard
+						label="현재 연결"
+						tone="primary"
+						trend="요청, 세션, 응답 API"
+						value="매칭"
+					/>
+					<MetricCard
+						label="팀 조회"
+						tone="amber"
+						trend="연결 준비 중"
+						value="대기"
+					/>
+					<MetricCard
+						label="팀 운영"
+						tone="amber"
+						trend="연결 준비 중"
+						value="대기"
+					/>
+				</div>
+			</div>
+		</AppShell>
+	);
+}
+
+function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 	const [selectedTab, setSelectedTab] = useState<TeamTab>("overview");
 	const [teamName, setTeamName] = useState(demoTeamSpace.name);
 	const [lifecycleStatus, setLifecycleStatus] =
@@ -156,7 +246,6 @@ export function TeamSpaceView() {
 			rail={
 				<TeamRail
 					activeStepIndex={activeStepIndex}
-					isSignedIn={isSignedIn}
 					lifecycleStatus={lifecycleStatus}
 					setLifecycleStatus={setLifecycleStatus}
 					setTeamName={setTeamName}
@@ -181,7 +270,7 @@ export function TeamSpaceView() {
 				{!isSignedIn ? (
 					<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-primary">
 						지금은 샘플 팀 스페이스를 둘러보는 프리뷰입니다. 로그인하면 내 팀
-						기준으로 룰, 체크리스트, 메신저를 이어서 관리할 수 있습니다.
+						기준으로 규칙, 체크리스트, 채팅을 이어서 관리할 수 있습니다.
 					</div>
 				) : null}
 
@@ -241,14 +330,12 @@ export function TeamSpaceView() {
 
 function TeamRail({
 	activeStepIndex,
-	isSignedIn,
 	lifecycleStatus,
 	setLifecycleStatus,
 	setTeamName,
 	teamName,
 }: {
 	activeStepIndex: number;
-	isSignedIn: boolean;
 	lifecycleStatus: ProjectLifecycleStatus;
 	setLifecycleStatus: (status: ProjectLifecycleStatus) => void;
 	setTeamName: (name: string) => void;
@@ -285,10 +372,10 @@ function TeamRail({
 									<p className="font-semibold text-brand-ink">{step.label}</p>
 									<p className="mt-1 text-sm leading-6 text-muted-foreground">
 										{isActive
-											? "현재 단계입니다."
+											? "지금 진행 중인 단계입니다."
 											: isDone
-												? "완료된 단계입니다."
-												: "다음에 이동할 단계입니다."}
+												? "이미 완료한 단계입니다."
+												: "다음에 진행할 단계입니다."}
 									</p>
 								</div>
 							</div>
@@ -304,7 +391,7 @@ function TeamRail({
 
 			<AppPanel>
 				<AppPanelHeader
-					description={isSignedIn ? "내 팀 설정" : "프리뷰 설정"}
+					description="팀 이름과 프로젝트 진행 상태를 조정합니다."
 					eyebrow="Controls"
 					title="팀 상태 편집"
 				/>
@@ -460,7 +547,7 @@ function GuidePanel() {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="주제와 MVP만 보고 팀이 논의할 방향을 잡아주는 문서 영역입니다."
+				description="주제와 MVP를 바탕으로 팀이 먼저 논의할 방향을 정리합니다."
 				eyebrow="Guide"
 				title={demoTeamSpace.guideline.title}
 			/>
@@ -528,13 +615,14 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 							type="button"
 							variant="outline"
 						>
-							<PencilLine data-icon="inline-start" />룰 수정
+							<PencilLine data-icon="inline-start" />
+							규칙 수정
 						</Button>
 					)
 				}
-				description="Markdown 템플릿을 팀원이 함께 다듬는 공간입니다."
+				description="함께 지킬 협업 규칙을 정리하고 필요할 때 수정합니다."
 				eyebrow="Rulebook"
-				title="팀 룰"
+				title="팀 규칙"
 			/>
 			<div className="p-5">
 				{isEditing ? (
@@ -552,7 +640,7 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 							value={draftRules}
 						/>
 						<p className="text-sm text-muted-foreground">
-							저장하면 이 화면의 팀 룰에 바로 반영됩니다.
+							저장하면 팀 규칙에 바로 반영됩니다.
 						</p>
 					</div>
 				) : (
@@ -627,7 +715,7 @@ function ChecklistPanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="할 일을 적으면 작업 플로우와 고려사항을 받을 수 있게 연결될 영역입니다."
+				description="작업을 추가하고 상태, 담당자, 기한을 함께 관리합니다."
 				eyebrow="Tasks"
 				title="체크리스트"
 			/>
@@ -790,7 +878,7 @@ function GithubPanel() {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="방장이 GitHub OAuth로 로그인한 뒤 org/repo를 연결하면 팀원별 기여 흐름을 봅니다."
+				description="방장이 GitHub 계정을 연결하면 저장소 활동과 팀원별 기여 흐름을 확인할 수 있습니다."
 				eyebrow="Repository"
 				title="GitHub 운영 요약"
 			/>
@@ -800,11 +888,11 @@ function GithubPanel() {
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
-									방장 OAuth 상태
+									GitHub 연결 상태
 								</p>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									실제 인증은 아직 연결하지 않고, API만 붙이면 되는 더미
-									상태입니다.
+									현재는 프리뷰 상태입니다. 연결 후 팀 활동 요약이 이곳에
+									표시됩니다.
 								</p>
 							</div>
 							<Badge
@@ -844,8 +932,8 @@ function GithubPanel() {
 							</div>
 						) : (
 							<p className="mt-3 text-sm leading-6 text-muted-foreground">
-								아직 repo가 연결되지 않았습니다. 아래 입력은 API 연결 전
-								프리뷰입니다.
+								아직 저장소가 연결되지 않았습니다. 저장소를 입력하면 요약 화면을
+								미리 확인할 수 있습니다.
 							</p>
 						)}
 					</div>
@@ -858,7 +946,7 @@ function GithubPanel() {
 						className="grid gap-2 text-sm font-semibold text-brand-ink"
 						htmlFor="github-repo-url"
 					>
-						org/repo 또는 저장소 URL
+						저장소 이름 또는 URL
 						<input
 							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="github-repo-url"
@@ -870,7 +958,7 @@ function GithubPanel() {
 					<div className="flex items-end">
 						<Button disabled={!repoUrl.trim()} type="submit">
 							<GitPullRequest data-icon="inline-start" />
-							repo 연결
+							저장소 연결
 						</Button>
 					</div>
 				</form>
@@ -879,7 +967,7 @@ function GithubPanel() {
 						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
-									기여 잔디
+									GitHub 활동 히트맵
 								</p>
 								<p className="mt-1 text-sm text-muted-foreground">
 									기여량이 많을수록 색과 밀도가 진해집니다.
@@ -1007,7 +1095,7 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 			<AppPanelHeader
 				description="팀원이 빠르게 공유할 내용을 남기는 공간입니다."
 				eyebrow="Messages"
-				title="팀 메신저"
+				title="팀 채팅"
 			/>
 			<div className="flex h-[34rem] flex-col gap-5 p-5">
 				<div
@@ -1126,7 +1214,7 @@ function parseRulesMarkdown(markdown: string) {
 		.filter(Boolean);
 	const title =
 		lines.find((line) => line.startsWith("#"))?.replace(/^#+\s*/, "") ??
-		"팀 룰";
+		"팀 규칙";
 	const items = lines
 		.filter((line) => line.startsWith("-"))
 		.map((line) => line.replace(/^-\s*/, ""));

@@ -13,8 +13,8 @@ export function HowItWorksSection() {
 			<Container className="space-y-10">
 				<SectionHeading
 					label="How it works"
-					title="지원 스트레스 없이 팀 프로젝트에 진입하는 3단계"
-					description="자기소개 경쟁이 아니라, 역량 카드 기반 랜덤 매칭으로 시작합니다."
+					title="모집 글 없이 팀 프로젝트를 시작하는 3단계"
+					description="긴 자기소개와 선발 과정 대신, 필요한 정보만 입력하고 매칭을 기다립니다."
 				/>
 
 				<div className="grid gap-4 md:grid-cols-3">

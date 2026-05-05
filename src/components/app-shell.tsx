@@ -1,4 +1,3 @@
-import type { ComponentType, ReactNode } from "react";
 import {
 	ArrowUpRight,
 	LayoutDashboard,
@@ -7,6 +6,7 @@ import {
 	UserRound,
 	UsersRound,
 } from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -141,6 +141,9 @@ export function MetricCard({
 		primary: "border-primary/20 bg-primary/5 text-primary",
 		rose: "border-rose-500/20 bg-rose-50 text-rose-700",
 	}[tone];
+	const valueFontClass = /[0-9A-Za-z%]/.test(value)
+		? "font-mono"
+		: "font-display";
 
 	return (
 		<div className="rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
@@ -152,7 +155,11 @@ export function MetricCard({
 			>
 				{label}
 			</div>
-			<p className="font-mono text-3xl font-semibold text-brand-ink">{value}</p>
+			<p
+				className={cn("text-3xl font-semibold text-brand-ink", valueFontClass)}
+			>
+				{value}
+			</p>
 			{trend ? (
 				<p className="mt-1 text-xs leading-5 text-muted-foreground">{trend}</p>
 			) : null}
@@ -281,7 +288,7 @@ function AppSidebar() {
 						className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary"
 						to="/match"
 					>
-						매칭 열기
+						매칭 요청하기
 						<ArrowUpRight className="size-3.5" />
 					</Link>
 				</div>

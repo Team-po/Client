@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ArrowRight, KeyRound, LoaderCircle, Mail } from "lucide-react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -61,14 +61,13 @@ export function LoginView() {
 	return (
 		<AuthShell
 			badge="Login"
-			description="돌아온 팀원은 바로 현재 프로필과 팀 상태를 확인할 수 있습니다."
-			title="다시 이어서 팀을 만들어요"
+			description="로그인 후 내 정보, 매칭 상태, 팀 스페이스를 바로 확인할 수 있습니다."
+			title="팀 프로젝트를 이어서 관리하세요"
 		>
 			<div className="mb-6 rounded-lg border border-primary/15 bg-primary/5 p-4">
 				<p className="text-sm font-semibold text-primary">다음 액션</p>
 				<p className="mt-1 text-sm leading-6 text-muted-foreground">
-					로그인하면 내 정보 화면으로 이동하고, 매칭 준비 상태를 바로
-					확인합니다.
+					내 정보 화면에서 프로필 완성도와 현재 팀 상태를 확인합니다.
 				</p>
 			</div>
 
@@ -154,7 +153,8 @@ export function LoginView() {
 
 			<div className="mt-6 grid gap-3 rounded-lg border border-border/70 bg-brand-warm p-4 text-sm">
 				<p className="text-muted-foreground">
-					아직 계정이 없다면 회원가입으로 프로필을 먼저 준비하세요.
+					처음이라면 회원가입에서 이메일 인증과 프로필 설정을 먼저 진행해
+					주세요.
 				</p>
 				<div className="flex flex-wrap items-center gap-4">
 					<Button asChild className="h-auto px-0" variant="link">
@@ -165,7 +165,7 @@ export function LoginView() {
 						className="h-auto px-0 text-muted-foreground"
 						variant="link"
 					>
-						<Link to="/">랜딩 페이지 보기</Link>
+						<Link to="/">홈으로 이동</Link>
 					</Button>
 				</div>
 			</div>

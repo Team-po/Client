@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
 	ArrowRight,
 	CheckCircle2,
@@ -6,6 +5,7 @@ import {
 	Code2,
 	FolderKanban,
 	LoaderCircle,
+	type LucideIcon,
 	Palette,
 	RefreshCcw,
 	Send,
@@ -15,8 +15,8 @@ import {
 	Users,
 	UsersRound,
 	XCircle,
-	type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -49,6 +49,7 @@ import {
 import { demoMatchOffer } from "@/features/team/lib/demo-team-space";
 import { getAuthSession, getAuthSessionUserId } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { apiConfig } from "@/lib/api/config";
 import type {
 	MatchMember,
 	MatchProjectResponse,
@@ -65,7 +66,7 @@ const roleOptions: Array<{
 	value: MatchRole;
 }> = [
 	{
-		description: "인증, 저장, 배포처럼 서비스의 기반을 맡습니다.",
+		description: "인증, 데이터 저장, 배포 등 서비스 기반을 맡습니다.",
 		icon: ServerCog,
 		label: "Backend",
 		value: "BACKEND",
@@ -77,7 +78,7 @@ const roleOptions: Array<{
 		value: "FRONTEND",
 	},
 	{
-		description: "문제 정의, UX, 시각 시스템을 정리합니다.",
+		description: "문제 정의, UX 흐름, 화면 디자인을 정리합니다.",
 		icon: Palette,
 		label: "Design",
 		value: "DESIGN",
@@ -94,7 +95,7 @@ const statusMeta: Record<
 		tone: "border-muted-foreground/20 bg-secondary text-muted-foreground",
 	},
 	MATCHED: {
-		description: "팀 구성이 완료된 상태입니다.",
+		description: "팀 구성이 완료되었습니다. 팀 스페이스에서 협업을 시작하세요.",
 		label: "매칭 완료",
 		tone: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
 	},
@@ -174,7 +175,7 @@ export function MatchRequestView() {
 			projectTitle: emptyToNull(form.projectTitle),
 			role: form.role,
 		});
-		setOfferStatus("offered");
+		setOfferStatus(apiConfig.useMocks ? "offered" : "hidden");
 	}
 
 	return (
@@ -193,9 +194,9 @@ export function MatchRequestView() {
 					</Button>
 				</>
 			}
-			description="역할을 고르고, 프로젝트 힌트를 더하고, 제안이 오면 바로 수락 여부를 결정합니다."
+			description="역할을 고르고 프로젝트 힌트를 더하면 조건에 맞는 팀 후보를 찾습니다."
 			eyebrow="Matching"
-			title="매칭 큐"
+			title="매칭 요청"
 		>
 			<div className="grid gap-5">
 				<div className="grid gap-4 md:grid-cols-4">
@@ -239,7 +240,7 @@ export function MatchRequestView() {
 						label="팀 생성"
 						tone={hasAcceptedTeam ? "emerald" : "primary"}
 						trend={hasAcceptedTeam ? "팀으로 이동 가능" : "수락 후 생성"}
-						value={hasAcceptedTeam ? "Ready" : "Soon"}
+						value={hasAcceptedTeam ? "가능" : "대기"}
 					/>
 				</div>
 
@@ -264,7 +265,7 @@ export function MatchRequestView() {
 					</AppPanel>
 				) : null}
 
-				<div className="grid gap-5 xl:grid-cols-[0.88fr_1.12fr]">
+				<div className="grid gap-5 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
 					<div className="grid gap-5">
 						<AppPanel>
 							<AppPanelHeader
@@ -345,24 +346,25 @@ export function MatchRequestView() {
 							</div>
 						</AppPanel>
 
-						{offerStatus === "hidden" ? (
-							<MatchOfferPlaceholder
-								canPreview={isSignedIn}
-								onPreview={() => setOfferStatus("offered")}
-							/>
-						) : (
+						{apiConfig.useMocks && offerStatus !== "hidden" ? (
 							<MatchOfferPanel
 								onAccept={() => setOfferStatus("accepted")}
 								onDecline={() => setOfferStatus("declined")}
 								onReset={() => setOfferStatus("offered")}
 								status={offerStatus}
 							/>
+						) : (
+							<MatchOfferPlaceholder
+								canPreview={isSignedIn && apiConfig.useMocks}
+								onPreview={() => setOfferStatus("offered")}
+								showPreviewAction={apiConfig.useMocks}
+							/>
 						)}
 					</div>
 
 					<AppPanel>
 						<AppPanelHeader
-							description="역할만 선택해도 요청할 수 있고, 프로젝트 정보는 세 항목을 모두 채우면 호스트 요청이 됩니다."
+							description="역할만 선택해도 대기열에 등록됩니다. 프로젝트를 제안하려면 제목, 설명, MVP를 모두 입력해 주세요."
 							eyebrow="Request"
 							title="매칭 요청 작성"
 						/>
@@ -489,7 +491,7 @@ export function MatchRequestView() {
 									<Send data-icon="inline-start" />
 								)}
 								{hasAcceptedTeam
-									? "팀 소속 사용자는 신청 불가"
+									? "이미 팀에 참여 중입니다"
 									: "매칭 요청 보내기"}
 							</Button>
 						</form>
@@ -585,11 +587,13 @@ function getProjectInfoError(values: {
 interface MatchOfferPlaceholderProps {
 	canPreview: boolean;
 	onPreview: () => void;
+	showPreviewAction: boolean;
 }
 
 function MatchOfferPlaceholder({
 	canPreview,
 	onPreview,
+	showPreviewAction,
 }: MatchOfferPlaceholderProps) {
 	return (
 		<AppPanel>
@@ -601,12 +605,14 @@ function MatchOfferPlaceholder({
 			<div className="grid gap-4 p-5">
 				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
 					현재 도착한 제안은 없습니다. 요청을 보내면 이 영역에서 팀 후보와 다음
-					액션을 확인하게 됩니다.
+					단계를 확인하게 됩니다.
 				</div>
-				<Button disabled={!canPreview} onClick={onPreview} type="button">
-					<Sparkles data-icon="inline-start" />
-					매칭 제안 미리보기
-				</Button>
+				{showPreviewAction ? (
+					<Button disabled={!canPreview} onClick={onPreview} type="button">
+						<Sparkles data-icon="inline-start" />
+						매칭 제안 미리보기
+					</Button>
+				) : null}
 			</div>
 		</AppPanel>
 	);
@@ -690,7 +696,7 @@ function MatchOfferPanel({
 							팀이 생성되었습니다.
 						</p>
 						<p className="mt-1 text-sm leading-6 text-emerald-700/80">
-							이제 팀 스페이스에서 룰, 체크리스트, GitHub 요약을 확인하세요.
+							이제 팀 스페이스에서 규칙, 체크리스트, GitHub 요약을 확인하세요.
 						</p>
 					</div>
 				) : status === "declined" ? (
@@ -704,8 +710,9 @@ function MatchOfferPanel({
 					</div>
 				) : null}
 
-				<div className="grid gap-3 sm:grid-cols-3">
+				<div className="flex flex-col gap-3 sm:flex-row">
 					<Button
+						className="sm:flex-1"
 						disabled={status !== "offered"}
 						onClick={onAccept}
 						type="button"
@@ -714,6 +721,7 @@ function MatchOfferPanel({
 						수락
 					</Button>
 					<Button
+						className="sm:flex-1"
 						disabled={status !== "offered"}
 						onClick={onDecline}
 						type="button"
@@ -723,18 +731,23 @@ function MatchOfferPanel({
 						거절
 					</Button>
 					{status === "accepted" ? (
-						<Button asChild variant="outline">
+						<Button asChild className="sm:flex-1" variant="outline">
 							<Link to="/team">
 								<ArrowRight data-icon="inline-start" />
 								팀으로 이동
 							</Link>
 						</Button>
-					) : (
-						<Button onClick={onReset} type="button" variant="outline">
+					) : status === "declined" ? (
+						<Button
+							className="sm:flex-1"
+							onClick={onReset}
+							type="button"
+							variant="outline"
+						>
 							<RefreshCcw data-icon="inline-start" />
 							제안 다시 보기
 						</Button>
-					)}
+					) : null}
 				</div>
 			</div>
 		</AppPanel>
@@ -850,7 +863,7 @@ function MatchSessionCard({
 					<div className="flex flex-col gap-3 border-border/60 border-t pt-4">
 						{currentMember?.isHost ? (
 							<FieldDescription>
-								호스트는 서버에서 자동 수락 상태로 처리됩니다.
+								프로젝트 제안자는 자동으로 수락 처리됩니다.
 							</FieldDescription>
 						) : currentMember?.isAccepted === true ? (
 							<FieldDescription>이미 이 매칭을 수락했습니다.</FieldDescription>
@@ -911,7 +924,8 @@ function MatchMemberItem({ member }: { member: MatchMember }) {
 					{member.isHost ? <Badge variant="warm">Host</Badge> : null}
 				</div>
 				<p className="mt-1 text-sm text-muted-foreground">
-					{roleLabels[member.role]} · Lv.{member.level} · {member.temperature}도
+					{roleLabels[member.role]} · Lv.{member.level} · 온도{" "}
+					{member.temperature.toFixed(1)}℃
 				</p>
 				<p className="mt-1 text-xs text-muted-foreground">{acceptedLabel}</p>
 			</div>
@@ -929,7 +943,7 @@ function getMemberImageSrc(profileImageKey: string | null) {
 
 function getAcceptedLabel(member: MatchMember) {
 	if (member.isHost) {
-		return "호스트 자동 수락";
+		return "제안자 자동 수락";
 	}
 
 	if (member.isAccepted === true) {

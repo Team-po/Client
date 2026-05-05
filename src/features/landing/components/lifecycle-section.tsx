@@ -10,8 +10,8 @@ export function LifecycleSection() {
 			<Container className="space-y-10">
 				<SectionHeading
 					label="Project lifecycle"
-					title="형성부터 완료까지, 팀 프로젝트 라이프사이클을 고정된 규칙으로 운영"
-					description="상태 전이가 명확해야 팀 협업이 흔들리지 않습니다. 모든 팀은 같은 상태 모델을 사용합니다."
+					title="팀 결성부터 완료까지 진행 상태를 한눈에 관리"
+					description="프로젝트가 어디까지 왔는지 분명해야 다음에 할 일이 흔들리지 않습니다."
 				/>
 
 				<Surface variant="subtle" spacing="spacious" className="space-y-4">

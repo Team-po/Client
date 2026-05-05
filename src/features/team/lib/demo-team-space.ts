@@ -24,7 +24,7 @@ const demoMembers = [
 		id: "member-3",
 		level: 3,
 		name: "장다은",
-		responsibility: "프로덕트 룰과 UX 문서",
+		responsibility: "프로덕트 규칙과 UX 문서",
 		role: "DESIGN",
 		temperature: 43.1,
 	},
@@ -35,12 +35,12 @@ export const demoMatchOffer: MatchOffer = {
 	expiresAt: "2026-05-03T11:20:00+09:00",
 	id: "offer-team-po-001",
 	projectDescription:
-		"개발자 사이드 프로젝트를 랜덤 팀으로 시작하고, 팀 결성 이후에는 룰, 체크리스트, GitHub 요약을 한 공간에서 운영하는 서비스입니다.",
+		"개발자 사이드 프로젝트를 랜덤 팀으로 시작하고, 팀 결성 이후에는 규칙, 체크리스트, GitHub 요약을 한 공간에서 운영하는 서비스입니다.",
 	projectMvp:
-		"회원가입, 매칭 요청, 제안 수락/거절, 팀 스페이스, 협업 룰 템플릿, 체크리스트를 첫 배포 범위로 둡니다.",
+		"회원가입, 매칭 요청, 제안 수락/거절, 팀 스페이스, 협업 규칙 템플릿, 체크리스트를 첫 배포 범위로 둡니다.",
 	projectTitle: "Team-po 협업 온보딩",
 	recommendedNextStep:
-		"전원이 제안을 수락하면 팀 스페이스가 열리고, 첫 단계로 팀 룰 템플릿을 함께 확정합니다.",
+		"전원이 제안을 수락하면 팀 스페이스가 열리고, 첫 단계로 팀 규칙 템플릿을 함께 확정합니다.",
 	status: "offered",
 	teamNamePreview: "Blue Sprint",
 	teammates: demoMembers,
@@ -67,7 +67,7 @@ export const demoTeamSpace: TeamSpace = {
 			dueLabel: "완료",
 			id: "task-3",
 			status: "done",
-			title: "첫 회의 룰 템플릿 초안 작성",
+			title: "첫 회의 규칙 템플릿 초안 작성",
 		},
 	],
 	githubSummary: {
@@ -133,14 +133,14 @@ export const demoTeamSpace: TeamSpace = {
 			},
 			{
 				id: "activity-2",
-				label: "GitHub repo 연결 API 계약 초안",
+				label: "GitHub 저장소 연결 API 계약 초안",
 				memberName: "박상혁",
 				timeLabel: "어제",
 				type: "commit",
 			},
 			{
 				id: "activity-3",
-				label: "첫 회의 룰 템플릿 리뷰",
+				label: "첫 회의 규칙 템플릿 리뷰",
 				memberName: "장다은",
 				timeLabel: "어제",
 				type: "review",
@@ -157,14 +157,14 @@ export const demoTeamSpace: TeamSpace = {
 				title: "1. 첫 사용자 여정 고정",
 			},
 			{
-				body: "MVP는 인증, 매칭, 팀 생성, 룰 템플릿, 체크리스트까지로 제한합니다. GitHub 요약과 메신저는 첫 스프린트에서 사용자가 흐름을 이해할 수 있는 수준으로 연결합니다.",
+				body: "MVP는 인증, 매칭, 팀 생성, 규칙 템플릿, 체크리스트까지로 제한합니다. GitHub 요약과 채팅은 첫 스프린트에서 사용자가 흐름을 이해할 수 있는 수준으로 연결합니다.",
 				id: "guide-2",
 				title: "2. MVP 범위",
 			},
 			{
-				body: "팀 룰은 아무나 수정할 수 있는 Markdown 문서로 시작하고, 동시 편집 충돌은 마지막 저장자 기준으로 단순 처리하는 정책을 우선 검토합니다.",
+				body: "팀 규칙은 누구나 수정할 수 있는 Markdown 문서로 시작하고, 동시 편집 충돌은 마지막 저장자 기준으로 단순 처리하는 정책을 우선 검토합니다.",
 				id: "guide-3",
-				title: "3. 협업 룰",
+				title: "3. 협업 규칙",
 			},
 		],
 		title: "AI 개발 가이드라인 초안",
@@ -177,14 +177,14 @@ export const demoTeamSpace: TeamSpace = {
 			author: "장다은",
 			id: "message-1",
 			message:
-				"룰 템플릿에서 브랜치 네이밍만 먼저 합의하면 바로 개발 시작 가능해요.",
+				"규칙 템플릿에서 브랜치 네이밍만 먼저 합의하면 바로 개발을 시작할 수 있어요.",
 			timeLabel: "10:12",
 		},
 		{
 			author: "박상혁",
 			id: "message-2",
 			message:
-				"GitHub 연동은 방장 OAuth 이후 org/repo 선택만 받는 흐름으로 두면 API 붙이기 좋을 것 같습니다.",
+				"GitHub 연동은 방장이 계정을 연결한 뒤 저장소만 선택하는 흐름이면 충분할 것 같습니다.",
 			timeLabel: "10:18",
 		},
 	],
@@ -195,12 +195,12 @@ export const demoTeamSpace: TeamSpace = {
 		{ label: "팀 온도", value: "41.2" },
 	],
 	name: "Blue Sprint",
-	nextMeetingLabel: "오늘 21:00 첫 룰 정하기",
+	nextMeetingLabel: "오늘 21:00 첫 규칙 정하기",
 	projectDescription:
-		"랜덤 팀 매칭 이후 팀이 바로 움직일 수 있도록 룰, 체크리스트, GitHub 활동, 메신저를 한 화면에서 운영합니다.",
+		"랜덤 팀 매칭 이후 팀이 바로 움직일 수 있도록 규칙, 체크리스트, GitHub 활동, 채팅을 한 화면에서 운영합니다.",
 	projectMvp:
-		"매칭 제안 수락/거절, 팀 스페이스 홈, 룰 템플릿, 개발 가이드라인, 체크리스트, GitHub 운영 요약",
+		"매칭 제안 수락/거절, 팀 스페이스 홈, 규칙 템플릿, 개발 가이드라인, 체크리스트, GitHub 운영 요약",
 	projectTitle: "Team-po 팀 운영 MVP",
 	rulesMarkdown:
-		"# 팀 룰\n\n- 브랜치: `feat/{domain}-{short-topic}`\n- 커밋: `feat(domain): summary`\n- PR은 최소 1명 리뷰 후 머지\n- 매주 목요일 21:00 진행 상황 공유\n- 막힌 일은 24시간 안에 팀 채팅에 공유",
+		"# 팀 규칙\n\n- 브랜치: `feat/{domain}-{short-topic}`\n- 커밋: `feat(domain): summary`\n- PR은 최소 1명 리뷰 후 머지\n- 매주 목요일 21:00 진행 상황 공유\n- 막힌 일은 24시간 안에 팀 채팅에 공유",
 };

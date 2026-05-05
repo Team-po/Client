@@ -8,7 +8,7 @@ export function EmailVerificationView() {
 	return (
 		<AuthShell
 			badge="Verified"
-			description="가입 후 첫 행동을 바로 보여줘 다음 화면으로 자연스럽게 이어지도록 구성했습니다."
+			description="이제 로그인하고 매칭에 사용할 프로필을 확인할 수 있습니다."
 			title="계정 준비가 끝났습니다"
 		>
 			<div className="rounded-lg border border-emerald-500/25 bg-emerald-50 p-5">
@@ -18,7 +18,7 @@ export function EmailVerificationView() {
 					</div>
 					<div>
 						<p className="font-semibold text-emerald-800">
-							이메일 인증 흐름이 완료되었습니다
+							이메일 인증이 완료되었습니다
 						</p>
 						<p className="mt-1 text-sm leading-6 text-emerald-800/75">
 							로그인 후 프로필을 정리하면 매칭 카드가 더 명확해집니다.
@@ -32,7 +32,7 @@ export function EmailVerificationView() {
 					<ShieldCheck className="mt-0.5 size-5 text-primary" />
 					<p className="text-sm leading-6 text-muted-foreground">
 						프로필 이미지, 닉네임, 레벨은 팀 후보가 나를 빠르게 이해하는 데
-						쓰입니다.
+						사용됩니다.
 					</p>
 				</div>
 			</div>

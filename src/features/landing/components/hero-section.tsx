@@ -46,13 +46,13 @@ export function HeroSection() {
 								팀 프로젝트,
 							</span>
 							<span className="ds-title-gradient mt-1.5 block font-semibold md:mt-2">
-								지원 대신 매칭으로 시작
+								모집 대신 매칭으로 시작
 							</span>
 						</h1>
 						<p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground md:text-[17px]">
-							역량을 등록하고 대기열에 올라가면 시스템이 팀을 랜덤 매칭합니다.
-							프로젝트가 시작된 뒤에는 룰, 체크리스트, GitHub 기여 흐름,
-							메신저까지 한 팀 스페이스에서 이어갑니다.
+							역할과 기술 스택을 등록하면 조건이 맞는 팀원을 연결합니다. 팀이
+							만들어진 뒤에는 규칙, 체크리스트, GitHub 활동, 채팅까지 한 팀
+							스페이스에서 관리합니다.
 						</p>
 					</div>
 
@@ -92,7 +92,7 @@ export function HeroSection() {
 								Queue Snapshot
 							</p>
 							<p className="font-display text-2xl leading-tight">
-								내 포지션만 입력하면 팀 매칭이 완료됩니다
+								내 역할을 입력하면 팀 후보를 찾기 시작합니다
 							</p>
 						</div>
 

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
 	ArrowRight,
 	Camera,
@@ -9,6 +8,7 @@ import {
 	Trash2,
 	UsersRound,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -212,14 +212,14 @@ export function ProfileView() {
 					</Button>
 				</>
 			}
-			description="팀원이 보는 정보, 진행 중인 팀, 계정 보안을 한 화면에서 정리합니다."
+			description="팀 후보에게 보이는 정보와 현재 팀, 계정 보안을 한 화면에서 관리합니다."
 			eyebrow="Profile"
 			title={isSignedIn ? "내 정보" : "로그인 후 프로필을 관리하세요"}
 		>
 			<div className="grid gap-5">
 				{currentUserQuery.isLoading ? (
 					<NoticePanel
-						description="서버에서 내 프로필과 팀 상태를 확인하고 있습니다."
+						description="내 프로필과 팀 상태를 불러오고 있습니다."
 						title="내 정보를 불러오는 중입니다"
 					/>
 				) : null}
@@ -263,7 +263,7 @@ export function ProfileView() {
 								</Link>
 							</Button>
 						}
-						description="팀 스페이스 데모는 볼 수 있지만, 프로필 수정과 실제 매칭 요청은 로그인 후 사용할 수 있습니다."
+						description="샘플 팀 스페이스는 둘러볼 수 있지만, 프로필 수정과 매칭 요청은 로그인 후 사용할 수 있습니다."
 						title="로그인이 필요합니다"
 					/>
 				) : null}
@@ -343,7 +343,7 @@ export function ProfileView() {
 											</Link>
 										</Button>
 									}
-									description="한 번에 한 팀만 참여하는 구조라 현재 팀을 가장 먼저 보여줍니다."
+									description="참여 중인 팀과 다음 일정을 바로 확인하세요."
 									eyebrow="Current team"
 									title={demoTeamSpace.name}
 								/>
@@ -361,7 +361,7 @@ export function ProfileView() {
 											3
 										</p>
 										<p className="mt-1 text-xs font-semibold text-primary">
-											team members
+											팀원
 										</p>
 									</div>
 								</div>
@@ -456,7 +456,7 @@ function EditableProfilePanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀원이 먼저 확인하는 이름, 소개, 레벨을 다듬습니다."
+				description="팀 후보가 확인할 이름, 소개, 레벨을 수정합니다."
 				eyebrow="Profile editor"
 				title="내 정보 수정"
 			/>
@@ -485,7 +485,7 @@ function EditableProfilePanel({
 							{form.nickname || "닉네임"}
 						</p>
 						<p className="mt-1 text-sm leading-6 text-muted-foreground">
-							프로필 이미지는 매칭 제안 카드와 팀원 목록에 함께 표시됩니다.
+							프로필 이미지는 매칭 카드와 팀원 목록에 표시됩니다.
 						</p>
 						{touched.profileImage && formErrors.profileImage ? (
 							<FieldError>{formErrors.profileImage}</FieldError>

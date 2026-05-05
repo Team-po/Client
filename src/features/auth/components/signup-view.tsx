@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
 	ArrowRight,
 	CheckCircle2,
@@ -8,6 +7,7 @@ import {
 	SearchCheck,
 	ShieldCheck,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,8 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { ProfileImagePicker } from "@/features/auth/components/profile-image-picker";
 import { AuthShell } from "@/features/auth/components/auth-shell";
+import { ProfileImagePicker } from "@/features/auth/components/profile-image-picker";
 import { getProfileFallback } from "@/features/auth/constants";
 import {
 	useCheckEmailDuplicateMutation,
@@ -194,8 +194,8 @@ export function SignupView() {
 	return (
 		<AuthShell
 			badge="Signup"
-			description="계정, 인증, 프로필을 한 화면에서 끝내고 바로 매칭 대기열로 갈 수 있게 구성했습니다."
-			title="매칭될 준비를 먼저 끝내요"
+			description="이메일 인증과 프로필 설정을 마치면 바로 매칭 요청을 보낼 수 있습니다."
+			title="매칭에 필요한 정보를 준비하세요"
 		>
 			<div className="mb-6 grid gap-3 sm:grid-cols-3">
 				<SetupStatus
@@ -240,7 +240,7 @@ export function SignupView() {
 							</p>
 						</div>
 						<p className="mt-1 text-sm leading-6 text-muted-foreground">
-							닉네임과 레벨은 매칭 카드에서 가장 먼저 보입니다.
+							닉네임과 레벨은 팀 후보가 가장 먼저 확인하는 정보입니다.
 						</p>
 						{touched.profileImage && errors.profileImage ? (
 							<FieldError>{errors.profileImage}</FieldError>
@@ -418,7 +418,7 @@ export function SignupView() {
 							</FieldDescription>
 						) : (
 							<FieldDescription>
-								서버 회원가입은 이메일 인증 완료 후 진행됩니다.
+								번호 받기를 눌러 이메일 인증번호를 받아 주세요.
 							</FieldDescription>
 						)}
 					</Field>
@@ -509,7 +509,7 @@ export function SignupView() {
 							<FieldError>{errors.nickname}</FieldError>
 						) : (
 							<FieldDescription>
-								팀 매칭 카드와 팀 스페이스에서 표시되는 이름입니다.
+								매칭 카드와 팀 스페이스에 표시되는 이름입니다.
 							</FieldDescription>
 						)}
 					</Field>
@@ -570,7 +570,7 @@ export function SignupView() {
 
 			<div className="mt-6 rounded-lg border border-border/70 bg-brand-warm p-4 text-sm">
 				<p className="text-muted-foreground">
-					이미 계정이 있다면 로그인해서 매칭 흐름을 이어가세요.
+					이미 계정이 있다면 로그인하고 진행 중인 매칭을 이어가세요.
 				</p>
 				<Button
 					asChild

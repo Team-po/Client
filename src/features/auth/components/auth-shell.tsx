@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AppPanel, AppShell } from "@/components/app-shell";
@@ -12,17 +12,17 @@ interface AuthShellProps {
 
 const journeySteps = [
 	{
-		description: "이메일 인증과 기본 프로필을 한 번에 정리합니다.",
+		description: "이메일 인증과 기본 프로필을 먼저 준비합니다.",
 		icon: ShieldCheck,
 		label: "계정 준비",
 	},
 	{
-		description: "역할과 프로젝트 힌트를 기반으로 팀 후보를 받습니다.",
+		description: "역할과 프로젝트 힌트를 입력하고 팀 후보를 기다립니다.",
 		icon: Sparkles,
 		label: "매칭 요청",
 	},
 	{
-		description: "수락 후 룰, 체크리스트, GitHub 흐름을 바로 확인합니다.",
+		description: "수락 후 팀 규칙, 체크리스트, GitHub 활동을 관리합니다.",
 		icon: UsersRound,
 		label: "팀 운영",
 	},
@@ -36,9 +36,8 @@ export function AuthShell({
 }: AuthShellProps) {
 	return (
 		<AppShell
-			description="랜딩을 지나 실제 제품으로 들어오는 구간입니다."
+			description="계정 준비부터 매칭 요청까지 한 흐름으로 이어집니다."
 			eyebrow="Account"
-			rail={<AuthRail />}
 			title="Team-po 시작하기"
 		>
 			<div className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
@@ -82,37 +81,5 @@ export function AuthShell({
 				</AppPanel>
 			</div>
 		</AppShell>
-	);
-}
-
-function AuthRail() {
-	return (
-		<AppPanel>
-			<div className="p-5">
-				<div className="flex items-center gap-3">
-					<div className="flex size-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-						<CheckCircle2 className="size-5" />
-					</div>
-					<div>
-						<p className="text-sm font-semibold text-brand-ink">매칭 준비도</p>
-						<p className="text-xs text-muted-foreground">프로필 완성 전 기준</p>
-					</div>
-				</div>
-				<div className="mt-5 space-y-3">
-					<ReadinessItem label="이메일 인증" value="필수" />
-					<ReadinessItem label="역할 선택" value="필수" />
-					<ReadinessItem label="프로젝트 힌트" value="선택" />
-				</div>
-			</div>
-		</AppPanel>
-	);
-}
-
-function ReadinessItem({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex items-center justify-between rounded-lg border border-border/70 bg-white px-3 py-2">
-			<span className="text-sm text-muted-foreground">{label}</span>
-			<span className="text-xs font-semibold text-primary">{value}</span>
-		</div>
 	);
 }
