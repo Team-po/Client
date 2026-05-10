@@ -11,6 +11,7 @@ import { EmailVerificationPage } from "@/pages/email-verification-page";
 import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
 import { MatchPage } from "@/pages/match-page";
+import { TeamPoPresentationEleventhPage } from "@/pages/team-po-presentation-eleventh-page";
 import { ProfilePage } from "@/pages/profile-page";
 import { TeamPoPresentationEighthPage } from "@/pages/team-po-presentation-eighth-page";
 import { TeamPoPresentationFourthPage } from "@/pages/team-po-presentation-fourth-page";
@@ -67,6 +68,10 @@ export function App() {
 				<Route
 					path="/deck/team-po-10"
 					element={<TeamPoPresentationTenthPage />}
+				/>
+				<Route
+					path="/deck/team-po-11"
+					element={<TeamPoPresentationEleventhPage />}
 				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
