@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+	exchangeGithubOAuthCode,
 	login,
 	sendSignupEmail,
 	validateSignupAuthNumber,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/api/users";
 import type {
 	CreateUserRequest,
+	GithubOAuthTokenRequest,
 	LoginRequest,
 	SendSignupEmailRequest,
 	ValidateSignupAuthNumberRequest,
@@ -48,6 +50,19 @@ export function useLoginMutation() {
 
 	return useMutation({
 		mutationFn: (payload: LoginRequest) => login(payload),
+		onSuccess: (response) => {
+			setAuthSession(response);
+			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
+		},
+	});
+}
+
+export function useGithubOAuthTokenMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: GithubOAuthTokenRequest) =>
+			exchangeGithubOAuthCode(payload),
 		onSuccess: (response) => {
 			setAuthSession(response);
 			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });

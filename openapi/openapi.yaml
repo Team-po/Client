@@ -119,6 +119,32 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /oauth/github/token:
+    post:
+      tags: [Auth]
+      summary: Exchange a GitHub OAuth authorization code
+      description: |
+        Exchanges the short-lived code appended to `/oauth/github/callback` after
+        GitHub OAuth success for a Team-po session token pair. When
+        `onboardingRequired=true` was included in the callback query, `level` is
+        required so the backend can create the GitHub-backed user account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GithubOAuthTokenRequest'
+      responses:
+        '200':
+          description: GitHub OAuth login completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /users/refresh-token:
     post:
       tags: [Auth]
@@ -506,6 +532,18 @@ components:
         expiresAt:
           type: string
           format: date-time
+    GithubOAuthTokenRequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
     RefreshTokenRequest:
       type: object
       additionalProperties: false

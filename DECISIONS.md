@@ -35,3 +35,7 @@
 ## 2026-05-05
 - API contract alignment: `openapi/openapi.yaml`, API clients, hooks, and MSW mocks now mirror the current Spring server controllers for signup email auth, user profile/account APIs, matching sessions, and project-group admin permission endpoints without adding new dependencies.
 - Internal app redesign approach: use LazyWeb-informed, decision-first SaaS dashboard patterns for `/login`, `/signup`, `/verify-email`, `/me`, `/match`, and `/team`, while preserving the landing page and `/deck/*` presentation routes. Keep the existing CSS variable color system, avoid new dependencies, and introduce `src/components/app-shell.tsx` as the shared internal app chrome.
+
+## 2026-05-11
+- GitHub OAuth flow: start authentication through the backend OAuth2 endpoint, receive the short-lived code at `/oauth/github/callback`, and exchange it through `src/lib/api/auth.ts` so email login and GitHub login share the same session storage and API client behavior
+- GitHub OAuth onboarding: request only the required development level for first-time GitHub users because the backend derives email and nickname from GitHub

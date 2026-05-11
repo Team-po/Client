@@ -8,6 +8,7 @@ import {
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type {
 	CreateUserRequest,
+	GithubOAuthTokenRequest,
 	LoginRequest,
 	SendSignupEmailRequest,
 	ValidateSignupAuthNumberRequest,
@@ -221,6 +222,59 @@ export const handlers = [
 		}
 
 		return HttpResponse.json(buildSession());
+	}),
+
+	http.post(getPath("/oauth/github/token"), async ({ request }) => {
+		const body = (await request.json()) as GithubOAuthTokenRequest;
+
+		await delay(500);
+
+		if (body.code === "mock-github-server-error") {
+			return buildErrorResponse(
+				500,
+				"GitHub 로그인 처리 중 서버 오류가 발생했습니다.",
+				"MATCH_DATA_ERROR",
+			);
+		}
+
+		if (body.code === "mock-github-login-code") {
+			currentUser = createPreviewUser({
+				email: "github.dev@teampo.dev",
+				nickname: "github_runner",
+				profileImage: "https://i.pravatar.cc/240?img=32",
+			});
+			currentUserId = 5;
+
+			return HttpResponse.json(buildSession());
+		}
+
+		if (body.code === "mock-github-onboarding-code") {
+			if (!body.level || body.level < 1 || body.level > 5) {
+				return buildErrorResponse(
+					400,
+					"레벨 선택은 필수입니다.",
+					"INVALID_INPUT_FIELD",
+					{ level: "레벨은 1부터 5까지 선택할 수 있어요." },
+				);
+			}
+
+			currentUser = createPreviewUser({
+				description: null,
+				email: "new.github.dev@teampo.dev",
+				level: body.level,
+				nickname: "new_github_runner",
+				profileImage: "https://i.pravatar.cc/240?img=47",
+			});
+			currentUserId = 6;
+
+			return HttpResponse.json(buildSession());
+		}
+
+		return buildErrorResponse(
+			400,
+			"OAuth 인가 코드가 만료되었거나 올바르지 않습니다.",
+			"INVALID_OAUTH_AUTHORIZATION_CODE",
+		);
 	}),
 
 	http.post(getPath("/users/refresh-token"), async ({ request }) => {

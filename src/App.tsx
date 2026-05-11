@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import { EmailVerificationPage } from "@/pages/email-verification-page";
+import { GithubOAuthCallbackPage } from "@/pages/github-oauth-callback-page";
 import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
 import { MatchPage } from "@/pages/match-page";
@@ -76,6 +77,10 @@ export function App() {
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
 				<Route path="/verify-email" element={<EmailVerificationPage />} />
+				<Route
+					path="/oauth/github/callback"
+					element={<GithubOAuthCallbackPage />}
+				/>
 				<Route path="/me" element={<ProfilePage />} />
 				<Route path="/match" element={<MatchPage />} />
 				<Route path="/team" element={<TeamSpacePage />} />
