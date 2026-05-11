@@ -24,3 +24,7 @@
 
 ## 2026-04-07
 - Local PDF inspection skill: `.agents/skills/pdf-reading` documents a fallback workflow for reading PDFs in restricted environments, preferring text extraction first and Ghostscript rendering to temporary images with mandatory cleanup when visual inspection is required
+
+## 2026-05-11
+- GitHub OAuth flow: start authentication through the backend OAuth2 endpoint, receive the short-lived code at `/oauth/github/callback`, and exchange it through `src/lib/api/auth.ts` so email login and GitHub login share the same session storage and API client behavior
+- GitHub OAuth onboarding: request only the required development level for first-time GitHub users because the backend derives email and nickname from GitHub

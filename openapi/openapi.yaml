@@ -52,6 +52,50 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /oauth/github/token:
+    post:
+      tags:
+        - Auth
+      operationId: exchangeGithubOAuthAuthorizationCode
+      summary: Exchange a GitHub OAuth authorization code
+      description: |
+        Exchanges the short-lived code appended to `/oauth/github/callback` after
+        GitHub OAuth success for a Team-po session token pair. When
+        `onboardingRequired=true` was included in the callback query, `level` is
+        required so the backend can create the GitHub-backed user account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GithubOAuthTokenRequest'
+            examples:
+              existingUser:
+                value:
+                  code: 5f2f9f43-4a12-4e96-8cc8-bf4eb40f54f6
+              onboarding:
+                value:
+                  code: 71f9f7ac-42cc-4f16-8896-4e4fb43b0f48
+                  level: 3
+      responses:
+        '200':
+          description: GitHub OAuth login completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  value:
+                    accessToken: mq_access_demo_token
+                    refreshToken: mq_refresh_demo_token
+                    expiresAt: '2026-03-08T18:30:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /users/sign-up:
     post:
       tags:
@@ -315,6 +359,21 @@ components:
           maxLength: 128
     LoginResponse:
       $ref: '#/components/schemas/Session'
+    GithubOAuthTokenRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          minLength: 1
+          description: Short-lived authorization code issued by the backend after GitHub OAuth success.
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Required only when the callback query includes `onboardingRequired=true`.
     CreateUserRequest:
       type: object
       additionalProperties: false

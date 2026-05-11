@@ -37,12 +37,14 @@ API mode is controlled from [`src/lib/api/config.ts`](/Users/hwangjo/Client/src/
 - `VITE_API_MODE=mock`: use MSW-based mocked API
 - `VITE_API_MODE=real`: call a real backend
 - `VITE_API_BASE_URL`: backend base URL, defaults to `/api`
+- `VITE_OAUTH_BASE_URL`: backend origin for server-started OAuth redirects, inferred from `VITE_API_BASE_URL` when omitted
 
 Example:
 
 ```bash
 VITE_API_MODE=real
 VITE_API_BASE_URL=https://api.example.com
+VITE_OAUTH_BASE_URL=https://api.example.com
 ```
 
 ## Vercel Deployment

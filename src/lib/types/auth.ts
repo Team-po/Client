@@ -3,6 +3,11 @@ export interface LoginRequest {
 	password: string;
 }
 
+export interface GithubOAuthTokenRequest {
+	code: string;
+	level?: number;
+}
+
 export interface SessionPayload {
 	accessToken: string;
 	expiresAt: string;
@@ -10,6 +15,7 @@ export interface SessionPayload {
 }
 
 export type LoginResponse = SessionPayload;
+export type GithubOAuthTokenResponse = SessionPayload;
 
 export interface CreateUserRequest {
 	email: string;

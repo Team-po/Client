@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { ArrowRight, Github, LoaderCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
 	FieldError,
 	FieldGroup,
 	FieldLabel,
+	FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AuthShell } from "@/features/auth/components/auth-shell";
@@ -17,6 +18,7 @@ import {
 	validateLoginForm,
 } from "@/features/auth/lib/validation";
 import { useLoginMutation } from "@/features/auth/hooks/use-auth-queries";
+import { apiConfig } from "@/lib/api/config";
 import { getApiErrorMessage } from "@/lib/api/client";
 
 export function LoginView() {
@@ -137,6 +139,21 @@ export function LoginView() {
 					</Button>
 				</div>
 			</form>
+
+			<div className="mt-6 flex flex-col gap-4">
+				<FieldSeparator>또는</FieldSeparator>
+				<Button
+					asChild
+					className="border-zinc-950 bg-zinc-950 text-white shadow-soft hover:bg-zinc-800 hover:text-white hover:shadow-panel"
+					size="lg"
+					variant="outline"
+				>
+					<a href={apiConfig.githubOAuthAuthorizationUrl}>
+						<Github data-icon="inline-start" />
+						GitHub로 계속하기
+					</a>
+				</Button>
+			</div>
 
 			<div className="mt-6 flex flex-col gap-2 text-sm">
 				<p className="text-muted-foreground">
