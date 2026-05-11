@@ -40,3 +40,43 @@ export function clearAuthSession() {
 
 	window.localStorage.removeItem(authSessionStorageKey);
 }
+
+export function getAuthSessionUserId() {
+	const session = getAuthSession();
+
+	if (!session) {
+		return null;
+	}
+
+	return getUserIdFromAccessToken(session.accessToken);
+}
+
+function getUserIdFromAccessToken(accessToken: string) {
+	const [, payload] = accessToken.split(".");
+
+	if (!payload) {
+		return null;
+	}
+
+	try {
+		const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+		const paddedPayload = normalizedPayload.padEnd(
+			Math.ceil(normalizedPayload.length / 4) * 4,
+			"=",
+		);
+		const parsedPayload = JSON.parse(window.atob(paddedPayload)) as unknown;
+
+		if (
+			typeof parsedPayload === "object" &&
+			parsedPayload !== null &&
+			"userId" in parsedPayload
+		) {
+			const userId = parsedPayload.userId;
+			return typeof userId === "number" ? userId : null;
+		}
+	} catch {
+		return null;
+	}
+
+	return null;
+}

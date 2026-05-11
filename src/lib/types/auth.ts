@@ -8,6 +8,15 @@ export interface GithubOAuthTokenRequest {
 	level?: number;
 }
 
+export interface SendSignupEmailRequest {
+	email: string;
+}
+
+export interface ValidateSignupAuthNumberRequest {
+	authNumber: number;
+	email: string;
+}
+
 export interface SessionPayload {
 	accessToken: string;
 	expiresAt: string;

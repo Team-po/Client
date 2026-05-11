@@ -1,4 +1,4 @@
-import { BrainCircuit, GitBranch, Gauge } from "lucide-react";
+import { BrainCircuit, Gauge, GitBranch } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
@@ -14,8 +14,8 @@ export function ValueSection() {
 			<Container className="space-y-10">
 				<SectionHeading
 					label="Continuous push"
-					title="팀 프로젝트 완수를 위해 AI가 매주 추진력을 제공합니다"
-					description="단순 매칭 플랫폼이 아니라, 진행 관리와 회고 자동화까지 이어지는 실행 시스템입니다."
+					title="매칭 이후에도 프로젝트가 멈추지 않도록 돕습니다"
+					description="주간 리포트, 회고 질문, 지연 신호를 한곳에 모아 팀이 다음 행동을 정하기 쉽게 만듭니다."
 				/>
 
 				<div className="grid gap-4 md:grid-cols-3">

@@ -15,7 +15,7 @@ interface ApiRequestOptions extends Omit<RequestInit, "body"> {
 
 export class ApiError extends Error {
 	code?: string;
-	fieldErrors?: Record<string, string[]>;
+	fieldErrors?: Record<string, string>;
 	status: number;
 
 	constructor(status: number, payload: ApiErrorResponse) {

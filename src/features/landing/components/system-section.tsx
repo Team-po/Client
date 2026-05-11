@@ -6,16 +6,16 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
 
 const colorTokens = [
-	{ name: "Primary", className: "bg-primary" },
-	{ name: "Accent", className: "bg-accent" },
-	{ name: "Secondary", className: "bg-secondary" },
-	{ name: "Foreground", className: "bg-[hsl(var(--brand-ink))]" },
+	{ name: "forming", className: "bg-primary" },
+	{ name: "active", className: "bg-accent" },
+	{ name: "shipping", className: "bg-emerald-500" },
+	{ name: "paused", className: "bg-amber-500" },
 ];
 
 const principles = [
-	"토큰 기반 컬러/타이포/그림자로 섹션 간 일관성 유지",
-	"컴포넌트 변형(variant) 중심으로 상태 표현을 단순화",
-	"페이지 로직과 도메인 UI를 분리해 유지보수성 확보",
+	"프로젝트 상태와 다음 액션을 같은 화면에서 확인합니다.",
+	"팀 규칙, 체크리스트, GitHub 활동을 팀 스페이스에 모읍니다.",
+	"진척 리포트와 회고 질문으로 매주 다음 행동을 정할 근거를 제공합니다.",
 ];
 
 export function SystemSection() {
@@ -24,9 +24,9 @@ export function SystemSection() {
 			<Container className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
 				<Surface variant="glass" spacing="spacious" className="space-y-6">
 					<SectionHeading
-						label="Design system"
-						title="랜딩 페이지를 넘어 재사용 가능한 UI 기반을 먼저 설계"
-						description="색상, 타이포, 서피스 스타일을 토큰화해 이후 대시보드/프로젝트 화면까지 확장할 수 있습니다."
+						label="Operating model"
+						title="팀이 같은 기준으로 움직이도록 운영 흐름을 정리합니다"
+						description="처음 만난 팀도 상태, 역할, 다음 액션을 같은 방식으로 확인하게 만듭니다."
 					/>
 
 					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -46,7 +46,7 @@ export function SystemSection() {
 
 				<Surface spacing="spacious" className="space-y-5">
 					<p className="font-display text-2xl leading-tight">
-						설계 원칙은 단순하고 명확하게
+						팀 운영은 단순하고 예측 가능하게
 					</p>
 					<div className="space-y-3">
 						{principles.map((item) => (
@@ -60,7 +60,7 @@ export function SystemSection() {
 						))}
 					</div>
 					<div className="pt-2">
-						<Badge variant="brand">Design tokens + composable components</Badge>
+						<Badge variant="brand">Matching + team operations</Badge>
 					</div>
 				</Surface>
 			</Container>

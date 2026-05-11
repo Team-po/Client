@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { exchangeGithubOAuthCode, login } from "@/lib/api/auth";
+import {
+	exchangeGithubOAuthCode,
+	login,
+	sendSignupEmail,
+	validateSignupAuthNumber,
+} from "@/lib/api/auth";
 import {
 	clearAuthSession,
 	getAuthSession,
@@ -18,6 +23,8 @@ import type {
 	CreateUserRequest,
 	GithubOAuthTokenRequest,
 	LoginRequest,
+	SendSignupEmailRequest,
+	ValidateSignupAuthNumberRequest,
 } from "@/lib/types/auth";
 import type {
 	DeleteCurrentUserRequest,
@@ -72,6 +79,19 @@ export function useSignupMutation() {
 export function useCheckEmailDuplicateMutation() {
 	return useMutation({
 		mutationFn: (email: string) => checkEmailDuplicate(email),
+	});
+}
+
+export function useSendSignupEmailMutation() {
+	return useMutation({
+		mutationFn: (payload: SendSignupEmailRequest) => sendSignupEmail(payload),
+	});
+}
+
+export function useValidateSignupAuthNumberMutation() {
+	return useMutation({
+		mutationFn: (payload: ValidateSignupAuthNumberRequest) =>
+			validateSignupAuthNumber(payload),
 	});
 }
 

@@ -1,7 +1,7 @@
 export const previewAuth = {
+	authNumber: "123456",
 	email: "preview@teampo.dev",
 	password: "teampo123!",
-	verificationToken: "TEAMPO-2026",
 };
 
 export function getProfileFallback(value: string) {

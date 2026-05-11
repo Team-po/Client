@@ -1,7 +1,9 @@
 const apiMode = import.meta.env.VITE_API_MODE === "real" ? "real" : "mock";
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || "/api";
+const apiBaseUrl =
+	trimTrailingSlashes(import.meta.env.VITE_API_BASE_URL?.trim() || "/api") ||
+	"/api";
 const oauthBaseUrl =
-	import.meta.env.VITE_OAUTH_BASE_URL?.trim() ||
+	trimTrailingSlashes(import.meta.env.VITE_OAUTH_BASE_URL?.trim() || "") ||
 	getDefaultOAuthBaseUrl(apiBaseUrl);
 
 export const apiConfig = {
@@ -20,4 +22,8 @@ function getDefaultOAuthBaseUrl(baseUrl: string) {
 	}
 
 	return baseUrl;
+}
+
+function trimTrailingSlashes(value: string) {
+	return value.replace(/\/+$/, "");
 }

@@ -1,10 +1,18 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import {
+	BrowserRouter,
+	Navigate,
+	Route,
+	Routes,
+	useLocation,
+} from "react-router-dom";
 
 import { EmailVerificationPage } from "@/pages/email-verification-page";
 import { GithubOAuthCallbackPage } from "@/pages/github-oauth-callback-page";
 import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
 import { MatchPage } from "@/pages/match-page";
+import { TeamPoPresentationEleventhPage } from "@/pages/team-po-presentation-eleventh-page";
 import { ProfilePage } from "@/pages/profile-page";
 import { TeamPoPresentationEighthPage } from "@/pages/team-po-presentation-eighth-page";
 import { TeamPoPresentationFourthPage } from "@/pages/team-po-presentation-fourth-page";
@@ -16,10 +24,13 @@ import { TeamPoPresentationThirdPage } from "@/pages/team-po-presentation-third-
 import { TeamPoPresentationFifthPage } from "@/pages/team-po-presentation-fifth-page";
 import { TeamPoPresentationSeventhPage } from "@/pages/team-po-presentation-seventh-page";
 import { TeamPoPresentationSixthPage } from "@/pages/team-po-presentation-sixth-page";
+import { TeamSpacePage } from "@/pages/team-space-page";
+import { TeamPoPresentationTenthPage } from "@/pages/team-po-presentation-tenth-page";
 
 export function App() {
 	return (
 		<BrowserRouter>
+			<ScrollToTop />
 			<Routes>
 				<Route path="/" element={<LandingPage />} />
 				<Route path="/deck/team-po" element={<TeamPoPresentationPage />} />
@@ -55,6 +66,14 @@ export function App() {
 					path="/deck/team-po-9"
 					element={<TeamPoPresentationNinthPage />}
 				/>
+				<Route
+					path="/deck/team-po-10"
+					element={<TeamPoPresentationTenthPage />}
+				/>
+				<Route
+					path="/deck/team-po-11"
+					element={<TeamPoPresentationEleventhPage />}
+				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
 				<Route path="/verify-email" element={<EmailVerificationPage />} />
@@ -64,8 +83,21 @@ export function App() {
 				/>
 				<Route path="/me" element={<ProfilePage />} />
 				<Route path="/match" element={<MatchPage />} />
+				<Route path="/team" element={<TeamSpacePage />} />
 				<Route path="*" element={<Navigate replace to="/" />} />
 			</Routes>
 		</BrowserRouter>
 	);
+}
+
+function ScrollToTop() {
+	const { pathname } = useLocation();
+
+	useEffect(() => {
+		if (pathname) {
+			window.scrollTo({ left: 0, top: 0 });
+		}
+	}, [pathname]);
+
+	return null;
 }
