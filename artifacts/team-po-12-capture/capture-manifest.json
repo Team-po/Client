@@ -1,0 +1,132 @@
+{
+  "url": "http://127.0.0.1:5173/deck/team-po-12?mode=capture",
+  "deviceScaleFactor": 2,
+  "slideCount": 6,
+  "expectedSlideSize": {
+    "css": {
+      "width": 1680,
+      "height": 945
+    },
+    "pixels": {
+      "width": 3360,
+      "height": 1890
+    }
+  },
+  "measurements": [
+    {
+      "index": 1,
+      "width": 1680,
+      "height": 945,
+      "x": 60,
+      "y": 18
+    },
+    {
+      "index": 2,
+      "width": 1680,
+      "height": 945,
+      "x": 60,
+      "y": 156
+    },
+    {
+      "index": 3,
+      "width": 1680,
+      "height": 945,
+      "x": 60,
+      "y": 77
+    },
+    {
+      "index": 4,
+      "width": 1680,
+      "height": 945,
+      "x": 60,
+      "y": 156
+    },
+    {
+      "index": 5,
+      "width": 1680,
+      "height": 945,
+      "x": 60,
+      "y": 77
+    },
+    {
+      "index": 6,
+      "width": 1680,
+      "height": 945,
+      "x": 60,
+      "y": 156
+    }
+  ],
+  "imageDimensions": [
+    {
+      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-01.png",
+      "width": 3360,
+      "height": 1890
+    },
+    {
+      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-02.png",
+      "width": 3360,
+      "height": 1890
+    },
+    {
+      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-03.png",
+      "width": 3360,
+      "height": 1890
+    },
+    {
+      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-04.png",
+      "width": 3360,
+      "height": 1890
+    },
+    {
+      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-05.png",
+      "width": 3360,
+      "height": 1890
+    },
+    {
+      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-06.png",
+      "width": 3360,
+      "height": 1890
+    }
+  ],
+  "visualChecks": [
+    {
+      "index": 1,
+      "textOverflow": [],
+      "outsideSlide": []
+    },
+    {
+      "index": 2,
+      "textOverflow": [],
+      "outsideSlide": []
+    },
+    {
+      "index": 3,
+      "textOverflow": [],
+      "outsideSlide": []
+    },
+    {
+      "index": 4,
+      "textOverflow": [],
+      "outsideSlide": []
+    },
+    {
+      "index": 5,
+      "textOverflow": [],
+      "outsideSlide": []
+    },
+    {
+      "index": 6,
+      "textOverflow": [],
+      "outsideSlide": []
+    }
+  ],
+  "slides": [
+    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-01.png",
+    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-02.png",
+    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-03.png",
+    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-04.png",
+    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-05.png",
+    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-06.png"
+  ],
+  "pdf": "/Users/hwangjo/Client/artifacts/team-po-12-capture/team-po-12-presentation.pdf"
+}
