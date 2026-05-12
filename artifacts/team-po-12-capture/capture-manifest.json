@@ -58,32 +58,32 @@
   ],
   "imageDimensions": [
     {
-      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-01.png",
+      "path": "artifacts/team-po-12-capture/slide-01.png",
       "width": 3360,
       "height": 1890
     },
     {
-      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-02.png",
+      "path": "artifacts/team-po-12-capture/slide-02.png",
       "width": 3360,
       "height": 1890
     },
     {
-      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-03.png",
+      "path": "artifacts/team-po-12-capture/slide-03.png",
       "width": 3360,
       "height": 1890
     },
     {
-      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-04.png",
+      "path": "artifacts/team-po-12-capture/slide-04.png",
       "width": 3360,
       "height": 1890
     },
     {
-      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-05.png",
+      "path": "artifacts/team-po-12-capture/slide-05.png",
       "width": 3360,
       "height": 1890
     },
     {
-      "path": "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-06.png",
+      "path": "artifacts/team-po-12-capture/slide-06.png",
       "width": 3360,
       "height": 1890
     }
@@ -121,12 +121,12 @@
     }
   ],
   "slides": [
-    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-01.png",
-    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-02.png",
-    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-03.png",
-    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-04.png",
-    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-05.png",
-    "/Users/hwangjo/Client/artifacts/team-po-12-capture/slide-06.png"
+    "artifacts/team-po-12-capture/slide-01.png",
+    "artifacts/team-po-12-capture/slide-02.png",
+    "artifacts/team-po-12-capture/slide-03.png",
+    "artifacts/team-po-12-capture/slide-04.png",
+    "artifacts/team-po-12-capture/slide-05.png",
+    "artifacts/team-po-12-capture/slide-06.png"
   ],
-  "pdf": "/Users/hwangjo/Client/artifacts/team-po-12-capture/team-po-12-presentation.pdf"
+  "pdf": "artifacts/team-po-12-capture/team-po-12-presentation.pdf"
 }
