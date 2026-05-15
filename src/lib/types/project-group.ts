@@ -7,3 +7,24 @@ export interface ProjectGroupAdminPermissionRequest {
 	projectGroupId: number;
 	targetUserId: number;
 }
+
+export interface ProjectGroupMember {
+	admin: boolean;
+	groupRole: ProjectGroupRole;
+	level: number;
+	memberRole: ProjectGroupMemberRole;
+	nickname: string;
+	profileImage: string | null;
+	temperature: number;
+	userId: number;
+}
+
+export interface MyProjectGroup {
+	currentUserId: number;
+	members: ProjectGroupMember[];
+	projectDescription: string | null;
+	projectGroupId: number;
+	projectMvp: string | null;
+	projectName: string;
+	projectTitle: string;
+}

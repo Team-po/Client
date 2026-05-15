@@ -20,8 +20,8 @@ import type {
 	MatchStatus,
 	ProjectRequestPayload,
 } from "@/lib/types/match";
+import type { MyProjectGroup } from "@/lib/types/project-group";
 import type {
-	DeleteCurrentUserRequest,
 	EditPasswordRequest,
 	UpdateCurrentUserRequest,
 	UserProfile,
@@ -34,6 +34,9 @@ let matchStatus: MatchStatus | null = null;
 let activeMatchId: number | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
+let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
+let deleteEmailAuthSentUserId: number | null = null;
+let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
 
 function buildErrorResponse(
@@ -100,6 +103,11 @@ function base64UrlEncode(value: string) {
 
 function imageUrlFromKey(objectKey: string | undefined) {
 	return objectKey ? `https://images.teampo.dev/${objectKey}` : null;
+}
+
+function resetDeleteEmailState() {
+	deleteEmailAuthSentUserId = null;
+	deleteEmailVerifiedUserId = null;
 }
 
 function isValidMatchRole(value: string): value is MatchRole {
@@ -180,6 +188,60 @@ function createMockMatchSession(body: ProjectRequestPayload) {
 	];
 }
 
+function createMockProjectGroup(): MyProjectGroup {
+	return {
+		currentUserId,
+		members: [
+			{
+				admin: true,
+				groupRole: "HOST",
+				level: currentUser?.level ?? 3,
+				memberRole: "FRONTEND",
+				nickname: currentUser?.nickname ?? "preview",
+				profileImage: currentUser?.profileImage ?? null,
+				temperature: currentUser?.temperature ?? 50,
+				userId: currentUserId,
+			},
+			{
+				admin: false,
+				groupRole: "MEMBER",
+				level: 4,
+				memberRole: "BACKEND",
+				nickname: "api_builder",
+				profileImage: null,
+				temperature: 53,
+				userId: 2,
+			},
+			{
+				admin: false,
+				groupRole: "MEMBER",
+				level: 3,
+				memberRole: "FRONTEND",
+				nickname: "pixel_runner",
+				profileImage: null,
+				temperature: 49,
+				userId: 3,
+			},
+			{
+				admin: false,
+				groupRole: "MEMBER",
+				level: 2,
+				memberRole: "DESIGN",
+				nickname: "flow_designer",
+				profileImage: null,
+				temperature: 51,
+				userId: 4,
+			},
+		],
+		projectDescription:
+			"랜덤 팀 매칭 이후 팀이 바로 움직일 수 있도록 규칙과 체크리스트를 정리합니다.",
+		projectGroupId: 10,
+		projectMvp: "매칭 요청, 수락/거절, 팀 스페이스 홈, 첫 체크리스트 운영",
+		projectName: "Blue Sprint",
+		projectTitle: "Team-po 팀 운영 MVP",
+	};
+}
+
 export const handlers = [
 	http.post(getPath("/users/sign-in"), async ({ request }) => {
 		const body = (await request.json()) as LoginRequest;
@@ -244,6 +306,7 @@ export const handlers = [
 				profileImage: "https://i.pravatar.cc/240?img=32",
 			});
 			currentUserId = 5;
+			resetDeleteEmailState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -266,6 +329,7 @@ export const handlers = [
 				profileImage: "https://i.pravatar.cc/240?img=47",
 			});
 			currentUserId = 6;
+			resetDeleteEmailState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -461,6 +525,7 @@ export const handlers = [
 			temperature: 50,
 		};
 		currentPassword = body.password;
+		resetDeleteEmailState();
 
 		return new HttpResponse(null, { status: 200 });
 	}),
@@ -569,24 +634,80 @@ export const handlers = [
 		return new HttpResponse(null, { status: 200 });
 	}),
 
-	http.delete(getPath("/users/me"), async ({ request }) => {
-		const body = (await request.json()) as DeleteCurrentUserRequest;
-
+	http.post(getPath("/users/me/deletion-email"), async () => {
 		await delay(350);
 
-		if (body.password !== currentPassword) {
+		if (!currentUser) {
 			return buildErrorResponse(
 				401,
-				"현재 비밀번호가 일치하지 않습니다.",
-				"UNMATCHED_PASSWORD",
+				"로그인이 필요합니다.",
+				"NO_AUTHENTICATED_USER",
+			);
+		}
+
+		deleteEmailAuthSentUserId = currentUserId;
+		deleteEmailVerifiedUserId = null;
+		return new HttpResponse(null, { status: 200 });
+	}),
+
+	http.post(
+		getPath("/users/me/deletion-number-validation"),
+		async ({ request }) => {
+			const body = (await request.json()) as { authNumber: number };
+
+			await delay(250);
+
+			if (!currentUser) {
+				return buildErrorResponse(
+					401,
+					"로그인이 필요합니다.",
+					"NO_AUTHENTICATED_USER",
+				);
+			}
+
+			if (
+				deleteEmailAuthSentUserId !== currentUserId ||
+				body.authNumber !== 123456
+			) {
+				return buildErrorResponse(
+					400,
+					"인증번호가 만료되었거나 올바르지 않습니다.",
+					"INVALID_EMAIL_AUTH_CODE",
+				);
+			}
+
+			deleteEmailAuthSentUserId = null;
+			deleteEmailVerifiedUserId = currentUserId;
+			return new HttpResponse(null, { status: 200 });
+		},
+	),
+
+	http.delete(getPath("/users/me"), async () => {
+		await delay(350);
+
+		if (!currentUser) {
+			return buildErrorResponse(
+				401,
+				"로그인이 필요합니다.",
+				"NO_AUTHENTICATED_USER",
+			);
+		}
+
+		if (deleteEmailVerifiedUserId !== currentUserId) {
+			return buildErrorResponse(
+				400,
+				"이메일 인증이 필요합니다.",
+				"EMAIL_NOT_VERIFIED",
 			);
 		}
 
 		currentUser = null;
+		resetDeleteEmailState();
 		matchStatus = null;
 		activeMatchId = null;
 		activeMatchMembers = [];
 		activeMatchProject = null;
+		activeProjectGroup = null;
 
 		return new HttpResponse(null, { status: 200 });
 	}),
@@ -789,6 +910,28 @@ export const handlers = [
 		return new HttpResponse(null, { status: 200 });
 	}),
 
+	http.get(getPath("/project-groups/me"), async () => {
+		await delay(250);
+
+		if (!currentUser) {
+			return buildErrorResponse(
+				401,
+				"로그인이 필요합니다.",
+				"NO_AUTHENTICATED_USER",
+			);
+		}
+
+		if (!activeProjectGroup) {
+			return buildErrorResponse(
+				404,
+				"소속된 팀 스페이스를 찾을 수 없습니다.",
+				"PROJECT_GROUP_NOT_FOUND",
+			);
+		}
+
+		return HttpResponse.json(activeProjectGroup);
+	}),
+
 	http.patch(
 		getPath("/project-groups/:projectGroupId/admins/:targetUserId"),
 		({ params }) => {
@@ -808,6 +951,19 @@ export const handlers = [
 				);
 			}
 
+			const targetMember = activeProjectGroup?.members.find(
+				(member) => member.userId === Number(params.targetUserId),
+			);
+
+			if (!activeProjectGroup || !targetMember) {
+				return buildErrorResponse(
+					404,
+					"권한을 변경할 팀 멤버를 찾을 수 없습니다.",
+					"PROJECT_GROUP_MEMBER_NOT_FOUND",
+				);
+			}
+
+			targetMember.admin = true;
 			return new HttpResponse(null, { status: 200 });
 		},
 	),
@@ -831,6 +987,27 @@ export const handlers = [
 				);
 			}
 
+			const targetMember = activeProjectGroup?.members.find(
+				(member) => member.userId === Number(params.targetUserId),
+			);
+
+			if (!activeProjectGroup || !targetMember) {
+				return buildErrorResponse(
+					404,
+					"권한을 변경할 팀 멤버를 찾을 수 없습니다.",
+					"PROJECT_GROUP_MEMBER_NOT_FOUND",
+				);
+			}
+
+			if (targetMember.groupRole === "HOST") {
+				return buildErrorResponse(
+					403,
+					"방장의 관리자 권한은 회수할 수 없습니다.",
+					"PROJECT_GROUP_PERMISSION_DENIED",
+				);
+			}
+
+			targetMember.admin = false;
 			return new HttpResponse(null, { status: 200 });
 		},
 	),

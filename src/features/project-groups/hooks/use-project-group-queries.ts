@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+	getMyProjectGroup,
 	grantProjectGroupAdminPermission,
 	revokeProjectGroupAdminPermission,
 } from "@/lib/api/project-groups";
@@ -8,7 +9,16 @@ import type { ProjectGroupAdminPermissionRequest } from "@/lib/types/project-gro
 
 export const projectGroupQueryKeys = {
 	all: ["project-groups"] as const,
+	me: ["project-groups", "me"] as const,
 };
+
+export function useMyProjectGroupQuery(enabled = true) {
+	return useQuery({
+		enabled,
+		queryFn: () => getMyProjectGroup(),
+		queryKey: projectGroupQueryKeys.me,
+	});
+}
 
 export function useGrantProjectGroupAdminPermissionMutation() {
 	const queryClient = useQueryClient();

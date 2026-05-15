@@ -5,10 +5,10 @@ import type {
 	SignUpRequest,
 } from "@/lib/types/auth";
 import type {
-	DeleteCurrentUserRequest,
 	EditPasswordRequest,
 	UpdateCurrentUserRequest,
 	UserProfile,
+	ValidateDeleteUserEmailRequest,
 } from "@/lib/types/user";
 
 export async function createUser(payload: CreateUserRequest) {
@@ -56,9 +56,23 @@ export function editPassword(payload: EditPasswordRequest) {
 	});
 }
 
-export function deleteCurrentUser(payload: DeleteCurrentUserRequest) {
-	return apiRequest<void>("/users/me", {
+export function sendDeleteUserEmail() {
+	return apiRequest<void>("/users/me/deletion-email", {
+		method: "POST",
+	});
+}
+
+export function validateDeleteUserEmail(
+	payload: ValidateDeleteUserEmailRequest,
+) {
+	return apiRequest<void>("/users/me/deletion-number-validation", {
 		json: payload,
+		method: "POST",
+	});
+}
+
+export function deleteCurrentUser() {
+	return apiRequest<void>("/users/me", {
 		method: "DELETE",
 	});
 }
