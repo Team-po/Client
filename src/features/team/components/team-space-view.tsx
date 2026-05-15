@@ -6,6 +6,7 @@ import {
 	Github,
 	GitPullRequest,
 	Home,
+	LoaderCircle,
 	MessageSquareText,
 	PencilLine,
 	Plus,
@@ -33,9 +34,12 @@ import {
 } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
+import type { ProjectGroupMember } from "@/lib/types/project-group";
 import type {
 	ProjectLifecycleStatus,
 	TeamChecklistItem,
@@ -104,6 +108,8 @@ export function TeamSpaceView() {
 }
 
 function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
+	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
+
 	return (
 		<AppShell
 			actions={
@@ -122,63 +128,232 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					</Button>
 				</>
 			}
-			description="팀 생성과 팀스페이스 조회 API가 연결되면 이 화면에서 내 팀 정보를 확인할 수 있습니다."
+			description="서버에 연결된 내 팀 스페이스 정보를 확인합니다."
 			eyebrow="Team workspace"
-			title="팀 스페이스"
+			title={projectGroupQuery.data?.projectName ?? "팀 스페이스"}
 		>
 			<div className="grid gap-5">
-				<AppPanel className="border-primary/20">
-					<AppPanelHeader
-						action={<Badge variant="neutral">준비 중</Badge>}
-						description="현재 서버에는 매칭 요청, 매칭 세션 조회, 수락/거절 흐름까지만 연결되어 있습니다."
-						eyebrow="Status"
-						title="팀 스페이스를 준비하고 있습니다"
+				{!isSignedIn ? (
+					<RealTeamNotice
+						action={
+							<Button asChild className="sm:w-fit">
+								<Link to="/login">로그인</Link>
+							</Button>
+						}
+						description="로그인 후 내 팀 스페이스를 불러올 수 있습니다."
+						status="인증 필요"
+						title="로그인이 필요합니다"
 					/>
-					<div className="grid gap-4 p-5">
-						<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-							실제 팀 데이터를 불러오는 API가 아직 없어 샘플 팀 화면은 표시하지
-							않습니다. 매칭이 완료된 뒤 팀 조회 API가 연결되면 이곳에서 내 팀
-							공간을 열 수 있습니다.
-						</div>
-						<div className="flex flex-col gap-3 sm:flex-row">
+				) : null}
+
+				{isSignedIn && projectGroupQuery.isLoading ? (
+					<RealTeamNotice
+						description="내 팀 스페이스를 불러오고 있습니다."
+						icon={<LoaderCircle className="size-4 animate-spin" />}
+						status="조회 중"
+						title="팀 정보를 확인하는 중입니다"
+					/>
+				) : null}
+
+				{isSignedIn && projectGroupQuery.error ? (
+					<RealTeamNotice
+						action={
 							<Button asChild className="sm:w-fit">
 								<Link to="/match">
 									<ArrowRight data-icon="inline-start" />
 									매칭 상태 확인
 								</Link>
 							</Button>
-							{!isSignedIn ? (
-								<Button asChild className="sm:w-fit" variant="outline">
-									<Link to="/login">로그인</Link>
-								</Button>
-							) : null}
-						</div>
-					</div>
-				</AppPanel>
+						}
+						description={getApiErrorMessage(projectGroupQuery.error)}
+						status="팀 없음"
+						title="활성 팀 스페이스가 없습니다"
+					/>
+				) : null}
 
-				<div className="grid gap-4 md:grid-cols-3">
-					<MetricCard
-						label="현재 연결"
-						tone="primary"
-						trend="요청, 세션, 응답 API"
-						value="매칭"
-					/>
-					<MetricCard
-						label="팀 조회"
-						tone="amber"
-						trend="연결 준비 중"
-						value="대기"
-					/>
-					<MetricCard
-						label="팀 운영"
-						tone="amber"
-						trend="연결 준비 중"
-						value="대기"
-					/>
-				</div>
+				{projectGroupQuery.data ? (
+					<>
+						<AppPanel className="border-primary/20">
+							<AppPanelHeader
+								action={<Badge variant="neutral">ACTIVE</Badge>}
+								description={
+									projectGroupQuery.data.projectDescription ??
+									"프로젝트 설명이 아직 없습니다."
+								}
+								eyebrow="Project"
+								title={projectGroupQuery.data.projectTitle}
+							/>
+							<div className="grid gap-4 p-5">
+								<div className="rounded-lg border border-border bg-white p-4">
+									<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+										MVP
+									</p>
+									<p className="mt-2 text-sm leading-6 text-brand-ink">
+										{projectGroupQuery.data.projectMvp ??
+											"프로젝트 MVP가 아직 없습니다."}
+									</p>
+								</div>
+								<div className="grid gap-3 md:grid-cols-2">
+									{projectGroupQuery.data.members.map((member) => (
+										<RealProjectGroupMemberCard
+											currentUserId={projectGroupQuery.data.currentUserId}
+											key={member.userId}
+											member={member}
+										/>
+									))}
+								</div>
+							</div>
+						</AppPanel>
+
+						<div className="grid gap-4 md:grid-cols-3">
+							<MetricCard
+								label="팀 멤버"
+								tone="primary"
+								trend="ACTIVE 팀"
+								value={String(projectGroupQuery.data.members.length)}
+							/>
+							<MetricCard
+								label="관리자"
+								tone="emerald"
+								trend="권한 관리 가능"
+								value={String(
+									projectGroupQuery.data.members.filter(
+										(member) => member.admin,
+									).length,
+								)}
+							/>
+							<MetricCard
+								label="내 권한"
+								tone="amber"
+								trend="팀 스페이스"
+								value={
+									projectGroupQuery.data.members.find(
+										(member) =>
+											member.userId === projectGroupQuery.data.currentUserId,
+									)?.groupRole ?? "MEMBER"
+								}
+							/>
+						</div>
+					</>
+				) : null}
+
+				{projectGroupQuery.data ? null : (
+					<div className="grid gap-4 md:grid-cols-3">
+						<MetricCard
+							label="현재 연결"
+							tone="primary"
+							trend="서버 API"
+							value="팀 조회"
+						/>
+						<MetricCard
+							label="매칭"
+							tone="amber"
+							trend="팀 결성 전"
+							value="확인"
+						/>
+						<MetricCard
+							label="팀 운영"
+							tone="amber"
+							trend="팀 생성 후"
+							value="대기"
+						/>
+					</div>
+				)}
 			</div>
 		</AppShell>
 	);
+}
+
+function RealTeamNotice({
+	action,
+	description,
+	icon,
+	status,
+	title,
+}: {
+	action?: ReactNode;
+	description: string;
+	icon?: ReactNode;
+	status: string;
+	title: string;
+}) {
+	return (
+		<AppPanel className="border-primary/20">
+			<AppPanelHeader
+				action={<Badge variant="neutral">{status}</Badge>}
+				description={description}
+				eyebrow="Status"
+				title={title}
+			/>
+			<div className="grid gap-4 p-5">
+				<div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+					{icon}
+					<span>{description}</span>
+				</div>
+				{action ? (
+					<div className="flex flex-col gap-3 sm:flex-row">{action}</div>
+				) : null}
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealProjectGroupMemberCard({
+	currentUserId,
+	member,
+}: {
+	currentUserId: number;
+	member: ProjectGroupMember;
+}) {
+	return (
+		<div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-white p-4 shadow-crisp">
+			<div className="flex min-w-0 items-center gap-3">
+				<div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-secondary text-sm font-bold text-brand-ink">
+					{member.profileImage ? (
+						<img
+							alt=""
+							className="size-full object-cover"
+							src={member.profileImage}
+						/>
+					) : (
+						member.nickname.slice(0, 2).toUpperCase()
+					)}
+				</div>
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<p className="truncate text-sm font-semibold text-brand-ink">
+							{member.nickname}
+						</p>
+						{member.userId === currentUserId ? (
+							<Badge variant="brand">ME</Badge>
+						) : null}
+					</div>
+					<p className="mt-1 text-xs text-muted-foreground">
+						{formatMemberRole(member.memberRole)} · Lv.{member.level} · 온도{" "}
+						{member.temperature}
+					</p>
+				</div>
+			</div>
+			<div className="flex shrink-0 flex-col items-end gap-2">
+				<Badge variant={member.groupRole === "HOST" ? "brand" : "neutral"}>
+					{member.groupRole}
+				</Badge>
+				<Badge variant={member.admin ? "warm" : "neutral"}>
+					{member.admin ? "ADMIN" : "MEMBER"}
+				</Badge>
+			</div>
+		</div>
+	);
+}
+
+function formatMemberRole(role: ProjectGroupMember["memberRole"]) {
+	const labels: Record<ProjectGroupMember["memberRole"], string> = {
+		BACKEND: "BE",
+		DESIGN: "Design",
+		FRONTEND: "FE",
+	};
+
+	return labels[role];
 }
 
 function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {

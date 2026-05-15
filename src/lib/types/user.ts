@@ -19,6 +19,6 @@ export interface EditPasswordRequest {
 	currentPassword: string;
 }
 
-export interface DeleteCurrentUserRequest {
-	password: string;
+export interface ValidateDeleteUserEmailRequest {
+	authNumber: number;
 }

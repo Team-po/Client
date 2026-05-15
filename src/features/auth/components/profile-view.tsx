@@ -34,7 +34,9 @@ import {
 	useCurrentUserQuery,
 	useDeleteCurrentUserMutation,
 	useEditPasswordMutation,
+	useSendDeleteUserEmailMutation,
 	useUpdateCurrentUserMutation,
+	useValidateDeleteUserEmailMutation,
 } from "@/features/auth/hooks/use-auth-queries";
 import {
 	getDeleteConfirmationError,
@@ -56,6 +58,8 @@ export function ProfileView() {
 	const currentUserQuery = useCurrentUserQuery();
 	const updateCurrentUserMutation = useUpdateCurrentUserMutation();
 	const editPasswordMutation = useEditPasswordMutation();
+	const sendDeleteUserEmailMutation = useSendDeleteUserEmailMutation();
+	const validateDeleteUserEmailMutation = useValidateDeleteUserEmailMutation();
 	const deleteCurrentUserMutation = useDeleteCurrentUserMutation();
 	const [form, setForm] = useState({
 		description: "",
@@ -75,8 +79,8 @@ export function ProfileView() {
 		currentPassword: "",
 	});
 	const [deleteForm, setDeleteForm] = useState({
+		authNumber: "",
 		confirm: "",
-		password: "",
 	});
 	const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
 		string | null
@@ -135,9 +139,11 @@ export function ProfileView() {
 		passwordForm.currentPassword.length < 8 ||
 		passwordForm.afterPassword.length < 8;
 	const isDeleteDisabled =
+		sendDeleteUserEmailMutation.isPending ||
+		validateDeleteUserEmailMutation.isPending ||
 		deleteCurrentUserMutation.isPending ||
 		Boolean(deleteConfirmError) ||
-		deleteForm.password.length < 8;
+		!/^\d{6}$/.test(deleteForm.authNumber);
 
 	function markTouched(field: keyof typeof touched) {
 		setTouched((current) => ({
@@ -184,6 +190,10 @@ export function ProfileView() {
 		navigate("/login", { replace: true });
 	}
 
+	async function handleDeleteEmailSend() {
+		await sendDeleteUserEmailMutation.mutateAsync();
+	}
+
 	async function handleDeleteSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
@@ -191,9 +201,10 @@ export function ProfileView() {
 			return;
 		}
 
-		await deleteCurrentUserMutation.mutateAsync({
-			password: deleteForm.password,
+		await validateDeleteUserEmailMutation.mutateAsync({
+			authNumber: Number(deleteForm.authNumber),
 		});
+		await deleteCurrentUserMutation.mutateAsync();
 		navigate("/", { replace: true });
 	}
 
@@ -395,8 +406,13 @@ export function ProfileView() {
 									deleteCurrentUserMutation={deleteCurrentUserMutation}
 									deleteForm={deleteForm}
 									isDeleteDisabled={isDeleteDisabled}
+									onSendDeleteEmail={handleDeleteEmailSend}
 									onSubmit={handleDeleteSubmit}
+									sendDeleteUserEmailMutation={sendDeleteUserEmailMutation}
 									setDeleteForm={setDeleteForm}
+									validateDeleteUserEmailMutation={
+										validateDeleteUserEmailMutation
+									}
 								/>
 							</div>
 						</div>
@@ -769,22 +785,35 @@ function DangerPanel({
 	deleteCurrentUserMutation,
 	deleteForm,
 	isDeleteDisabled,
+	onSendDeleteEmail,
 	onSubmit,
+	sendDeleteUserEmailMutation,
 	setDeleteForm,
+	validateDeleteUserEmailMutation,
 }: {
 	deleteConfirmError: string | undefined;
 	deleteCurrentUserMutation: ReturnType<typeof useDeleteCurrentUserMutation>;
-	deleteForm: { confirm: string; password: string };
+	deleteForm: { authNumber: string; confirm: string };
 	isDeleteDisabled: boolean;
+	onSendDeleteEmail: () => void;
 	onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+	sendDeleteUserEmailMutation: ReturnType<
+		typeof useSendDeleteUserEmailMutation
+	>;
 	setDeleteForm: React.Dispatch<
-		React.SetStateAction<{ confirm: string; password: string }>
+		React.SetStateAction<{ authNumber: string; confirm: string }>
+	>;
+	validateDeleteUserEmailMutation: ReturnType<
+		typeof useValidateDeleteUserEmailMutation
 	>;
 }) {
+	const deleteError =
+		validateDeleteUserEmailMutation.error ?? deleteCurrentUserMutation.error;
+
 	return (
 		<AppPanel className="border-rose-200">
 			<AppPanelHeader
-				description="비밀번호 확인 후 계정을 삭제합니다."
+				description="이메일 인증번호 확인 후 계정을 삭제합니다."
 				eyebrow="Danger zone"
 				title="회원 탈퇴"
 			/>
@@ -799,6 +828,54 @@ function DangerPanel({
 					</p>
 				</div>
 				<FieldGroup>
+					<div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+						<Field>
+							<FieldLabel htmlFor="delete-auth-number">인증번호</FieldLabel>
+							<Input
+								className="h-11 bg-white"
+								id="delete-auth-number"
+								inputMode="numeric"
+								maxLength={6}
+								onChange={(event) =>
+									setDeleteForm((current) => ({
+										...current,
+										authNumber: event.target.value
+											.replace(/\D/g, "")
+											.slice(0, 6),
+									}))
+								}
+								placeholder="123456"
+								value={deleteForm.authNumber}
+							/>
+						</Field>
+						<Button
+							className="self-end"
+							disabled={sendDeleteUserEmailMutation.isPending}
+							onClick={() => void onSendDeleteEmail()}
+							type="button"
+							variant="outline"
+						>
+							{sendDeleteUserEmailMutation.isPending ? (
+								<LoaderCircle
+									className="animate-spin"
+									data-icon="inline-start"
+								/>
+							) : (
+								<KeyRound data-icon="inline-start" />
+							)}
+							인증번호 발송
+						</Button>
+					</div>
+					{sendDeleteUserEmailMutation.error ? (
+						<FieldError>
+							{getApiErrorMessage(sendDeleteUserEmailMutation.error)}
+						</FieldError>
+					) : null}
+					{sendDeleteUserEmailMutation.isSuccess ? (
+						<p className="text-sm font-medium text-emerald-700">
+							인증번호를 이메일로 보냈습니다.
+						</p>
+					) : null}
 					<Field data-invalid={Boolean(deleteConfirmError)}>
 						<FieldLabel htmlFor="delete-account-confirm">확인 문구</FieldLabel>
 						<Input
@@ -818,28 +895,10 @@ function DangerPanel({
 							<FieldError>{deleteConfirmError}</FieldError>
 						) : null}
 					</Field>
-					<Field>
-						<FieldLabel htmlFor="delete-password">비밀번호</FieldLabel>
-						<Input
-							className="h-11 bg-white"
-							id="delete-password"
-							minLength={8}
-							onChange={(event) =>
-								setDeleteForm((current) => ({
-									...current,
-									password: event.target.value,
-								}))
-							}
-							type="password"
-							value={deleteForm.password}
-						/>
-					</Field>
 				</FieldGroup>
 
-				{deleteCurrentUserMutation.error ? (
-					<FieldError>
-						{getApiErrorMessage(deleteCurrentUserMutation.error)}
-					</FieldError>
+				{deleteError ? (
+					<FieldError>{getApiErrorMessage(deleteError)}</FieldError>
 				) : null}
 
 				<Button disabled={isDeleteDisabled} type="submit" variant="outline">

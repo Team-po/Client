@@ -17,7 +17,9 @@ import {
 	deleteCurrentUser,
 	editPassword,
 	getCurrentUser,
+	sendDeleteUserEmail,
 	updateCurrentUser,
+	validateDeleteUserEmail,
 } from "@/lib/api/users";
 import type {
 	CreateUserRequest,
@@ -27,10 +29,10 @@ import type {
 	ValidateSignupAuthNumberRequest,
 } from "@/lib/types/auth";
 import type {
-	DeleteCurrentUserRequest,
 	EditPasswordRequest,
 	UpdateCurrentUserRequest,
 	UserProfile,
+	ValidateDeleteUserEmailRequest,
 } from "@/lib/types/user";
 
 const authQueryKeys = {
@@ -133,12 +135,24 @@ export function useEditPasswordMutation() {
 	});
 }
 
+export function useSendDeleteUserEmailMutation() {
+	return useMutation({
+		mutationFn: () => sendDeleteUserEmail(),
+	});
+}
+
+export function useValidateDeleteUserEmailMutation() {
+	return useMutation({
+		mutationFn: (payload: ValidateDeleteUserEmailRequest) =>
+			validateDeleteUserEmail(payload),
+	});
+}
+
 export function useDeleteCurrentUserMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (payload: DeleteCurrentUserRequest) =>
-			deleteCurrentUser(payload),
+		mutationFn: () => deleteCurrentUser(),
 		onSuccess: () => {
 			clearAuthSession();
 			queryClient.removeQueries({

@@ -1,5 +1,12 @@
 import { apiRequest } from "@/lib/api/client";
-import type { ProjectGroupAdminPermissionRequest } from "@/lib/types/project-group";
+import type {
+	MyProjectGroup,
+	ProjectGroupAdminPermissionRequest,
+} from "@/lib/types/project-group";
+
+export function getMyProjectGroup() {
+	return apiRequest<MyProjectGroup>("/project-groups/me");
+}
 
 export function grantProjectGroupAdminPermission({
 	projectGroupId,
