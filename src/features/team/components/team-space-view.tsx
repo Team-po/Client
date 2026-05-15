@@ -155,7 +155,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					/>
 				) : null}
 
-				{isSignedIn && projectGroupQuery.error ? (
+				{isSignedIn && projectGroupQuery.error && !projectGroupQuery.data ? (
 					<RealTeamNotice
 						action={
 							<Button asChild className="sm:w-fit">

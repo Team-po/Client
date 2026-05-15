@@ -35,7 +35,7 @@ let activeMatchId: number | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
-let isDeleteEmailVerified = false;
+let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
 
 function buildErrorResponse(
@@ -636,7 +636,7 @@ export const handlers = [
 			);
 		}
 
-		isDeleteEmailVerified = false;
+		deleteEmailVerifiedUserId = null;
 		return new HttpResponse(null, { status: 200 });
 	}),
 
@@ -663,7 +663,7 @@ export const handlers = [
 				);
 			}
 
-			isDeleteEmailVerified = true;
+			deleteEmailVerifiedUserId = currentUserId;
 			return new HttpResponse(null, { status: 200 });
 		},
 	),
@@ -679,7 +679,7 @@ export const handlers = [
 			);
 		}
 
-		if (!isDeleteEmailVerified) {
+		if (deleteEmailVerifiedUserId !== currentUserId) {
 			return buildErrorResponse(
 				400,
 				"이메일 인증이 필요합니다.",
@@ -688,7 +688,7 @@ export const handlers = [
 		}
 
 		currentUser = null;
-		isDeleteEmailVerified = false;
+		deleteEmailVerifiedUserId = null;
 		matchStatus = null;
 		activeMatchId = null;
 		activeMatchMembers = [];
