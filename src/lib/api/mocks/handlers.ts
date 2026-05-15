@@ -35,6 +35,7 @@ let activeMatchId: number | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
+let deleteEmailAuthSentUserId: number | null = null;
 let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
 
@@ -102,6 +103,11 @@ function base64UrlEncode(value: string) {
 
 function imageUrlFromKey(objectKey: string | undefined) {
 	return objectKey ? `https://images.teampo.dev/${objectKey}` : null;
+}
+
+function resetDeleteEmailState() {
+	deleteEmailAuthSentUserId = null;
+	deleteEmailVerifiedUserId = null;
 }
 
 function isValidMatchRole(value: string): value is MatchRole {
@@ -300,6 +306,7 @@ export const handlers = [
 				profileImage: "https://i.pravatar.cc/240?img=32",
 			});
 			currentUserId = 5;
+			resetDeleteEmailState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -322,6 +329,7 @@ export const handlers = [
 				profileImage: "https://i.pravatar.cc/240?img=47",
 			});
 			currentUserId = 6;
+			resetDeleteEmailState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -517,6 +525,7 @@ export const handlers = [
 			temperature: 50,
 		};
 		currentPassword = body.password;
+		resetDeleteEmailState();
 
 		return new HttpResponse(null, { status: 200 });
 	}),
@@ -636,6 +645,7 @@ export const handlers = [
 			);
 		}
 
+		deleteEmailAuthSentUserId = currentUserId;
 		deleteEmailVerifiedUserId = null;
 		return new HttpResponse(null, { status: 200 });
 	}),
@@ -655,7 +665,10 @@ export const handlers = [
 				);
 			}
 
-			if (body.authNumber !== 123456) {
+			if (
+				deleteEmailAuthSentUserId !== currentUserId ||
+				body.authNumber !== 123456
+			) {
 				return buildErrorResponse(
 					400,
 					"인증번호가 만료되었거나 올바르지 않습니다.",
@@ -663,6 +676,7 @@ export const handlers = [
 				);
 			}
 
+			deleteEmailAuthSentUserId = null;
 			deleteEmailVerifiedUserId = currentUserId;
 			return new HttpResponse(null, { status: 200 });
 		},
@@ -688,7 +702,7 @@ export const handlers = [
 		}
 
 		currentUser = null;
-		deleteEmailVerifiedUserId = null;
+		resetDeleteEmailState();
 		matchStatus = null;
 		activeMatchId = null;
 		activeMatchMembers = [];

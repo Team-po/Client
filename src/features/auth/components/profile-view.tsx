@@ -191,7 +191,11 @@ export function ProfileView() {
 	}
 
 	async function handleDeleteEmailSend() {
-		await sendDeleteUserEmailMutation.mutateAsync();
+		try {
+			await sendDeleteUserEmailMutation.mutateAsync();
+		} catch {
+			// The mutation error state renders the inline error message.
+		}
 	}
 
 	async function handleDeleteSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -201,11 +205,15 @@ export function ProfileView() {
 			return;
 		}
 
-		await validateDeleteUserEmailMutation.mutateAsync({
-			authNumber: Number(deleteForm.authNumber),
-		});
-		await deleteCurrentUserMutation.mutateAsync();
-		navigate("/", { replace: true });
+		try {
+			await validateDeleteUserEmailMutation.mutateAsync({
+				authNumber: Number(deleteForm.authNumber),
+			});
+			await deleteCurrentUserMutation.mutateAsync();
+			navigate("/", { replace: true });
+		} catch {
+			// The mutation error state renders the inline error message.
+		}
 	}
 
 	return (

@@ -305,15 +305,17 @@ function RealProjectGroupMemberCard({
 	currentUserId: number;
 	member: ProjectGroupMember;
 }) {
+	const profileImageSrc = getProjectGroupMemberImageSrc(member.profileImage);
+
 	return (
 		<div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-white p-4 shadow-crisp">
 			<div className="flex min-w-0 items-center gap-3">
 				<div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-secondary text-sm font-bold text-brand-ink">
-					{member.profileImage ? (
+					{profileImageSrc ? (
 						<img
 							alt=""
 							className="size-full object-cover"
-							src={member.profileImage}
+							src={profileImageSrc}
 						/>
 					) : (
 						member.nickname.slice(0, 2).toUpperCase()
@@ -344,6 +346,14 @@ function RealProjectGroupMemberCard({
 			</div>
 		</div>
 	);
+}
+
+function getProjectGroupMemberImageSrc(profileImage: string | null) {
+	if (!profileImage?.startsWith("http")) {
+		return undefined;
+	}
+
+	return profileImage;
 }
 
 function formatMemberRole(role: ProjectGroupMember["memberRole"]) {
