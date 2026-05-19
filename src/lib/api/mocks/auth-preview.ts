@@ -13,6 +13,9 @@ export function createPreviewUser(
 	return {
 		description: "빠르게 실험하고, 팀원과 맥락을 맞추는 일을 좋아합니다.",
 		email: previewAuthSeed.email,
+		githubUsername: null,
+		isGithubLinked: false,
+		isGithubLogin: false,
 		level: 3,
 		nickname: previewAuthSeed.nickname,
 		profileImage: previewAuthSeed.profileImage,

@@ -56,22 +56,32 @@ export interface TeamMessage {
 
 export type ContributionLevel = 0 | 1 | 2 | 3 | 4;
 
+export interface GithubRepositorySummary {
+	defaultBranch: string;
+	id: string;
+	lastPushedLabel: string;
+	name: string;
+	owner: string;
+	url: string;
+	visibility: "public" | "private";
+}
+
 export interface TeamSpace {
 	checklist: TeamChecklistItem[];
 	githubSummary: {
+		appInstallation: {
+			permissions: string[];
+			repositorySelection: "selected" | "all" | null;
+			setupUrl: string;
+			status: "not_installed" | "installed";
+		};
+		availableRepositories: GithubRepositorySummary[];
 		contributionDays: Array<{
 			id: string;
 			label: string;
 			level: ContributionLevel;
 		}>;
-		connectedRepo: {
-			defaultBranch: string;
-			name: string;
-			owner: string;
-			syncedAtLabel: string;
-			url: string;
-			visibility: "public" | "private";
-		} | null;
+		connectedRepos: GithubRepositorySummary[];
 		memberContributions: Array<{
 			commits: number;
 			issues: number;
@@ -81,7 +91,13 @@ export interface TeamSpace {
 			reviews: number;
 		}>;
 		oauthStatus: "disconnected" | "connected";
+		organization: {
+			login: string;
+			name: string;
+			url: string;
+		} | null;
 		openPrs: number;
+		projectGroupGithubLinked: boolean;
 		recentActivities: Array<{
 			id: string;
 			label: string;

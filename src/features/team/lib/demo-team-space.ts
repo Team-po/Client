@@ -71,6 +71,46 @@ export const demoTeamSpace: TeamSpace = {
 		},
 	],
 	githubSummary: {
+		appInstallation: {
+			permissions: [
+				"Metadata: read",
+				"Contents: read",
+				"Pull requests: read",
+				"Issues: read",
+			],
+			repositorySelection: null,
+			setupUrl: "https://github.com/apps/team-po/installations/new",
+			status: "not_installed",
+		},
+		availableRepositories: [
+			{
+				defaultBranch: "main",
+				id: "repo-client",
+				lastPushedLabel: "오늘 13:20",
+				name: "client",
+				owner: "team-po-labs",
+				url: "https://github.com/team-po-labs/client",
+				visibility: "private",
+			},
+			{
+				defaultBranch: "main",
+				id: "repo-server",
+				lastPushedLabel: "오늘 11:48",
+				name: "server",
+				owner: "team-po-labs",
+				url: "https://github.com/team-po-labs/server",
+				visibility: "private",
+			},
+			{
+				defaultBranch: "docs",
+				id: "repo-docs",
+				lastPushedLabel: "어제 22:10",
+				name: "product-notes",
+				owner: "team-po-labs",
+				url: "https://github.com/team-po-labs/product-notes",
+				visibility: "public",
+			},
+		],
 		contributionDays: [
 			{ id: "day-01", label: "4월 13일", level: 1 },
 			{ id: "day-02", label: "4월 14일", level: 0 },
@@ -94,7 +134,7 @@ export const demoTeamSpace: TeamSpace = {
 			{ id: "day-20", label: "5월 2일", level: 4 },
 			{ id: "day-21", label: "5월 3일", level: 2 },
 		],
-		connectedRepo: null,
+		connectedRepos: [],
 		memberContributions: [
 			{
 				commits: 18,
@@ -122,7 +162,9 @@ export const demoTeamSpace: TeamSpace = {
 			},
 		],
 		oauthStatus: "disconnected",
+		organization: null,
 		openPrs: 3,
+		projectGroupGithubLinked: false,
 		recentActivities: [
 			{
 				id: "activity-1",

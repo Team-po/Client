@@ -1,11 +1,13 @@
 import {
 	ArrowRight,
 	Camera,
+	Github,
 	KeyRound,
 	LoaderCircle,
 	RefreshCcw,
 	ShieldAlert,
 	Trash2,
+	Unlink,
 	UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -35,6 +37,8 @@ import {
 	useDeleteCurrentUserMutation,
 	useEditPasswordMutation,
 	useSendDeleteUserEmailMutation,
+	useStartGithubAccountLinkMutation,
+	useUnlinkGithubAccountMutation,
 	useUpdateCurrentUserMutation,
 	useValidateDeleteUserEmailMutation,
 } from "@/features/auth/hooks/use-auth-queries";
@@ -47,6 +51,7 @@ import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
+import type { UserProfile } from "@/lib/types/user";
 import { cn } from "@/lib/utils";
 
 const levelOptions = [1, 2, 3, 4, 5] as const;
@@ -58,6 +63,8 @@ export function ProfileView() {
 	const currentUserQuery = useCurrentUserQuery();
 	const updateCurrentUserMutation = useUpdateCurrentUserMutation();
 	const editPasswordMutation = useEditPasswordMutation();
+	const startGithubAccountLinkMutation = useStartGithubAccountLinkMutation();
+	const unlinkGithubAccountMutation = useUnlinkGithubAccountMutation();
 	const sendDeleteUserEmailMutation = useSendDeleteUserEmailMutation();
 	const validateDeleteUserEmailMutation = useValidateDeleteUserEmailMutation();
 	const deleteCurrentUserMutation = useDeleteCurrentUserMutation();
@@ -188,6 +195,28 @@ export function ProfileView() {
 
 		await editPasswordMutation.mutateAsync(passwordForm);
 		navigate("/login", { replace: true });
+	}
+
+	async function handleGithubLinkStart() {
+		try {
+			const response = await startGithubAccountLinkMutation.mutateAsync();
+			if (apiConfig.useMocks && response.authorizationUrl.startsWith("/")) {
+				navigate(response.authorizationUrl);
+				return;
+			}
+
+			window.location.assign(response.authorizationUrl);
+		} catch {
+			// The mutation error state renders the inline error message.
+		}
+	}
+
+	async function handleGithubUnlink() {
+		try {
+			await unlinkGithubAccountMutation.mutateAsync();
+		} catch {
+			// The mutation error state renders the inline error message.
+		}
 	}
 
 	async function handleDeleteEmailSend() {
@@ -408,6 +437,15 @@ export function ProfileView() {
 									onSubmit={handlePasswordSubmit}
 									passwordForm={passwordForm}
 									setPasswordForm={setPasswordForm}
+								/>
+								<AccountLinksPanel
+									currentUser={currentUser}
+									onStartGithubLink={handleGithubLinkStart}
+									onUnlinkGithub={handleGithubUnlink}
+									startGithubAccountLinkMutation={
+										startGithubAccountLinkMutation
+									}
+									unlinkGithubAccountMutation={unlinkGithubAccountMutation}
 								/>
 								<DangerPanel
 									deleteConfirmError={visibleDeleteConfirmError}
@@ -784,6 +822,115 @@ function SecurityPanel({
 					비밀번호 변경
 				</Button>
 			</form>
+		</AppPanel>
+	);
+}
+
+function AccountLinksPanel({
+	currentUser,
+	onStartGithubLink,
+	onUnlinkGithub,
+	startGithubAccountLinkMutation,
+	unlinkGithubAccountMutation,
+}: {
+	currentUser: UserProfile;
+	onStartGithubLink: () => void;
+	onUnlinkGithub: () => void;
+	startGithubAccountLinkMutation: ReturnType<
+		typeof useStartGithubAccountLinkMutation
+	>;
+	unlinkGithubAccountMutation: ReturnType<
+		typeof useUnlinkGithubAccountMutation
+	>;
+}) {
+	const isBusy =
+		startGithubAccountLinkMutation.isPending ||
+		unlinkGithubAccountMutation.isPending;
+	const linkError =
+		startGithubAccountLinkMutation.error ?? unlinkGithubAccountMutation.error;
+
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="팀 협업에 사용할 GitHub 계정 연결 상태입니다."
+				eyebrow="Connected accounts"
+				title="GitHub 연동"
+			/>
+			<div className="grid gap-4 p-5">
+				<div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-brand-warm p-4 sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex min-w-0 items-center gap-3">
+						<div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+							<Github className="size-5" aria-hidden="true" />
+						</div>
+						<div className="min-w-0">
+							<div className="flex flex-wrap items-center gap-2">
+								<p className="font-semibold text-brand-ink">GitHub</p>
+								<Badge
+									variant={currentUser.isGithubLinked ? "brand" : "neutral"}
+								>
+									{currentUser.isGithubLinked ? "연동됨" : "미연동"}
+								</Badge>
+							</div>
+							<p className="mt-1 truncate text-sm text-muted-foreground">
+								{currentUser.githubUsername
+									? `@${currentUser.githubUsername}`
+									: "연결된 GitHub 계정이 없습니다."}
+							</p>
+						</div>
+					</div>
+
+					{currentUser.isGithubLinked ? (
+						<Button
+							disabled={isBusy || currentUser.isGithubLogin}
+							onClick={() => void onUnlinkGithub()}
+							type="button"
+							variant="outline"
+						>
+							{unlinkGithubAccountMutation.isPending ? (
+								<LoaderCircle
+									className="animate-spin"
+									data-icon="inline-start"
+								/>
+							) : (
+								<Unlink data-icon="inline-start" />
+							)}
+							연동 해제
+						</Button>
+					) : (
+						<Button
+							disabled={isBusy}
+							onClick={() => void onStartGithubLink()}
+							type="button"
+						>
+							{startGithubAccountLinkMutation.isPending ? (
+								<LoaderCircle
+									className="animate-spin"
+									data-icon="inline-start"
+								/>
+							) : (
+								<Github data-icon="inline-start" />
+							)}
+							GitHub 연동
+						</Button>
+					)}
+				</div>
+
+				{currentUser.isGithubLogin ? (
+					<p className="text-sm leading-6 text-muted-foreground">
+						GitHub 로그인 계정은 GitHub 연동을 해제할 수 없습니다.
+					</p>
+				) : null}
+
+				{linkError ? (
+					<FieldError>{getApiErrorMessage(linkError)}</FieldError>
+				) : null}
+
+				{unlinkGithubAccountMutation.isSuccess ? (
+					<p className="text-sm font-medium text-emerald-700">
+						GitHub 연동을 해제했습니다.
+					</p>
+				) : null}
+			</div>
 		</AppPanel>
 	);
 }

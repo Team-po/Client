@@ -4,6 +4,8 @@ import {
 	exchangeGithubOAuthCode,
 	login,
 	sendSignupEmail,
+	startGithubAccountLink,
+	unlinkGithubAccount,
 	validateSignupAuthNumber,
 } from "@/lib/api/auth";
 import {
@@ -67,6 +69,34 @@ export function useGithubOAuthTokenMutation() {
 			exchangeGithubOAuthCode(payload),
 		onSuccess: (response) => {
 			setAuthSession(response);
+			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
+		},
+	});
+}
+
+export function useStartGithubAccountLinkMutation() {
+	return useMutation({
+		mutationFn: () => startGithubAccountLink(),
+	});
+}
+
+export function useUnlinkGithubAccountMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: () => unlinkGithubAccount(),
+		onSuccess: () => {
+			queryClient.setQueryData<UserProfile | undefined>(
+				authQueryKeys.currentUser,
+				(current) =>
+					current
+						? {
+								...current,
+								githubUsername: null,
+								isGithubLinked: false,
+							}
+						: current,
+			);
 			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
 		},
 	});

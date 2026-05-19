@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, Github, LoaderCircle, RefreshCcw } from "lucide-react";
+import {
+	ArrowRight,
+	CircleCheck,
+	Github,
+	LoaderCircle,
+	RefreshCcw,
+	ShieldAlert,
+} from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +28,14 @@ export function GithubOAuthCallbackView() {
 	const [searchParams] = useSearchParams();
 	const code = searchParams.get("code")?.trim() ?? "";
 	const onboardingRequired = searchParams.get("onboardingRequired") === "true";
+	const githubLinkedParam = searchParams.get("githubLinked");
+	const githubLinkResult =
+		githubLinkedParam === null
+			? null
+			: {
+					errorCode: searchParams.get("error"),
+					linked: githubLinkedParam === "true",
+				};
 	const [level, setLevel] = useState(3);
 	const [touchedLevel, setTouchedLevel] = useState(false);
 	const {
@@ -29,7 +44,7 @@ export function GithubOAuthCallbackView() {
 		mutateAsync: exchangeGithubOAuthCode,
 	} = useGithubOAuthTokenMutation();
 	const hasStartedExchangeRef = useRef(false);
-	const isCallbackInvalid = !code;
+	const isCallbackInvalid = !code && !githubLinkResult;
 	const levelError =
 		Number.isInteger(level) && level >= 1 && level <= 5
 			? undefined
@@ -49,6 +64,7 @@ export function GithubOAuthCallbackView() {
 	useEffect(() => {
 		if (
 			isCallbackInvalid ||
+			githubLinkResult ||
 			onboardingRequired ||
 			hasStartedExchangeRef.current
 		) {
@@ -60,7 +76,12 @@ export function GithubOAuthCallbackView() {
 		void exchangeGithubCode().catch(() => {
 			hasStartedExchangeRef.current = false;
 		});
-	}, [exchangeGithubCode, isCallbackInvalid, onboardingRequired]);
+	}, [
+		exchangeGithubCode,
+		githubLinkResult,
+		isCallbackInvalid,
+		onboardingRequired,
+	]);
 
 	async function handleOnboardingSubmit(
 		event: React.FormEvent<HTMLFormElement>,
@@ -79,13 +100,51 @@ export function GithubOAuthCallbackView() {
 		<AuthShell
 			badge="GitHub Login"
 			description={
-				onboardingRequired
-					? "GitHub 계정으로 팀 매칭에 합류하기 전에 현재 개발 레벨만 선택해 주세요."
-					: "GitHub 인증 결과를 확인하고 Team-po 세션을 준비하고 있습니다."
+				githubLinkResult
+					? githubLinkResult.linked
+						? "GitHub 계정 연동이 완료되었습니다."
+						: "GitHub 계정 연동을 완료하지 못했습니다."
+					: onboardingRequired
+						? "GitHub 계정으로 팀 매칭에 합류하기 전에 현재 개발 레벨만 선택해 주세요."
+						: "GitHub 인증 결과를 확인하고 Team-po 세션을 준비하고 있습니다."
 			}
-			title={onboardingRequired ? "거의 다 왔어요" : "GitHub 로그인 중"}
+			title={
+				githubLinkResult
+					? githubLinkResult.linked
+						? "GitHub 연동 완료"
+						: "GitHub 연동 실패"
+					: onboardingRequired
+						? "거의 다 왔어요"
+						: "GitHub 로그인 중"
+			}
 		>
-			{isCallbackInvalid ? (
+			{githubLinkResult ? (
+				<div className="flex flex-col gap-5">
+					<div className="flex items-center gap-3 rounded-xl border border-border/70 bg-secondary/35 p-4">
+						{githubLinkResult.linked ? (
+							<CircleCheck
+								className="size-5 text-emerald-600"
+								aria-hidden="true"
+							/>
+						) : (
+							<ShieldAlert
+								className="size-5 text-rose-600"
+								aria-hidden="true"
+							/>
+						)}
+						<p className="text-sm text-muted-foreground">
+							{githubLinkResult.linked
+								? "프로필에서 연결된 GitHub 계정을 확인할 수 있습니다."
+								: getGithubLinkErrorMessage(githubLinkResult.errorCode)}
+						</p>
+					</div>
+					<Button asChild size="lg">
+						<Link to="/me">
+							<ArrowRight data-icon="inline-start" />내 정보로 이동
+						</Link>
+					</Button>
+				</div>
+			) : isCallbackInvalid ? (
 				<div className="flex flex-col gap-5">
 					<FieldError>
 						GitHub 인증 정보가 없습니다. 로그인 화면에서 다시 시작해 주세요.
@@ -197,4 +256,17 @@ export function GithubOAuthCallbackView() {
 			)}
 		</AuthShell>
 	);
+}
+
+function getGithubLinkErrorMessage(errorCode: string | null) {
+	switch (errorCode) {
+		case "GITHUB_ACCOUNT_ALREADY_LINKED":
+			return "이미 GitHub 계정이 연동되어 있습니다.";
+		case "GITHUB_ACCOUNT_LINKED_TO_ANOTHER_USER":
+			return "이미 다른 사용자에게 연동된 GitHub 계정입니다.";
+		case "INVALID_GITHUB_OAUTH_LINK_STATE":
+			return "GitHub 계정 연동 요청이 만료되었거나 올바르지 않습니다.";
+		default:
+			return "GitHub 계정 연동 결과를 확인할 수 없습니다.";
+	}
 }

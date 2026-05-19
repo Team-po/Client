@@ -1,5 +1,7 @@
 import { apiRequest } from "@/lib/api/client";
+import { resolveOAuthUrl } from "@/lib/api/config";
 import type {
+	GithubLinkStartResponse,
 	GithubOAuthTokenRequest,
 	GithubOAuthTokenResponse,
 	LoginRequest,
@@ -21,6 +23,25 @@ export function exchangeGithubOAuthCode(payload: GithubOAuthTokenRequest) {
 		json: payload,
 		method: "POST",
 		skipAuth: true,
+	});
+}
+
+export async function startGithubAccountLink() {
+	const response = await apiRequest<GithubLinkStartResponse>(
+		"/oauth/github/link-requests",
+		{
+			method: "POST",
+		},
+	);
+
+	return {
+		authorizationUrl: resolveOAuthUrl(response.authorizationUrl),
+	} satisfies GithubLinkStartResponse;
+}
+
+export function unlinkGithubAccount() {
+	return apiRequest<void>("/oauth/github/account", {
+		method: "DELETE",
 	});
 }
 

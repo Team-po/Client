@@ -1,7 +1,9 @@
 import {
 	ArrowRight,
 	BookOpenText,
+	Building2,
 	CheckCircle2,
+	ExternalLink,
 	GitBranch,
 	Github,
 	GitPullRequest,
@@ -12,6 +14,8 @@ import {
 	Plus,
 	Save,
 	SendHorizontal,
+	Settings2,
+	ShieldCheck,
 	Sparkles,
 	Trash2,
 } from "lucide-react";
@@ -41,6 +45,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
 import type { ProjectGroupMember } from "@/lib/types/project-group";
 import type {
+	GithubRepositorySummary,
 	ProjectLifecycleStatus,
 	TeamChecklistItem,
 	TeamMessage,
@@ -1042,112 +1047,342 @@ function ChecklistPanel({
 }
 
 function GithubPanel() {
-	const [repoUrl, setRepoUrl] = useState("");
-	const [oauthStatus, setOauthStatus] = useState(
-		demoTeamSpace.githubSummary.oauthStatus,
+	const initialSelectedRepoIds =
+		demoTeamSpace.githubSummary.connectedRepos.length > 0
+			? demoTeamSpace.githubSummary.connectedRepos.map((repo) => repo.id)
+			: [];
+	const [organization, setOrganization] = useState(
+		demoTeamSpace.githubSummary.organization,
 	);
-	const [connectedRepo, setConnectedRepo] = useState(
-		demoTeamSpace.githubSummary.connectedRepo,
+	const [installationStatus, setInstallationStatus] = useState(
+		demoTeamSpace.githubSummary.appInstallation.status,
 	);
+	const [projectGroupGithubLinked, setProjectGroupGithubLinked] = useState(
+		demoTeamSpace.githubSummary.projectGroupGithubLinked,
+	);
+	const [selectedRepoIds, setSelectedRepoIds] = useState<string[]>(
+		initialSelectedRepoIds,
+	);
+	const [connectedRepos, setConnectedRepos] = useState(
+		demoTeamSpace.githubSummary.connectedRepos,
+	);
+	const selectedRepositories = useMemo(
+		() =>
+			demoTeamSpace.githubSummary.availableRepositories.filter((repo) =>
+				selectedRepoIds.includes(repo.id),
+			),
+		[selectedRepoIds],
+	);
+	const isGitHubAppInstalled = installationStatus === "installed";
+	const canSelectRepositories = Boolean(organization && isGitHubAppInstalled);
+	const canSaveRepositoryConnection =
+		canSelectRepositories && selectedRepoIds.length > 0;
+	const setupStatusItems = [
+		{
+			description: organization?.login ?? "Organization 필요",
+			icon: Building2,
+			label: "Organization",
+			ready: Boolean(organization),
+		},
+		{
+			description: isGitHubAppInstalled ? "TeamPo App 설치됨" : "설치 전",
+			icon: Github,
+			label: "GitHub App",
+			ready: isGitHubAppInstalled,
+		},
+		{
+			description:
+				connectedRepos.length > 0
+					? `${connectedRepos.length}개 저장소`
+					: "저장소 선택 전",
+			icon: GitBranch,
+			label: "Repository",
+			ready: connectedRepos.length > 0,
+		},
+		{
+			description: projectGroupGithubLinked ? "기여도 집계 가능" : "연동 전",
+			icon: ShieldCheck,
+			label: "TeamSpace",
+			ready: projectGroupGithubLinked,
+		},
+	];
 
-	function handleConnect(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
+	function handleInstallationComplete() {
+		setOrganization({
+			login: "team-po-labs",
+			name: "TeamPo Labs",
+			url: "https://github.com/team-po-labs",
+		});
+		setInstallationStatus("installed");
+		setConnectedRepos([]);
+		setProjectGroupGithubLinked(false);
+		setSelectedRepoIds((current) =>
+			current.length > 0
+				? current
+				: [demoTeamSpace.githubSummary.availableRepositories[0]?.id].filter(
+						Boolean,
+					),
+		);
+	}
 
-		if (!repoUrl.trim()) {
+	function handleRepositoryToggle(repoId: string) {
+		setSelectedRepoIds((current) =>
+			current.includes(repoId)
+				? current.filter((id) => id !== repoId)
+				: [...current, repoId],
+		);
+	}
+
+	function handleSaveRepositoryConnection() {
+		if (!canSaveRepositoryConnection) {
 			return;
 		}
 
-		setConnectedRepo(parseGithubRepo(repoUrl.trim()));
+		setConnectedRepos(selectedRepositories);
+		setProjectGroupGithubLinked(true);
 	}
 
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="방장이 GitHub 계정을 연결하면 저장소 활동과 팀원별 기여 흐름을 확인할 수 있습니다."
-				eyebrow="Repository"
-				title="GitHub 운영 요약"
+				description="팀 관리자가 Organization에 TeamPo GitHub App을 설치하고 저장소를 선택하면 기여도 집계가 시작됩니다."
+				eyebrow="GitHub App"
+				title="Organization 연동"
 			/>
 			<div className="grid gap-5 p-5">
-				<div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+				<div className="grid gap-3 md:grid-cols-4">
+					{setupStatusItems.map((item) => {
+						const Icon = item.icon;
+
+						return (
+							<div
+								className={cn(
+									"rounded-lg border p-4 shadow-crisp",
+									item.ready
+										? "border-primary/20 bg-primary/5"
+										: "border-border/70 bg-white",
+								)}
+								key={item.label}
+							>
+								<div className="flex items-center justify-between gap-3">
+									<Icon
+										className={cn(
+											"size-4",
+											item.ready ? "text-primary" : "text-muted-foreground",
+										)}
+										aria-hidden="true"
+									/>
+									<Badge variant={item.ready ? "brand" : "neutral"}>
+										{item.ready ? "ready" : "pending"}
+									</Badge>
+								</div>
+								<p className="mt-3 text-sm font-semibold text-brand-ink">
+									{item.label}
+								</p>
+								<p className="mt-1 text-xs leading-5 text-muted-foreground">
+									{item.description}
+								</p>
+							</div>
+						);
+					})}
+				</div>
+
+				<div className="grid gap-4 2xl:grid-cols-[0.85fr_1.15fr]">
 					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
-									GitHub 연결 상태
+									Organization 준비
 								</p>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									현재는 프리뷰 상태입니다. 연결 후 팀 활동 요약이 이곳에
-									표시됩니다.
+									TeamSpace에 연결할 GitHub Organization이 필요합니다.
 								</p>
 							</div>
-							<Badge
-								variant={oauthStatus === "connected" ? "brand" : "neutral"}
-							>
-								{oauthStatus === "connected" ? "connected" : "preview"}
+							<Badge variant={organization ? "brand" : "neutral"}>
+								{organization ? "found" : "required"}
 							</Badge>
 						</div>
-						<Button
-							className="mt-4 w-full sm:w-auto"
-							onClick={() => setOauthStatus("connected")}
-							type="button"
-							variant={oauthStatus === "connected" ? "outline" : "default"}
-						>
-							<Github data-icon="inline-start" />
-							{oauthStatus === "connected"
-								? "GitHub 로그인 완료"
-								: "GitHub로 로그인"}
-						</Button>
-					</div>
-					<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
-						<p className="text-sm font-semibold text-brand-ink">
-							연결된 저장소
-						</p>
-						{connectedRepo ? (
-							<div className="mt-3 flex flex-col gap-2 rounded-lg border border-primary/15 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-								<div className="min-w-0">
-									<p className="truncate font-mono text-sm font-semibold text-primary">
-										{connectedRepo.owner}/{connectedRepo.name}
-									</p>
-									<p className="mt-1 text-xs text-muted-foreground">
-										{connectedRepo.visibility} · {connectedRepo.defaultBranch} ·{" "}
-										{connectedRepo.syncedAtLabel}
-									</p>
-								</div>
-								<GitBranch className="size-5 shrink-0 text-primary" />
+						{organization ? (
+							<div className="mt-4 rounded-lg border border-primary/15 bg-white p-4">
+								<p className="font-mono text-sm font-semibold text-primary">
+									{organization.login}
+								</p>
+								<p className="mt-1 text-xs text-muted-foreground">
+									{organization.name}
+								</p>
 							</div>
 						) : (
-							<p className="mt-3 text-sm leading-6 text-muted-foreground">
-								아직 저장소가 연결되지 않았습니다. 저장소를 입력하면 요약 화면을
-								미리 확인할 수 있습니다.
+							<div className="mt-4 flex flex-col gap-3 sm:flex-row">
+								<Button asChild variant="outline">
+									<a
+										href="https://github.com/account/organizations/new"
+										rel="noreferrer"
+										target="_blank"
+									>
+										<Building2 data-icon="inline-start" />
+										Organization 생성
+										<ExternalLink data-icon="inline-end" />
+									</a>
+								</Button>
+								<Button onClick={handleInstallationComplete} type="button">
+									<Github data-icon="inline-start" />
+									GitHub Organization 연결하기
+								</Button>
+							</div>
+						)}
+					</div>
+
+					<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<p className="text-sm font-semibold text-brand-ink">
+									TeamPo GitHub App
+								</p>
+								<p className="mt-1 text-sm leading-6 text-muted-foreground">
+									읽기 전용 권한으로 설치하고 필요한 저장소만 선택합니다.
+								</p>
+							</div>
+							<Badge variant={isGitHubAppInstalled ? "brand" : "neutral"}>
+								{isGitHubAppInstalled ? "installed" : "not installed"}
+							</Badge>
+						</div>
+						<div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+							<div className="grid gap-2">
+								<div className="flex flex-wrap gap-2">
+									<Badge variant="warm">Only select repositories</Badge>
+									<Badge variant="neutral">read-only</Badge>
+									<Badge variant="neutral">installation_id + state</Badge>
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{demoTeamSpace.githubSummary.appInstallation.permissions.map(
+										(permission) => (
+											<span
+												className="rounded-md border border-border/70 bg-secondary/35 px-2 py-1 font-mono text-[11px] text-muted-foreground"
+												key={permission}
+											>
+												{permission}
+											</span>
+										),
+									)}
+								</div>
+							</div>
+							<div className="flex flex-col gap-2 md:items-end">
+								<Button asChild variant="outline">
+									<a
+										href={demoTeamSpace.githubSummary.appInstallation.setupUrl}
+										rel="noreferrer"
+										target="_blank"
+									>
+										<Settings2 data-icon="inline-start" />
+										설치 화면 열기
+										<ExternalLink data-icon="inline-end" />
+									</a>
+								</Button>
+								{!isGitHubAppInstalled ? (
+									<Button onClick={handleInstallationComplete} type="button">
+										<ShieldCheck data-icon="inline-start" />
+										설치 완료
+									</Button>
+								) : null}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div className="grid gap-4 2xl:grid-cols-[1.05fr_0.95fr]">
+					<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<p className="text-sm font-semibold text-brand-ink">
+									저장소 선택
+								</p>
+								<p className="mt-1 text-sm leading-6 text-muted-foreground">
+									설치된 GitHub App이 접근 가능한 저장소 중 팀 활동을 집계할
+									저장소를 선택합니다.
+								</p>
+							</div>
+							<Badge variant={canSelectRepositories ? "brand" : "neutral"}>
+								{canSelectRepositories ? "selectable" : "install first"}
+							</Badge>
+						</div>
+						<div className="mt-4 grid gap-3">
+							{demoTeamSpace.githubSummary.availableRepositories.map((repo) => (
+								<RepositoryOption
+									disabled={!canSelectRepositories}
+									key={repo.id}
+									onToggle={handleRepositoryToggle}
+									repo={repo}
+									selected={selectedRepoIds.includes(repo.id)}
+								/>
+							))}
+						</div>
+						<div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							<p className="text-xs leading-5 text-muted-foreground">
+								{selectedRepoIds.length > 0
+									? `${selectedRepoIds.length}개 저장소 선택됨`
+									: "최소 1개 저장소를 선택해야 합니다."}
 							</p>
+							<Button
+								disabled={!canSaveRepositoryConnection}
+								onClick={handleSaveRepositoryConnection}
+								type="button"
+							>
+								<GitPullRequest data-icon="inline-start" />
+								선택 저장소 연결
+							</Button>
+						</div>
+					</div>
+
+					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<p className="text-sm font-semibold text-brand-ink">
+									TeamSpace 연동 상태
+								</p>
+								<p className="mt-1 text-sm leading-6 text-muted-foreground">
+									프로젝트 그룹 기준으로 GitHub Organization 연동 여부를
+									확인합니다.
+								</p>
+							</div>
+							<Badge variant={projectGroupGithubLinked ? "brand" : "neutral"}>
+								{projectGroupGithubLinked ? "linked" : "not linked"}
+							</Badge>
+						</div>
+						{connectedRepos.length > 0 ? (
+							<div className="mt-4 grid gap-3">
+								{connectedRepos.map((repo) => (
+									<a
+										className="flex flex-col gap-2 rounded-lg border border-primary/15 bg-white p-4 transition-colors hover:border-primary/30 sm:flex-row sm:items-center sm:justify-between"
+										href={repo.url}
+										key={repo.id}
+										rel="noreferrer"
+										target="_blank"
+									>
+										<div className="min-w-0">
+											<p className="truncate font-mono text-sm font-semibold text-primary">
+												{repo.owner}/{repo.name}
+											</p>
+											<p className="mt-1 text-xs text-muted-foreground">
+												{repo.visibility} · {repo.defaultBranch} · pushed{" "}
+												{repo.lastPushedLabel}
+											</p>
+										</div>
+										<ExternalLink className="size-4 shrink-0 text-primary" />
+									</a>
+								))}
+							</div>
+						) : (
+							<div className="mt-4 rounded-lg border border-dashed border-border bg-white/65 p-4">
+								<p className="text-sm leading-6 text-muted-foreground">
+									GitHub App 설치와 저장소 선택이 끝나면 이 영역에서 연결된
+									저장소를 확인합니다.
+								</p>
+							</div>
 						)}
 					</div>
 				</div>
-				<form
-					className="grid gap-3 rounded-lg border border-border/70 bg-brand-warm p-4 md:grid-cols-[1fr_auto]"
-					onSubmit={handleConnect}
-				>
-					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
-						htmlFor="github-repo-url"
-					>
-						저장소 이름 또는 URL
-						<input
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-							id="github-repo-url"
-							onChange={(event) => setRepoUrl(event.target.value)}
-							placeholder="team-po/app 또는 https://github.com/team-po/app"
-							value={repoUrl}
-						/>
-					</label>
-					<div className="flex items-end">
-						<Button disabled={!repoUrl.trim()} type="submit">
-							<GitPullRequest data-icon="inline-start" />
-							저장소 연결
-						</Button>
-					</div>
-				</form>
-				<div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+
+				<div className="grid gap-4 2xl:grid-cols-[1.1fr_0.9fr]">
 					<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
 						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 							<div>
@@ -1158,8 +1393,11 @@ function GithubPanel() {
 									기여량이 많을수록 색과 밀도가 진해집니다.
 								</p>
 							</div>
-							<Badge variant="brand">
-								open PR {demoTeamSpace.githubSummary.openPrs}
+							<Badge variant={projectGroupGithubLinked ? "brand" : "neutral"}>
+								open PR{" "}
+								{projectGroupGithubLinked
+									? demoTeamSpace.githubSummary.openPrs
+									: "-"}
 							</Badge>
 						</div>
 						<div className="mt-5 grid grid-cols-7 gap-2">
@@ -1167,15 +1405,21 @@ function GithubPanel() {
 								<div
 									className={cn(
 										"aspect-square rounded-sm transition-transform hover:scale-110",
-										contributionLevelClass[day.level],
+										projectGroupGithubLinked
+											? contributionLevelClass[day.level]
+											: "bg-secondary/60",
 									)}
 									key={day.id}
-									title={`${day.label}: level ${day.level}`}
+									title={`${day.label}: level ${
+										projectGroupGithubLinked ? day.level : 0
+									}`}
 								/>
 							))}
 						</div>
 						<p className="mt-4 text-sm leading-6 text-muted-foreground">
-							{demoTeamSpace.githubSummary.weeklySummary}
+							{projectGroupGithubLinked
+								? demoTeamSpace.githubSummary.weeklySummary
+								: "저장소를 연결하면 커밋, PR, 리뷰, 이슈 기준으로 팀원별 기여 흐름을 집계합니다."}
 						</p>
 					</div>
 					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
@@ -1203,13 +1447,16 @@ function GithubPanel() {
 												<span
 													className={cn(
 														"size-4 rounded-sm",
-														contributionLevelClass[contribution.level],
+														projectGroupGithubLinked
+															? contributionLevelClass[contribution.level]
+															: "bg-secondary",
 													)}
 												/>
 											</div>
 											<p className="mt-2 text-xs leading-5 text-muted-foreground">
-												커밋 {contribution.commits} · PR {contribution.prs} ·
-												리뷰 {contribution.reviews} · 이슈 {contribution.issues}
+												{projectGroupGithubLinked
+													? `커밋 ${contribution.commits} · PR ${contribution.prs} · 리뷰 ${contribution.reviews} · 이슈 ${contribution.issues}`
+													: "저장소 연결 후 기여 수치가 표시됩니다."}
 											</p>
 										</div>
 									);
@@ -1220,27 +1467,82 @@ function GithubPanel() {
 				</div>
 				<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 					<p className="text-sm font-semibold text-brand-ink">최근 활동</p>
-					<div className="mt-4 grid gap-3 md:grid-cols-3">
-						{demoTeamSpace.githubSummary.recentActivities.map((activity) => (
-							<div
-								className="rounded-lg border border-border/70 bg-white p-4"
-								key={activity.id}
-							>
-								<p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-									{activity.type.replace("_", " ")}
-								</p>
-								<p className="mt-2 text-sm font-semibold leading-6 text-brand-ink">
-									{activity.label}
-								</p>
-								<p className="mt-2 text-xs text-muted-foreground">
-									{activity.memberName} · {activity.timeLabel}
-								</p>
-							</div>
-						))}
-					</div>
+					{projectGroupGithubLinked ? (
+						<div className="mt-4 grid gap-3 md:grid-cols-3">
+							{demoTeamSpace.githubSummary.recentActivities.map((activity) => (
+								<div
+									className="rounded-lg border border-border/70 bg-white p-4"
+									key={activity.id}
+								>
+									<p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+										{activity.type.replace("_", " ")}
+									</p>
+									<p className="mt-2 text-sm font-semibold leading-6 text-brand-ink">
+										{activity.label}
+									</p>
+									<p className="mt-2 text-xs text-muted-foreground">
+										{activity.memberName} · {activity.timeLabel}
+									</p>
+								</div>
+							))}
+						</div>
+					) : (
+						<p className="mt-4 rounded-lg border border-dashed border-border bg-white/65 p-4 text-sm leading-6 text-muted-foreground">
+							연동된 저장소 활동이 아직 없습니다.
+						</p>
+					)}
 				</div>
 			</div>
 		</AppPanel>
+	);
+}
+
+function RepositoryOption({
+	disabled,
+	onToggle,
+	repo,
+	selected,
+}: {
+	disabled: boolean;
+	onToggle: (repoId: string) => void;
+	repo: GithubRepositorySummary;
+	selected: boolean;
+}) {
+	return (
+		<label
+			className={cn(
+				"flex cursor-pointer flex-col gap-3 rounded-lg border p-4 transition-colors sm:flex-row sm:items-center sm:justify-between",
+				selected
+					? "border-primary/25 bg-primary/5"
+					: "border-border/70 bg-white hover:border-primary/20",
+				disabled ? "cursor-not-allowed opacity-60" : "",
+			)}
+		>
+			<div className="flex min-w-0 items-center gap-3">
+				<input
+					checked={selected}
+					className="size-4 rounded border-border text-primary accent-primary"
+					disabled={disabled}
+					onChange={() => onToggle(repo.id)}
+					type="checkbox"
+				/>
+				<div className="min-w-0">
+					<p className="truncate font-mono text-sm font-semibold text-brand-ink">
+						{repo.owner}/{repo.name}
+					</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						{repo.visibility} · {repo.defaultBranch} · pushed{" "}
+						{repo.lastPushedLabel}
+					</p>
+				</div>
+			</div>
+			<div className="flex shrink-0 flex-wrap items-center gap-2">
+				<Badge variant={repo.visibility === "private" ? "warm" : "neutral"}>
+					{repo.visibility}
+				</Badge>
+				<GitBranch className="size-4 text-muted-foreground" />
+			</div>
+		</label>
 	);
 }
 
@@ -1429,22 +1731,4 @@ function renderInlineCode(text: string): ReactNode[] {
 
 		return <span key={key}>{part}</span>;
 	});
-}
-
-function parseGithubRepo(input: string) {
-	const normalized = input
-		.replace("https://github.com/", "")
-		.replace("http://github.com/", "")
-		.replace(/^github.com\//, "")
-		.replace(/\.git$/, "");
-	const [owner = "team-po", name = "app"] = normalized.split("/");
-
-	return {
-		defaultBranch: "main",
-		name,
-		owner,
-		syncedAtLabel: "방금 동기화",
-		url: `https://github.com/${owner}/${name}`,
-		visibility: "private" as const,
-	};
 }

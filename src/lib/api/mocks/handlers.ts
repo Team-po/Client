@@ -302,6 +302,9 @@ export const handlers = [
 		if (body.code === "mock-github-login-code") {
 			currentUser = createPreviewUser({
 				email: "github.dev@teampo.dev",
+				githubUsername: "github_runner",
+				isGithubLinked: true,
+				isGithubLogin: true,
 				nickname: "github_runner",
 				profileImage: "https://i.pravatar.cc/240?img=32",
 			});
@@ -324,6 +327,9 @@ export const handlers = [
 			currentUser = createPreviewUser({
 				description: null,
 				email: "new.github.dev@teampo.dev",
+				githubUsername: "new_github_runner",
+				isGithubLinked: true,
+				isGithubLogin: true,
 				level: body.level,
 				nickname: "new_github_runner",
 				profileImage: "https://i.pravatar.cc/240?img=47",
@@ -335,10 +341,76 @@ export const handlers = [
 		}
 
 		return buildErrorResponse(
-			400,
+			401,
 			"OAuth 인가 코드가 만료되었거나 올바르지 않습니다.",
 			"INVALID_OAUTH_AUTHORIZATION_CODE",
 		);
+	}),
+
+	http.post(getPath("/oauth/github/link-requests"), async () => {
+		await delay(350);
+
+		if (!currentUser) {
+			return buildErrorResponse(
+				401,
+				"인증된 유저를 찾을 수 없습니다.",
+				"NO_AUTHENTICATED_USER",
+			);
+		}
+
+		if (currentUser.isGithubLinked) {
+			return buildErrorResponse(
+				409,
+				"이미 GitHub 계정이 연동되어 있습니다.",
+				"GITHUB_ACCOUNT_ALREADY_LINKED",
+			);
+		}
+
+		currentUser = {
+			...currentUser,
+			githubUsername: "octocat",
+			isGithubLinked: true,
+		};
+
+		return HttpResponse.json({
+			authorizationUrl: "/oauth/github/callback?githubLinked=true",
+		});
+	}),
+
+	http.delete(getPath("/oauth/github/account"), async () => {
+		await delay(350);
+
+		if (!currentUser) {
+			return buildErrorResponse(
+				401,
+				"인증된 유저를 찾을 수 없습니다.",
+				"NO_AUTHENTICATED_USER",
+			);
+		}
+
+		if (!currentUser.isGithubLinked) {
+			return buildErrorResponse(
+				404,
+				"연동된 GitHub 계정이 없습니다.",
+				"GITHUB_ACCOUNT_NOT_LINKED",
+			);
+		}
+
+		if (currentUser.isGithubLogin) {
+			return buildErrorResponse(
+				409,
+				"GitHub 로그인 계정은 GitHub 연동을 해제할 수 없습니다.",
+				"GITHUB_LOGIN_ACCOUNT_UNLINK_NOT_ALLOWED",
+			);
+		}
+
+		currentUser = {
+			...currentUser,
+			githubUsername: null,
+			isGithubLinked: false,
+		};
+
+		return new HttpResponse(null, { status: 204 });
 	}),
 
 	http.post(getPath("/users/refresh-token"), async ({ request }) => {
@@ -516,14 +588,14 @@ export const handlers = [
 		}
 
 		currentUserId += 1;
-		currentUser = {
+		currentUser = createPreviewUser({
 			description: null,
 			email: normalizeEmail(body.email),
 			level: body.level,
 			nickname: body.nickname.trim(),
 			profileImage: imageUrlFromKey(body.profileImageKey),
 			temperature: 50,
-		};
+		});
 		currentPassword = body.password;
 		resetDeleteEmailState();
 

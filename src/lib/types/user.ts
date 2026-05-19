@@ -1,6 +1,9 @@
 export interface UserProfile {
 	description: string | null;
 	email: string;
+	githubUsername: string | null;
+	isGithubLinked: boolean;
+	isGithubLogin: boolean;
 	level: number;
 	nickname: string;
 	profileImage: string | null;
