@@ -143,6 +143,40 @@ paths:
                 $ref: '#/components/schemas/SignInResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /oauth/github/link-requests:
+    post:
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      summary: Start GitHub account linking for the current user
+      responses:
+        '200':
+          description: GitHub OAuth authorization URL issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubLinkStartResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /oauth/github/account:
+    delete:
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      summary: Unlink the current user's GitHub account
+      responses:
+        '204':
+          description: GitHub account unlinked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
   /users/refresh-token:
@@ -587,6 +621,13 @@ components:
           type: integer
           minimum: 1
           maximum: 5
+    GithubLinkStartResponse:
+      type: object
+      additionalProperties: false
+      required: [authorizationUrl]
+      properties:
+        authorizationUrl:
+          type: string
     RefreshTokenRequest:
       type: object
       additionalProperties: false
@@ -607,7 +648,7 @@ components:
     UserProfile:
       type: object
       additionalProperties: false
-      required: [email, profileImage, description, nickname, temperature, level]
+      required: [email, profileImage, description, nickname, temperature, level, isGithubLogin, isGithubLinked, githubUsername]
       properties:
         email:
           type: string
@@ -628,6 +669,14 @@ components:
           type: integer
           minimum: 1
           maximum: 5
+        isGithubLogin:
+          type: boolean
+        isGithubLinked:
+          type: boolean
+        githubUsername:
+          type:
+            - string
+            - 'null'
     EditProfileRequest:
       type: object
       additionalProperties: false

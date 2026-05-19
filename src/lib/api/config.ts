@@ -11,10 +11,23 @@ export const apiConfig = {
 	githubOAuthAuthorizationUrl:
 		apiMode === "mock"
 			? "/oauth/github/callback?code=mock-github-login-code&onboardingRequired=false"
-			: `${oauthBaseUrl}/oauth2/authorization/github`,
+			: resolveOAuthUrl("/oauth2/authorization/github"),
 	mode: apiMode,
 	useMocks: apiMode === "mock",
 };
+
+export function resolveOAuthUrl(pathOrUrl: string) {
+	if (/^https?:\/\//.test(pathOrUrl)) {
+		return pathOrUrl;
+	}
+
+	if (apiMode === "mock") {
+		return pathOrUrl;
+	}
+
+	const path = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+	return `${oauthBaseUrl}${path}`;
+}
 
 function getDefaultOAuthBaseUrl(baseUrl: string) {
 	if (baseUrl.endsWith("/api")) {

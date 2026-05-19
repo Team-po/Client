@@ -8,6 +8,10 @@ export interface GithubOAuthTokenRequest {
 	level?: number;
 }
 
+export interface GithubLinkStartResponse {
+	authorizationUrl: string;
+}
+
 export interface SendSignupEmailRequest {
 	email: string;
 }
