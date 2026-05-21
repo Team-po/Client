@@ -147,6 +147,7 @@ export function ProfileView() {
 	const projectGroupError = isSignedIn ? projectGroupQuery.error : null;
 	const isProjectGroupLoading = isSignedIn && projectGroupQuery.isLoading;
 	const hasCurrentTeam = Boolean(currentProjectGroup);
+	const isMatchingAccessBlocked = hasCurrentTeam || isProjectGroupLoading;
 	const showMockTeamPreview = useMockTeamSurface && hasCurrentTeam;
 	const isProfileDirty = currentUser
 		? form.description.trim() !== (currentUser.description ?? "") ||
@@ -304,10 +305,10 @@ export function ProfileView() {
 		<AppShell
 			actions={
 				<>
-					{hasCurrentTeam ? (
+					{isMatchingAccessBlocked ? (
 						<Button disabled variant="outline">
 							<ArrowRight data-icon="inline-start" />
-							매칭 잠김
+							{isProjectGroupLoading ? "팀 확인 중" : "매칭 잠김"}
 						</Button>
 					) : (
 						<Button asChild variant="outline">

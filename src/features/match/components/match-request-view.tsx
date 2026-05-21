@@ -152,6 +152,8 @@ export function MatchRequestView() {
 		? (projectGroupQuery.data ?? undefined)
 		: undefined;
 	const hasCurrentTeam = Boolean(currentProjectGroup);
+	const isCheckingCurrentTeam = isSignedIn && projectGroupQuery.isLoading;
+	const isMatchingAccessBlocked = hasCurrentTeam || isCheckingCurrentTeam;
 	const currentMatchMember =
 		currentUserId && matchMembersQuery.data
 			? matchMembersQuery.data.members.find(
@@ -160,18 +162,18 @@ export function MatchRequestView() {
 			: undefined;
 	const hasAcceptedTeam = offerStatus === "accepted";
 	const canCancel =
-		!hasCurrentTeam &&
+		!isMatchingAccessBlocked &&
 		!hasAcceptedTeam &&
 		(status === "WAITING" || status === "MATCHING");
 	const canRespondToMatch = Boolean(
-		!hasCurrentTeam &&
+		!isMatchingAccessBlocked &&
 			activeMatchId &&
 			(!currentMatchMember ||
 				(!currentMatchMember.isHost && currentMatchMember.isAccepted !== true)),
 	);
 	const isSubmitDisabled =
 		!isSignedIn ||
-		hasCurrentTeam ||
+		isMatchingAccessBlocked ||
 		hasAcceptedTeam ||
 		createMutation.isPending ||
 		Boolean(status && canCancel) ||
@@ -249,6 +251,7 @@ export function MatchRequestView() {
 				{currentProjectGroup ? (
 					<CurrentTeamMatchLockPanel projectGroup={currentProjectGroup} />
 				) : null}
+				{isCheckingCurrentTeam ? <CurrentTeamCheckPanel /> : null}
 
 				<div className="grid gap-4 md:grid-cols-4">
 					<MetricCard
@@ -261,22 +264,26 @@ export function MatchRequestView() {
 									: "amber"
 						}
 						trend={
-							hasCurrentTeam
-								? "팀 스페이스에서 진행"
-								: hasAcceptedTeam
-									? "팀 스페이스 열림"
-									: status
-										? statusMeta[status].description
-										: undefined
+							isCheckingCurrentTeam
+								? "팀 소속 여부 확인 중"
+								: hasCurrentTeam
+									? "팀 스페이스에서 진행"
+									: hasAcceptedTeam
+										? "팀 스페이스 열림"
+										: status
+											? statusMeta[status].description
+											: undefined
 						}
 						value={
-							hasCurrentTeam
-								? "팀 소속"
-								: hasAcceptedTeam
+							isCheckingCurrentTeam
+								? "확인 중"
+								: hasCurrentTeam
 									? "팀 소속"
-									: status
-										? statusMeta[status].label
-										: "없음"
+									: hasAcceptedTeam
+										? "팀 소속"
+										: status
+											? statusMeta[status].label
+											: "없음"
 						}
 					/>
 					<MetricCard label="선택 역할" value={roleLabels[form.role]} />
@@ -332,7 +339,7 @@ export function MatchRequestView() {
 					</AppPanel>
 				) : null}
 
-				{activeMatchId && !hasCurrentTeam ? (
+				{activeMatchId && !isMatchingAccessBlocked ? (
 					<MatchSessionCard
 						canRespond={canRespondToMatch}
 						currentMember={currentMatchMember}
@@ -352,7 +359,7 @@ export function MatchRequestView() {
 					/>
 				) : null}
 
-				{hasCurrentTeam ? null : (
+				{isMatchingAccessBlocked ? null : (
 					<div className="grid gap-5 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
 						<div className="grid gap-5">
 							<AppPanel>
@@ -626,6 +633,24 @@ function CurrentTeamMatchLockPanel({
 					</p>
 					<p className="mt-1 text-xs font-semibold text-primary">팀원</p>
 				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function CurrentTeamCheckPanel() {
+	return (
+		<AppPanel>
+			<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+				<div>
+					<h2 className="text-xl font-semibold text-brand-ink">
+						팀 상태를 확인하고 있습니다
+					</h2>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						이미 팀 스페이스가 있는지 확인한 뒤 매칭 요청을 열겠습니다.
+					</p>
+				</div>
+				<LoaderCircle className="size-5 animate-spin text-primary" />
 			</div>
 		</AppPanel>
 	);

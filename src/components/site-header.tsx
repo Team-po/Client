@@ -25,6 +25,11 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 	const [isSignedIn, setIsSignedIn] = useState(() => Boolean(getAuthSession()));
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
 	const hasProjectGroup = isSignedIn && Boolean(projectGroupQuery.data);
+	const isMatchingLinkDisabled =
+		isSignedIn && (hasProjectGroup || projectGroupQuery.isLoading);
+	const matchingDisabledTitle = projectGroupQuery.isLoading
+		? "팀 스페이스 상태를 확인하는 중입니다."
+		: "이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다.";
 
 	useEffect(() => {
 		function syncAuthState() {
@@ -70,11 +75,11 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 				<div className="flex items-center gap-2">
 					{showMyPageLink && isSignedIn ? (
 						<div className="hidden items-center gap-4 md:flex">
-							{hasProjectGroup ? (
+							{isMatchingLinkDisabled ? (
 								<span
 									aria-disabled="true"
 									className="cursor-not-allowed text-sm text-muted-foreground/55"
-									title="이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다."
+									title={matchingDisabledTitle}
 								>
 									매칭
 								</span>

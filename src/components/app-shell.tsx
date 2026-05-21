@@ -207,11 +207,17 @@ function AppSidebar() {
 	const isSignedIn = Boolean(getAuthSession());
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
 	const hasProjectGroup = isSignedIn && Boolean(projectGroupQuery.data);
+	const isCheckingProjectGroup = isSignedIn && projectGroupQuery.isLoading;
 	const flowHref = hasProjectGroup ? "/team" : "/match";
 	const flowLabel = hasProjectGroup ? "팀 스페이스 열기" : "매칭 요청하기";
-	const flowDescription = hasProjectGroup
-		? "이미 소속된 팀이 있어 팀 스페이스에서 현재 협업 흐름을 이어가세요."
-		: "프로필을 정리하고 매칭 요청을 보낸 뒤 팀 스페이스에서 바로 협업을 시작하세요.";
+	const flowDescription = isCheckingProjectGroup
+		? "내 팀 스페이스 상태를 확인한 뒤 가능한 다음 흐름을 안내합니다."
+		: hasProjectGroup
+			? "이미 소속된 팀이 있어 팀 스페이스에서 현재 협업 흐름을 이어가세요."
+			: "프로필을 정리하고 매칭 요청을 보낸 뒤 팀 스페이스에서 바로 협업을 시작하세요.";
+	const matchingDisabledTitle = isCheckingProjectGroup
+		? "팀 스페이스 상태를 확인하는 중입니다."
+		: "이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다.";
 
 	function handleLogout() {
 		clearAuthSession();
@@ -244,7 +250,10 @@ function AppSidebar() {
 					{navigationItems.map((item) => {
 						const Icon = item.icon;
 						const isActive = location.pathname === item.to;
-						const isDisabled = Boolean(item.requiresNoTeam && hasProjectGroup);
+						const isDisabled = Boolean(
+							item.requiresNoTeam &&
+								(hasProjectGroup || isCheckingProjectGroup),
+						);
 						const className = cn(
 							"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
 							isDisabled
@@ -260,7 +269,7 @@ function AppSidebar() {
 									aria-disabled="true"
 									className={className}
 									key={item.to}
-									title="이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다."
+									title={matchingDisabledTitle}
 								>
 									<Icon className="size-4" />
 									{item.label}
@@ -281,7 +290,10 @@ function AppSidebar() {
 					{navigationItems.map((item) => {
 						const Icon = item.icon;
 						const isActive = location.pathname === item.to;
-						const isDisabled = Boolean(item.requiresNoTeam && hasProjectGroup);
+						const isDisabled = Boolean(
+							item.requiresNoTeam &&
+								(hasProjectGroup || isCheckingProjectGroup),
+						);
 						const className = cn(
 							"flex size-9 items-center justify-center rounded-lg border transition-colors",
 							isDisabled
@@ -297,7 +309,7 @@ function AppSidebar() {
 									aria-disabled="true"
 									className={className}
 									key={item.to}
-									title="이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다."
+									title={matchingDisabledTitle}
 								>
 									<Icon className="size-4" />
 									<span className="sr-only">{item.label} 비활성화</span>
