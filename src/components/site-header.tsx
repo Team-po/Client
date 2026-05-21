@@ -1,8 +1,11 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { clearAuthScopedQueryData } from "@/features/auth/hooks/use-auth-queries";
+import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { clearAuthSession, getAuthSession } from "@/lib/api/auth-session";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +21,15 @@ const authLinks = [
 export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const [isSignedIn, setIsSignedIn] = useState(() => Boolean(getAuthSession()));
+	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
+	const hasProjectGroup = isSignedIn && Boolean(projectGroupQuery.data);
+	const isMatchingLinkDisabled =
+		isSignedIn && (hasProjectGroup || projectGroupQuery.isLoading);
+	const matchingDisabledTitle = projectGroupQuery.isLoading
+		? "팀 스페이스 상태를 확인하는 중입니다."
+		: "이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다.";
 
 	useEffect(() => {
 		function syncAuthState() {
@@ -37,6 +48,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 
 	function handleLogout() {
 		clearAuthSession();
+		clearAuthScopedQueryData(queryClient);
 		setIsSignedIn(false);
 		navigate("/");
 	}
@@ -63,15 +75,25 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 				<div className="flex items-center gap-2">
 					{showMyPageLink && isSignedIn ? (
 						<div className="hidden items-center gap-4 md:flex">
-							<Link
-								className={cn(
-									"text-sm text-muted-foreground transition-colors hover:text-foreground",
-									location.pathname === "/match" && "text-foreground",
-								)}
-								to="/match"
-							>
-								매칭
-							</Link>
+							{isMatchingLinkDisabled ? (
+								<span
+									aria-disabled="true"
+									className="cursor-not-allowed text-sm text-muted-foreground/55"
+									title={matchingDisabledTitle}
+								>
+									매칭
+								</span>
+							) : (
+								<Link
+									className={cn(
+										"text-sm text-muted-foreground transition-colors hover:text-foreground",
+										location.pathname === "/match" && "text-foreground",
+									)}
+									to="/match"
+								>
+									매칭
+								</Link>
+							)}
 							<Link
 								className={cn(
 									"text-sm text-muted-foreground transition-colors hover:text-foreground",

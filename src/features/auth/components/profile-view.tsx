@@ -1,11 +1,14 @@
 import {
 	ArrowRight,
 	Camera,
+	CheckCircle2,
 	Github,
 	KeyRound,
 	LoaderCircle,
+	MailCheck,
 	RefreshCcw,
 	ShieldAlert,
+	ShieldCheck,
 	Trash2,
 	Unlink,
 	UsersRound,
@@ -48,9 +51,10 @@ import {
 	validateProfileEditForm,
 } from "@/features/auth/lib/validation";
 import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
+import { isProjectGroupNotFoundError } from "@/features/project-groups/lib/errors";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
-import { ApiError, getApiErrorMessage } from "@/lib/api/client";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
 import type { MyProjectGroup } from "@/lib/types/project-group";
 import type { UserProfile } from "@/lib/types/user";
@@ -61,11 +65,9 @@ const levelOptions = [1, 2, 3, 4, 5] as const;
 export function ProfileView() {
 	const navigate = useNavigate();
 	const isSignedIn = Boolean(getAuthSession());
-	const showMockTeamPreview = apiConfig.useMocks;
+	const useMockTeamSurface = apiConfig.useMocks;
 	const currentUserQuery = useCurrentUserQuery();
-	const projectGroupQuery = useMyProjectGroupQuery(
-		isSignedIn && !showMockTeamPreview,
-	);
+	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
 	const updateCurrentUserMutation = useUpdateCurrentUserMutation();
 	const editPasswordMutation = useEditPasswordMutation();
 	const startGithubAccountLinkMutation = useStartGithubAccountLinkMutation();
@@ -94,6 +96,8 @@ export function ProfileView() {
 		authNumber: "",
 		confirm: "",
 	});
+	const [isDeleteEmailSent, setIsDeleteEmailSent] = useState(false);
+	const [isDeleteEmailVerified, setIsDeleteEmailVerified] = useState(false);
 	const [profileImagePreviewUrl, setProfileImagePreviewUrl] = useState<
 		string | null
 	>(null);
@@ -135,7 +139,16 @@ export function ProfileView() {
 	const deleteConfirmError = getDeleteConfirmationError(deleteForm.confirm);
 	const visibleDeleteConfirmError =
 		deleteForm.confirm.length > 0 ? deleteConfirmError : undefined;
+	const isDeleteAuthNumberInvalid = !/^\d{6}$/.test(deleteForm.authNumber);
 	const currentUser = currentUserQuery.data;
+	const currentProjectGroup = isSignedIn
+		? (projectGroupQuery.data ?? undefined)
+		: undefined;
+	const projectGroupError = isSignedIn ? projectGroupQuery.error : null;
+	const isProjectGroupLoading = isSignedIn && projectGroupQuery.isLoading;
+	const hasCurrentTeam = Boolean(currentProjectGroup);
+	const isMatchingAccessBlocked = hasCurrentTeam || isProjectGroupLoading;
+	const showMockTeamPreview = useMockTeamSurface && hasCurrentTeam;
 	const isProfileDirty = currentUser
 		? form.description.trim() !== (currentUser.description ?? "") ||
 			form.level !== currentUser.level ||
@@ -154,20 +167,21 @@ export function ProfileView() {
 		sendDeleteUserEmailMutation.isPending ||
 		validateDeleteUserEmailMutation.isPending ||
 		deleteCurrentUserMutation.isPending ||
+		!isDeleteEmailVerified ||
 		Boolean(deleteConfirmError) ||
-		!/^\d{6}$/.test(deleteForm.authNumber);
+		isDeleteAuthNumberInvalid;
 	const currentTeamName = showMockTeamPreview
 		? demoTeamSpace.name
-		: projectGroupQuery.data?.projectName ||
+		: currentProjectGroup?.projectName ||
 			getCurrentTeamName({
-				error: projectGroupQuery.error,
-				isLoading: projectGroupQuery.isLoading,
+				error: projectGroupError,
+				isLoading: isProjectGroupLoading,
 			});
 	const currentTeamMetric = getCurrentTeamMetric({
-		error: projectGroupQuery.error,
+		error: projectGroupError,
 		isMock: showMockTeamPreview,
-		isLoading: projectGroupQuery.isLoading,
-		projectGroup: projectGroupQuery.data,
+		isLoading: isProjectGroupLoading,
+		projectGroup: currentProjectGroup,
 	});
 
 	function markTouched(field: keyof typeof touched) {
@@ -240,9 +254,36 @@ export function ProfileView() {
 	async function handleDeleteEmailSend() {
 		try {
 			await sendDeleteUserEmailMutation.mutateAsync();
+			validateDeleteUserEmailMutation.reset();
+			setIsDeleteEmailSent(true);
+			setIsDeleteEmailVerified(false);
 		} catch {
 			// The mutation error state renders the inline error message.
 		}
+	}
+
+	async function handleDeleteAuthNumberValidate() {
+		if (!isDeleteEmailSent || isDeleteAuthNumberInvalid) {
+			return;
+		}
+
+		try {
+			await validateDeleteUserEmailMutation.mutateAsync({
+				authNumber: Number(deleteForm.authNumber),
+			});
+			setIsDeleteEmailVerified(true);
+		} catch {
+			// The mutation error state renders the inline error message.
+		}
+	}
+
+	function handleDeleteAuthNumberChange(authNumber: string) {
+		validateDeleteUserEmailMutation.reset();
+		setIsDeleteEmailVerified(false);
+		setDeleteForm((current) => ({
+			...current,
+			authNumber,
+		}));
 	}
 
 	async function handleDeleteSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -253,9 +294,6 @@ export function ProfileView() {
 		}
 
 		try {
-			await validateDeleteUserEmailMutation.mutateAsync({
-				authNumber: Number(deleteForm.authNumber),
-			});
 			await deleteCurrentUserMutation.mutateAsync();
 			navigate("/", { replace: true });
 		} catch {
@@ -267,12 +305,19 @@ export function ProfileView() {
 		<AppShell
 			actions={
 				<>
-					<Button asChild variant="outline">
-						<Link to="/match">
+					{isMatchingAccessBlocked ? (
+						<Button disabled variant="outline">
 							<ArrowRight data-icon="inline-start" />
-							매칭 요청
-						</Link>
-					</Button>
+							{isProjectGroupLoading ? "팀 확인 중" : "매칭 잠김"}
+						</Button>
+					) : (
+						<Button asChild variant="outline">
+							<Link to="/match">
+								<ArrowRight data-icon="inline-start" />
+								매칭 요청
+							</Link>
+						</Button>
+					)}
 					<Button asChild>
 						<Link to="/team">
 							<UsersRound data-icon="inline-start" />팀 스페이스
@@ -420,10 +465,10 @@ export function ProfileView() {
 								<MockCurrentTeamPanel />
 							) : (
 								<RealCurrentTeamPanel
-									error={projectGroupQuery.error}
-									isLoading={projectGroupQuery.isLoading}
+									error={projectGroupError}
+									isLoading={isProjectGroupLoading}
 									onRetry={() => void projectGroupQuery.refetch()}
-									projectGroup={projectGroupQuery.data}
+									projectGroup={currentProjectGroup}
 								/>
 							)}
 						</div>
@@ -443,13 +488,15 @@ export function ProfileView() {
 							/>
 
 							<div className="grid gap-5">
-								<SecurityPanel
-									editPasswordMutation={editPasswordMutation}
-									isPasswordSubmitDisabled={isPasswordSubmitDisabled}
-									onSubmit={handlePasswordSubmit}
-									passwordForm={passwordForm}
-									setPasswordForm={setPasswordForm}
-								/>
+								{currentUser.isGithubLogin ? null : (
+									<SecurityPanel
+										editPasswordMutation={editPasswordMutation}
+										isPasswordSubmitDisabled={isPasswordSubmitDisabled}
+										onSubmit={handlePasswordSubmit}
+										passwordForm={passwordForm}
+										setPasswordForm={setPasswordForm}
+									/>
+								)}
 								<AccountLinksPanel
 									currentUser={currentUser}
 									onStartGithubLink={handleGithubLinkStart}
@@ -463,9 +510,14 @@ export function ProfileView() {
 									deleteConfirmError={visibleDeleteConfirmError}
 									deleteCurrentUserMutation={deleteCurrentUserMutation}
 									deleteForm={deleteForm}
+									isDeleteAuthNumberInvalid={isDeleteAuthNumberInvalid}
 									isDeleteDisabled={isDeleteDisabled}
+									isDeleteEmailSent={isDeleteEmailSent}
+									isDeleteEmailVerified={isDeleteEmailVerified}
+									onDeleteAuthNumberChange={handleDeleteAuthNumberChange}
 									onSendDeleteEmail={handleDeleteEmailSend}
 									onSubmit={handleDeleteSubmit}
+									onValidateDeleteEmail={handleDeleteAuthNumberValidate}
 									sendDeleteUserEmailMutation={sendDeleteUserEmailMutation}
 									setDeleteForm={setDeleteForm}
 									validateDeleteUserEmailMutation={
@@ -551,13 +603,6 @@ function getCurrentTeamMetric({
 		trend: "매칭 완료 후 생성",
 		value: "0",
 	};
-}
-
-function isProjectGroupNotFoundError(error: unknown) {
-	return (
-		error instanceof ApiError &&
-		(error.status === 404 || error.code === "PROJECT_GROUP_NOT_FOUND")
-	);
 }
 
 function MockCurrentTeamPanel() {
@@ -1119,9 +1164,14 @@ function DangerPanel({
 	deleteConfirmError,
 	deleteCurrentUserMutation,
 	deleteForm,
+	isDeleteAuthNumberInvalid,
 	isDeleteDisabled,
+	isDeleteEmailSent,
+	isDeleteEmailVerified,
+	onDeleteAuthNumberChange,
 	onSendDeleteEmail,
 	onSubmit,
+	onValidateDeleteEmail,
 	sendDeleteUserEmailMutation,
 	setDeleteForm,
 	validateDeleteUserEmailMutation,
@@ -1129,9 +1179,14 @@ function DangerPanel({
 	deleteConfirmError: string | undefined;
 	deleteCurrentUserMutation: ReturnType<typeof useDeleteCurrentUserMutation>;
 	deleteForm: { authNumber: string; confirm: string };
+	isDeleteAuthNumberInvalid: boolean;
 	isDeleteDisabled: boolean;
+	isDeleteEmailSent: boolean;
+	isDeleteEmailVerified: boolean;
+	onDeleteAuthNumberChange: (authNumber: string) => void;
 	onSendDeleteEmail: () => void;
 	onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+	onValidateDeleteEmail: () => void;
 	sendDeleteUserEmailMutation: ReturnType<
 		typeof useSendDeleteUserEmailMutation
 	>;
@@ -1142,8 +1197,9 @@ function DangerPanel({
 		typeof useValidateDeleteUserEmailMutation
 	>;
 }) {
-	const deleteError =
-		validateDeleteUserEmailMutation.error ?? deleteCurrentUserMutation.error;
+	const deleteError = deleteCurrentUserMutation.error;
+	const showDeleteAuthNumberError =
+		deleteForm.authNumber.length > 0 && isDeleteAuthNumberInvalid;
 
 	return (
 		<AppPanel className="border-rose-200">
@@ -1163,54 +1219,98 @@ function DangerPanel({
 					</p>
 				</div>
 				<FieldGroup>
-					<div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-						<Field>
-							<FieldLabel htmlFor="delete-auth-number">인증번호</FieldLabel>
+					<Field
+						data-invalid={Boolean(
+							showDeleteAuthNumberError ||
+								sendDeleteUserEmailMutation.error ||
+								validateDeleteUserEmailMutation.error,
+						)}
+					>
+						<FieldLabel htmlFor="delete-auth-number">
+							이메일 인증번호
+						</FieldLabel>
+						<div className="grid gap-2 lg:grid-cols-[1fr_auto_auto]">
 							<Input
+								aria-invalid={showDeleteAuthNumberError}
 								className="h-11 bg-white"
+								disabled={!isDeleteEmailSent || isDeleteEmailVerified}
 								id="delete-auth-number"
 								inputMode="numeric"
 								maxLength={6}
 								onChange={(event) =>
-									setDeleteForm((current) => ({
-										...current,
-										authNumber: event.target.value
-											.replace(/\D/g, "")
-											.slice(0, 6),
-									}))
+									onDeleteAuthNumberChange(
+										event.target.value.replace(/\D/g, "").slice(0, 6),
+									)
 								}
-								placeholder="123456"
+								placeholder="6자리 숫자"
 								value={deleteForm.authNumber}
 							/>
-						</Field>
-						<Button
-							className="self-end"
-							disabled={sendDeleteUserEmailMutation.isPending}
-							onClick={() => void onSendDeleteEmail()}
-							type="button"
-							variant="outline"
-						>
-							{sendDeleteUserEmailMutation.isPending ? (
-								<LoaderCircle
-									className="animate-spin"
-									data-icon="inline-start"
-								/>
-							) : (
-								<KeyRound data-icon="inline-start" />
-							)}
-							인증번호 발송
-						</Button>
-					</div>
-					{sendDeleteUserEmailMutation.error ? (
-						<FieldError>
-							{getApiErrorMessage(sendDeleteUserEmailMutation.error)}
-						</FieldError>
-					) : null}
-					{sendDeleteUserEmailMutation.isSuccess ? (
-						<p className="text-sm font-medium text-emerald-700">
-							인증번호를 이메일로 보냈습니다.
-						</p>
-					) : null}
+							<Button
+								className="h-11"
+								disabled={
+									sendDeleteUserEmailMutation.isPending || isDeleteEmailVerified
+								}
+								onClick={() => void onSendDeleteEmail()}
+								type="button"
+								variant="outline"
+							>
+								{sendDeleteUserEmailMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : (
+									<MailCheck data-icon="inline-start" />
+								)}
+								번호 받기
+							</Button>
+							<Button
+								className="h-11"
+								disabled={
+									!isDeleteEmailSent ||
+									isDeleteEmailVerified ||
+									validateDeleteUserEmailMutation.isPending ||
+									isDeleteAuthNumberInvalid
+								}
+								onClick={() => void onValidateDeleteEmail()}
+								type="button"
+								variant="outline"
+							>
+								{validateDeleteUserEmailMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : isDeleteEmailVerified ? (
+									<CheckCircle2 data-icon="inline-start" />
+								) : (
+									<ShieldCheck data-icon="inline-start" />
+								)}
+								인증 확인
+							</Button>
+						</div>
+						{showDeleteAuthNumberError ? (
+							<FieldError>인증번호 6자리를 입력해 주세요.</FieldError>
+						) : sendDeleteUserEmailMutation.error ? (
+							<FieldError>
+								{getApiErrorMessage(sendDeleteUserEmailMutation.error)}
+							</FieldError>
+						) : validateDeleteUserEmailMutation.error ? (
+							<FieldError>
+								{getApiErrorMessage(validateDeleteUserEmailMutation.error)}
+							</FieldError>
+						) : isDeleteEmailVerified ? (
+							<FieldDescription>이메일 인증이 완료되었습니다.</FieldDescription>
+						) : isDeleteEmailSent ? (
+							<FieldDescription>
+								메일로 받은 6자리 숫자를 입력해 주세요.
+							</FieldDescription>
+						) : (
+							<FieldDescription>
+								번호 받기를 눌러 이메일 인증번호를 받아 주세요.
+							</FieldDescription>
+						)}
+					</Field>
 					<Field data-invalid={Boolean(deleteConfirmError)}>
 						<FieldLabel htmlFor="delete-account-confirm">확인 문구</FieldLabel>
 						<Input

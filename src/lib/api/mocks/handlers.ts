@@ -39,6 +39,97 @@ let deleteEmailAuthSentUserId: number | null = null;
 let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
 
+function createGithubLoginUser() {
+	return createPreviewUser({
+		email: "github.dev@teampo.dev",
+		githubUsername: "github_runner",
+		isGithubLinked: true,
+		isGithubLogin: true,
+		nickname: "github_runner",
+		profileImage: "https://i.pravatar.cc/240?img=32",
+	});
+}
+
+function createGithubOnboardingUser(level: number) {
+	return createPreviewUser({
+		description: null,
+		email: "new.github.dev@teampo.dev",
+		githubUsername: "new_github_runner",
+		isGithubLinked: true,
+		isGithubLogin: true,
+		level,
+		nickname: "new_github_runner",
+		profileImage: "https://i.pravatar.cc/240?img=47",
+	});
+}
+
+function syncSessionFromRequest(request: Request) {
+	const requestUserId = getUserIdFromAuthorizationHeader(request);
+
+	if (!requestUserId || requestUserId === currentUserId) {
+		return;
+	}
+
+	if (requestUserId === 1) {
+		currentUser = createPreviewUser();
+		currentUserId = 1;
+		currentPassword = previewAuthSeed.password;
+		resetDeleteEmailState();
+		resetMatchState();
+		activeProjectGroup = createMockProjectGroup();
+		return;
+	}
+
+	if (requestUserId === 5) {
+		currentUser = createGithubLoginUser();
+		currentUserId = 5;
+		resetDeleteEmailState();
+		resetMatchState();
+		activeProjectGroup = null;
+		return;
+	}
+
+	if (requestUserId === 6) {
+		currentUser = createGithubOnboardingUser(3);
+		currentUserId = 6;
+		resetDeleteEmailState();
+		resetMatchState();
+		activeProjectGroup = null;
+	}
+}
+
+function getUserIdFromAuthorizationHeader(request: Request) {
+	const authorization = request.headers.get("Authorization");
+	const accessToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+	const payload = accessToken?.split(".")[1];
+
+	if (!payload) {
+		return null;
+	}
+
+	try {
+		const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+		const paddedPayload = normalizedPayload.padEnd(
+			Math.ceil(normalizedPayload.length / 4) * 4,
+			"=",
+		);
+		const parsedPayload = JSON.parse(atob(paddedPayload)) as unknown;
+
+		if (
+			typeof parsedPayload === "object" &&
+			parsedPayload !== null &&
+			"userId" in parsedPayload
+		) {
+			const userId = parsedPayload.userId;
+			return typeof userId === "number" ? userId : null;
+		}
+	} catch {
+		return null;
+	}
+
+	return null;
+}
+
 function buildErrorResponse(
 	status: number,
 	message: string,
@@ -110,6 +201,13 @@ function resetDeleteEmailState() {
 	deleteEmailVerifiedUserId = null;
 }
 
+function resetMatchState() {
+	matchStatus = null;
+	activeMatchId = null;
+	activeMatchMembers = [];
+	activeMatchProject = null;
+}
+
 function isValidMatchRole(value: string): value is MatchRole {
 	return ["BACKEND", "FRONTEND", "DESIGN"].includes(value);
 }
@@ -133,6 +231,8 @@ function hasPartialProjectInfo(body: ProjectRequestPayload) {
 }
 
 function createMockMatchSession(body: ProjectRequestPayload) {
+	const isCurrentUserLastResponder = currentUser?.isGithubLogin === true;
+
 	activeMatchId = 42;
 	activeMatchProject = {
 		matchId: activeMatchId,
@@ -144,48 +244,91 @@ function createMockMatchSession(body: ProjectRequestPayload) {
 			"프로필 기반 매칭 요청, 팀원 응답, 팀 스페이스 생성까지 연결합니다.",
 		projectTitle: body.projectTitle ?? "Team-po 매칭 실험",
 	};
-	activeMatchMembers = [
-		{
-			isAccepted: hasCompleteProjectInfo(body) ? true : null,
-			isHost: hasCompleteProjectInfo(body),
-			level: currentUser?.level ?? 3,
-			nickname: currentUser?.nickname ?? "preview",
-			profileImageKey: currentUser?.profileImage ?? null,
-			role: body.role,
-			temperature: currentUser?.temperature ?? 50,
-			userId: currentUserId,
-		},
-		{
-			isAccepted: true,
-			isHost: !hasCompleteProjectInfo(body),
-			level: 4,
-			nickname: "api_builder",
-			profileImageKey: null,
-			role: "BACKEND",
-			temperature: 53,
-			userId: 2,
-		},
-		{
-			isAccepted: null,
-			isHost: false,
-			level: 3,
-			nickname: "pixel_runner",
-			profileImageKey: null,
-			role: "FRONTEND",
-			temperature: 49,
-			userId: 3,
-		},
-		{
-			isAccepted: null,
-			isHost: false,
-			level: 2,
-			nickname: "flow_designer",
-			profileImageKey: null,
-			role: "DESIGN",
-			temperature: 51,
-			userId: 4,
-		},
-	];
+	activeMatchMembers = isCurrentUserLastResponder
+		? [
+				{
+					isAccepted: true,
+					isHost: true,
+					level: 4,
+					nickname: "api_builder",
+					profileImageKey: null,
+					role: "BACKEND",
+					temperature: 53,
+					userId: 2,
+				},
+				{
+					isAccepted: true,
+					isHost: false,
+					level: 3,
+					nickname: "pixel_runner",
+					profileImageKey: null,
+					role: "FRONTEND",
+					temperature: 49,
+					userId: 3,
+				},
+				{
+					isAccepted: true,
+					isHost: false,
+					level: 2,
+					nickname: "flow_designer",
+					profileImageKey: null,
+					role: "DESIGN",
+					temperature: 51,
+					userId: 4,
+				},
+				{
+					isAccepted: null,
+					isHost: false,
+					level: currentUser?.level ?? 3,
+					nickname: currentUser?.nickname ?? "preview",
+					profileImageKey: currentUser?.profileImage ?? null,
+					role: body.role,
+					temperature: currentUser?.temperature ?? 50,
+					userId: currentUserId,
+				},
+			]
+		: [
+				{
+					isAccepted: hasCompleteProjectInfo(body) ? true : null,
+					isHost: hasCompleteProjectInfo(body),
+					level: currentUser?.level ?? 3,
+					nickname: currentUser?.nickname ?? "preview",
+					profileImageKey: currentUser?.profileImage ?? null,
+					role: body.role,
+					temperature: currentUser?.temperature ?? 50,
+					userId: currentUserId,
+				},
+				{
+					isAccepted: true,
+					isHost: !hasCompleteProjectInfo(body),
+					level: 4,
+					nickname: "api_builder",
+					profileImageKey: null,
+					role: "BACKEND",
+					temperature: 53,
+					userId: 2,
+				},
+				{
+					isAccepted: null,
+					isHost: false,
+					level: 3,
+					nickname: "pixel_runner",
+					profileImageKey: null,
+					role: "FRONTEND",
+					temperature: 49,
+					userId: 3,
+				},
+				{
+					isAccepted: null,
+					isHost: false,
+					level: 2,
+					nickname: "flow_designer",
+					profileImageKey: null,
+					role: "DESIGN",
+					temperature: 51,
+					userId: 4,
+				},
+			];
 }
 
 function createMockProjectGroup(): MyProjectGroup {
@@ -242,6 +385,49 @@ function createMockProjectGroup(): MyProjectGroup {
 	};
 }
 
+function createProjectGroupFromActiveMatch(): MyProjectGroup | null {
+	if (!activeMatchProject || activeMatchMembers.length === 0) {
+		return null;
+	}
+
+	const hostMember =
+		activeMatchMembers.find((member) => member.isHost) ?? activeMatchMembers[0];
+
+	return {
+		currentUserId,
+		members: activeMatchMembers.map((member) => ({
+			admin: member.isHost,
+			groupRole: member.isHost ? "HOST" : "MEMBER",
+			level: member.level,
+			memberRole: member.role,
+			nickname: member.nickname,
+			profileImage: member.profileImageKey,
+			temperature: member.temperature,
+			userId: member.userId,
+		})),
+		projectDescription: activeMatchProject.projectDescription,
+		projectGroupId: 10,
+		projectMvp: activeMatchProject.projectMvp,
+		projectName: `${hostMember.nickname} 팀`,
+		projectTitle: activeMatchProject.projectTitle,
+	};
+}
+
+function completeMatchIfEveryoneAccepted() {
+	const everyoneAccepted =
+		activeMatchMembers.length > 0 &&
+		activeMatchMembers.every(
+			(member) => member.isHost || member.isAccepted === true,
+		);
+
+	if (!everyoneAccepted) {
+		return;
+	}
+
+	matchStatus = "MATCHED";
+	activeProjectGroup = createProjectGroupFromActiveMatch();
+}
+
 export const handlers = [
 	http.post(getPath("/users/sign-in"), async ({ request }) => {
 		const body = (await request.json()) as LoginRequest;
@@ -256,19 +442,33 @@ export const handlers = [
 			);
 		}
 
-		if (!currentUser) {
-			return buildErrorResponse(
-				401,
-				"이메일 또는 비밀번호가 올바르지 않습니다.",
-				"INVALID_CREDENTIALS",
-			);
-		}
-
 		if (!isValidEmail(body.email) || body.password.length < 8) {
 			return buildErrorResponse(
 				400,
 				"입력한 정보를 다시 확인해 주세요.",
 				"INVALID_INPUT_FIELD",
+			);
+		}
+
+		if (
+			normalizeEmail(body.email) === previewAuthSeed.email &&
+			body.password === previewAuthSeed.password
+		) {
+			currentUserId = 1;
+			currentUser = createPreviewUser();
+			currentPassword = previewAuthSeed.password;
+			resetDeleteEmailState();
+			resetMatchState();
+			activeProjectGroup = createMockProjectGroup();
+
+			return HttpResponse.json(buildSession());
+		}
+
+		if (!currentUser) {
+			return buildErrorResponse(
+				401,
+				"이메일 또는 비밀번호가 올바르지 않습니다.",
+				"INVALID_CREDENTIALS",
 			);
 		}
 
@@ -300,16 +500,11 @@ export const handlers = [
 		}
 
 		if (body.code === "mock-github-login-code") {
-			currentUser = createPreviewUser({
-				email: "github.dev@teampo.dev",
-				githubUsername: "github_runner",
-				isGithubLinked: true,
-				isGithubLogin: true,
-				nickname: "github_runner",
-				profileImage: "https://i.pravatar.cc/240?img=32",
-			});
+			currentUser = createGithubLoginUser();
 			currentUserId = 5;
 			resetDeleteEmailState();
+			resetMatchState();
+			activeProjectGroup = null;
 
 			return HttpResponse.json(buildSession());
 		}
@@ -324,18 +519,11 @@ export const handlers = [
 				);
 			}
 
-			currentUser = createPreviewUser({
-				description: null,
-				email: "new.github.dev@teampo.dev",
-				githubUsername: "new_github_runner",
-				isGithubLinked: true,
-				isGithubLogin: true,
-				level: body.level,
-				nickname: "new_github_runner",
-				profileImage: "https://i.pravatar.cc/240?img=47",
-			});
+			currentUser = createGithubOnboardingUser(body.level);
 			currentUserId = 6;
 			resetDeleteEmailState();
+			resetMatchState();
+			activeProjectGroup = null;
 
 			return HttpResponse.json(buildSession());
 		}
@@ -598,12 +786,15 @@ export const handlers = [
 		});
 		currentPassword = body.password;
 		resetDeleteEmailState();
+		resetMatchState();
+		activeProjectGroup = null;
 
 		return new HttpResponse(null, { status: 200 });
 	}),
 
-	http.get(getPath("/users/me"), async () => {
+	http.get(getPath("/users/me"), async ({ request }) => {
 		await delay(250);
+		syncSessionFromRequest(request);
 
 		if (!currentUser) {
 			return buildErrorResponse(
@@ -784,8 +975,9 @@ export const handlers = [
 		return new HttpResponse(null, { status: 200 });
 	}),
 
-	http.get(getPath("/match/status"), async () => {
+	http.get(getPath("/match/status"), async ({ request }) => {
 		await delay(250);
+		syncSessionFromRequest(request);
 
 		if (!currentUser) {
 			return buildErrorResponse(
@@ -813,6 +1005,7 @@ export const handlers = [
 		const body = (await request.json()) as ProjectRequestPayload;
 
 		await delay(500);
+		syncSessionFromRequest(request);
 
 		if (!currentUser) {
 			return buildErrorResponse(
@@ -948,6 +1141,7 @@ export const handlers = [
 		}
 
 		member.isAccepted = true;
+		completeMatchIfEveryoneAccepted();
 		return new HttpResponse(null, { status: 200 });
 	}),
 
@@ -982,8 +1176,9 @@ export const handlers = [
 		return new HttpResponse(null, { status: 200 });
 	}),
 
-	http.get(getPath("/project-groups/me"), async () => {
+	http.get(getPath("/project-groups/me"), async ({ request }) => {
 		await delay(250);
+		syncSessionFromRequest(request);
 
 		if (!currentUser) {
 			return buildErrorResponse(
