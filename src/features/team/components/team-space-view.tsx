@@ -142,7 +142,9 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		revokeAdminPermissionMutation.isPending;
 	const pendingAdminPermissionTargetId = grantAdminPermissionMutation.isPending
 		? grantAdminPermissionMutation.variables.targetUserId
-		: (revokeAdminPermissionMutation.variables?.targetUserId ?? null);
+		: revokeAdminPermissionMutation.isPending
+			? revokeAdminPermissionMutation.variables.targetUserId
+			: null;
 
 	function handleAdminPermissionChange(member: ProjectGroupMember) {
 		if (!projectGroup) {
