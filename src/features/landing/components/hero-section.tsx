@@ -8,6 +8,24 @@ import { Container } from "@/components/ui/container";
 import { Surface } from "@/components/ui/surface";
 import { heroStats } from "@/features/landing/constants";
 
+const heroFlowSteps = [
+	{
+		label: "01",
+		title: "역할 선택",
+		description: "내가 맡을 파트를 고릅니다.",
+	},
+	{
+		label: "02",
+		title: "제안 확인",
+		description: "팀 후보와 프로젝트를 봅니다.",
+	},
+	{
+		label: "03",
+		title: "팀 스페이스",
+		description: "수락 후 바로 협업을 시작합니다.",
+	},
+] as const;
+
 function renderHeroStatValue(value: string) {
 	const parts = value.match(/[0-9A-Za-z%]+|[^0-9A-Za-z%]+/g) ?? [value];
 	let currentOffset = 0;
@@ -79,6 +97,25 @@ export function HeroSection() {
 							<Link to="/team">팀 스페이스 보기</Link>
 						</Button>
 					</div>
+
+					<div className="grid max-w-xl gap-2 rounded-lg border border-primary/15 bg-white/80 p-2.5 shadow-crisp sm:grid-cols-3">
+						{heroFlowSteps.map((step) => (
+							<div
+								className="rounded-md px-3 py-2 transition-colors hover:bg-primary/5"
+								key={step.label}
+							>
+								<p className="font-mono text-xs font-semibold text-primary">
+									{step.label}
+								</p>
+								<p className="mt-1 text-sm font-semibold text-brand-ink">
+									{step.title}
+								</p>
+								<p className="mt-1 text-xs leading-5 text-muted-foreground">
+									{step.description}
+								</p>
+							</div>
+						))}
+					</div>
 				</div>
 
 				<div className="relative animate-rise-in [animation-delay:140ms]">
@@ -91,9 +128,14 @@ export function HeroSection() {
 							<p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
 								Queue Snapshot
 							</p>
-							<p className="font-display text-2xl leading-tight">
-								내 역할을 입력하면 팀 후보를 찾기 시작합니다
-							</p>
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+								<p className="font-display text-2xl leading-tight">
+									내 역할을 입력하면 팀 후보를 찾기 시작합니다
+								</p>
+								<Badge variant="warm" className="w-fit">
+									응답까지 한 흐름
+								</Badge>
+							</div>
 						</div>
 
 						<div className="space-y-3 rounded-xl border border-border/70 bg-white/80 p-4">
