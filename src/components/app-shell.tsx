@@ -10,6 +10,7 @@ import type { ComponentType, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { clearAuthSession, getAuthSession } from "@/lib/api/auth-session";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +33,11 @@ interface AppTopBarProps {
 const navigationItems: Array<{
 	icon: ComponentType<{ className?: string }>;
 	label: string;
+	requiresNoTeam?: boolean;
 	to: string;
 }> = [
 	{ icon: UserRound, label: "내 정보", to: "/me" },
-	{ icon: Shuffle, label: "매칭", to: "/match" },
+	{ icon: Shuffle, label: "매칭", requiresNoTeam: true, to: "/match" },
 	{ icon: UsersRound, label: "팀 스페이스", to: "/team" },
 ];
 
@@ -200,6 +202,13 @@ function AppSidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const isSignedIn = Boolean(getAuthSession());
+	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
+	const hasProjectGroup = Boolean(projectGroupQuery.data);
+	const flowHref = hasProjectGroup ? "/team" : "/match";
+	const flowLabel = hasProjectGroup ? "팀 스페이스 열기" : "매칭 요청하기";
+	const flowDescription = hasProjectGroup
+		? "이미 소속된 팀이 있어 팀 스페이스에서 현재 협업 흐름을 이어가세요."
+		: "프로필을 정리하고 매칭 요청을 보낸 뒤 팀 스페이스에서 바로 협업을 시작하세요.";
 
 	function handleLogout() {
 		clearAuthSession();
@@ -231,18 +240,32 @@ function AppSidebar() {
 					{navigationItems.map((item) => {
 						const Icon = item.icon;
 						const isActive = location.pathname === item.to;
+						const isDisabled = Boolean(item.requiresNoTeam && hasProjectGroup);
+						const className = cn(
+							"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
+							isDisabled
+								? "cursor-not-allowed text-muted-foreground/55"
+								: isActive
+									? "bg-primary text-primary-foreground shadow-soft"
+									: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+						);
+
+						if (isDisabled) {
+							return (
+								<span
+									aria-disabled="true"
+									className={className}
+									key={item.to}
+									title="이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다."
+								>
+									<Icon className="size-4" />
+									{item.label}
+								</span>
+							);
+						}
 
 						return (
-							<Link
-								className={cn(
-									"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
-									isActive
-										? "bg-primary text-primary-foreground shadow-soft"
-										: "text-muted-foreground hover:bg-secondary hover:text-foreground",
-								)}
-								key={item.to}
-								to={item.to}
-							>
+							<Link className={className} key={item.to} to={item.to}>
 								<Icon className="size-4" />
 								{item.label}
 							</Link>
@@ -254,16 +277,34 @@ function AppSidebar() {
 					{navigationItems.map((item) => {
 						const Icon = item.icon;
 						const isActive = location.pathname === item.to;
+						const isDisabled = Boolean(item.requiresNoTeam && hasProjectGroup);
+						const className = cn(
+							"flex size-9 items-center justify-center rounded-lg border transition-colors",
+							isDisabled
+								? "cursor-not-allowed border-border/70 bg-secondary/40 text-muted-foreground/55"
+								: isActive
+									? "border-primary bg-primary text-primary-foreground"
+									: "border-border/70 bg-white text-muted-foreground",
+						);
+
+						if (isDisabled) {
+							return (
+								<span
+									aria-disabled="true"
+									className={className}
+									key={item.to}
+									title="이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다."
+								>
+									<Icon className="size-4" />
+									<span className="sr-only">{item.label} 비활성화</span>
+								</span>
+							);
+						}
 
 						return (
 							<Link
 								aria-label={item.label}
-								className={cn(
-									"flex size-9 items-center justify-center rounded-lg border transition-colors",
-									isActive
-										? "border-primary bg-primary text-primary-foreground"
-										: "border-border/70 bg-white text-muted-foreground",
-								)}
+								className={className}
 								key={item.to}
 								to={item.to}
 							>
@@ -281,14 +322,13 @@ function AppSidebar() {
 						오늘의 흐름
 					</div>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
-						프로필을 정리하고 매칭 요청을 보낸 뒤 팀 스페이스에서 바로 협업을
-						시작하세요.
+						{flowDescription}
 					</p>
 					<Link
 						className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary"
-						to="/match"
+						to={flowHref}
 					>
-						매칭 요청하기
+						{flowLabel}
 						<ArrowUpRight className="size-3.5" />
 					</Link>
 				</div>

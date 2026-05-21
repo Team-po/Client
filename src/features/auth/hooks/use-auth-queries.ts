@@ -23,6 +23,7 @@ import {
 	updateCurrentUser,
 	validateDeleteUserEmail,
 } from "@/lib/api/users";
+import { projectGroupQueryKeys } from "@/features/project-groups/hooks/use-project-group-queries";
 import type {
 	CreateUserRequest,
 	GithubOAuthTokenRequest,
@@ -41,6 +42,13 @@ const authQueryKeys = {
 	currentUser: ["users", "me"] as const,
 };
 
+function clearProjectGroupQueryData(
+	queryClient: ReturnType<typeof useQueryClient>,
+) {
+	queryClient.removeQueries({ queryKey: projectGroupQueryKeys.all });
+	queryClient.setQueryData(projectGroupQueryKeys.me, null);
+}
+
 export function useCurrentUserQuery() {
 	return useQuery({
 		enabled: Boolean(getAuthSession()),
@@ -56,6 +64,7 @@ export function useLoginMutation() {
 		mutationFn: (payload: LoginRequest) => login(payload),
 		onSuccess: (response) => {
 			setAuthSession(response);
+			clearProjectGroupQueryData(queryClient);
 			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
 		},
 	});
@@ -69,6 +78,7 @@ export function useGithubOAuthTokenMutation() {
 			exchangeGithubOAuthCode(payload),
 		onSuccess: (response) => {
 			setAuthSession(response);
+			clearProjectGroupQueryData(queryClient);
 			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
 		},
 	});
@@ -158,6 +168,7 @@ export function useEditPasswordMutation() {
 		mutationFn: (payload: EditPasswordRequest) => editPassword(payload),
 		onSuccess: () => {
 			clearAuthSession();
+			clearProjectGroupQueryData(queryClient);
 			queryClient.removeQueries({
 				queryKey: authQueryKeys.currentUser,
 			});
@@ -185,6 +196,7 @@ export function useDeleteCurrentUserMutation() {
 		mutationFn: () => deleteCurrentUser(),
 		onSuccess: () => {
 			clearAuthSession();
+			clearProjectGroupQueryData(queryClient);
 			queryClient.removeQueries({
 				queryKey: authQueryKeys.currentUser,
 			});
