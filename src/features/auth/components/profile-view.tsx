@@ -50,7 +50,7 @@ import {
 import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
-import { getApiErrorMessage } from "@/lib/api/client";
+import { ApiError, getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
 import type { MyProjectGroup } from "@/lib/types/project-group";
 import type { UserProfile } from "@/lib/types/user";
@@ -159,8 +159,12 @@ export function ProfileView() {
 	const currentTeamName = showMockTeamPreview
 		? demoTeamSpace.name
 		: projectGroupQuery.data?.projectName ||
-			(projectGroupQuery.isLoading ? "조회 중" : "팀 없음");
+			getCurrentTeamName({
+				error: projectGroupQuery.error,
+				isLoading: projectGroupQuery.isLoading,
+			});
 	const currentTeamMetric = getCurrentTeamMetric({
+		error: projectGroupQuery.error,
 		isMock: showMockTeamPreview,
 		isLoading: projectGroupQuery.isLoading,
 		projectGroup: projectGroupQuery.data,
@@ -477,11 +481,35 @@ export function ProfileView() {
 	);
 }
 
+function getCurrentTeamName({
+	error,
+	isLoading,
+}: {
+	error: unknown;
+	isLoading: boolean;
+}) {
+	if (isLoading) {
+		return "조회 중";
+	}
+
+	if (isProjectGroupNotFoundError(error)) {
+		return "팀 없음";
+	}
+
+	if (error) {
+		return "조회 실패";
+	}
+
+	return "팀 없음";
+}
+
 function getCurrentTeamMetric({
+	error,
 	isLoading,
 	isMock,
 	projectGroup,
 }: {
+	error: unknown;
 	isLoading: boolean;
 	isMock: boolean;
 	projectGroup?: MyProjectGroup;
@@ -510,11 +538,26 @@ function getCurrentTeamMetric({
 		};
 	}
 
+	if (error && !isProjectGroupNotFoundError(error)) {
+		return {
+			tone: "rose" as const,
+			trend: "다시 조회 필요",
+			value: "!",
+		};
+	}
+
 	return {
 		tone: "amber" as const,
 		trend: "매칭 완료 후 생성",
 		value: "0",
 	};
+}
+
+function isProjectGroupNotFoundError(error: unknown) {
+	return (
+		error instanceof ApiError &&
+		(error.status === 404 || error.code === "PROJECT_GROUP_NOT_FOUND")
+	);
 }
 
 function MockCurrentTeamPanel() {
@@ -619,6 +662,8 @@ function RealCurrentTeamPanel({
 		);
 	}
 
+	const isLookupError = Boolean(error) && !isProjectGroupNotFoundError(error);
+
 	return (
 		<AppPanel>
 			<AppPanelHeader
@@ -630,21 +675,36 @@ function RealCurrentTeamPanel({
 						</Link>
 					</Button>
 				}
-				description="아직 활성 팀 스페이스가 없으면 매칭 상태를 먼저 확인하세요."
+				description={
+					isLookupError
+						? "서버 응답을 확인하지 못했습니다. 잠시 후 다시 시도하세요."
+						: "아직 활성 팀 스페이스가 없으면 매칭 상태를 먼저 확인하세요."
+				}
 				eyebrow="Team workspace"
-				title="활성 팀 스페이스가 없습니다"
+				title={
+					isLookupError
+						? "팀 정보를 불러오지 못했습니다"
+						: "활성 팀 스페이스가 없습니다"
+				}
 			/>
 			<div className="grid gap-4 p-5">
 				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-					{getApiErrorMessage(error, "소속된 팀 스페이스를 찾을 수 없습니다.")}
+					{getApiErrorMessage(
+						error,
+						isLookupError
+							? "팀 정보를 불러오지 못했습니다."
+							: "소속된 팀 스페이스를 찾을 수 없습니다.",
+					)}
 				</div>
 				<div className="flex flex-wrap gap-2">
-					<Button asChild className="w-fit">
-						<Link to="/match">
-							<ArrowRight data-icon="inline-start" />
-							매칭 상태 확인
-						</Link>
-					</Button>
+					{isLookupError ? null : (
+						<Button asChild className="w-fit">
+							<Link to="/match">
+								<ArrowRight data-icon="inline-start" />
+								매칭 상태 확인
+							</Link>
+						</Button>
+					)}
 					<Button className="w-fit" onClick={onRetry} variant="outline">
 						<RefreshCcw data-icon="inline-start" />
 						다시 조회
