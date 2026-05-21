@@ -703,12 +703,12 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 							onStatusChange={handleChecklistStatusChange}
 						/>
 					) : null}
-					{selectedTab === "github" ? (
+					<div hidden={selectedTab !== "github"}>
 						<GithubPanel
 							isProjectGroupGithubLinked={isGithubLinked}
 							onProjectGroupGithubLinkedChange={setIsGithubLinked}
 						/>
-					) : null}
+					</div>
 					{selectedTab === "chat" ? (
 						<ChatPanel messages={messages} onSend={handleSendMessage} />
 					) : null}
