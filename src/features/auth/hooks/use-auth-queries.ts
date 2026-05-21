@@ -1,5 +1,6 @@
 import {
 	type QueryClient,
+	type QueryKey,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -48,11 +49,20 @@ const authQueryKeys = {
 	currentUser: ["users", "me"] as const,
 };
 
+function clearQueryData(queryClient: QueryClient, queryKey: QueryKey) {
+	const filters = { queryKey };
+
+	for (const query of queryClient.getQueryCache().findAll(filters)) {
+		query.reset();
+	}
+
+	queryClient.removeQueries(filters);
+}
+
 export function clearAuthScopedQueryData(queryClient: QueryClient) {
-	queryClient.removeQueries({ queryKey: authQueryKeys.currentUser });
-	queryClient.removeQueries({ queryKey: matchQueryKeys.all });
-	queryClient.removeQueries({ queryKey: projectGroupQueryKeys.all });
-	queryClient.setQueryData(projectGroupQueryKeys.me, null);
+	clearQueryData(queryClient, authQueryKeys.currentUser);
+	clearQueryData(queryClient, matchQueryKeys.all);
+	clearQueryData(queryClient, projectGroupQueryKeys.all);
 }
 
 export function useCurrentUserQuery() {
