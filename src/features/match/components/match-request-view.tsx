@@ -293,7 +293,7 @@ export function MatchRequestView() {
 						tone={
 							hasCurrentTeam || offerStatus === "accepted"
 								? "emerald"
-								: hasLiveMatch || offerStatus === "offered"
+								: canRespondToMatch || offerStatus === "offered"
 									? "amber"
 									: "primary"
 						}
@@ -301,7 +301,9 @@ export function MatchRequestView() {
 							hasCurrentTeam
 								? "잠김"
 								: hasLiveMatch
-									? "응답 필요"
+									? canRespondToMatch
+										? "응답 필요"
+										: "응답 완료"
 									: offerStatus === "accepted"
 										? "수락 완료"
 										: offerStatus === "hidden"
@@ -314,7 +316,7 @@ export function MatchRequestView() {
 						tone={
 							hasCurrentTeam || hasAcceptedTeam
 								? "emerald"
-								: hasLiveMatch
+								: canRespondToMatch
 									? "amber"
 									: "primary"
 						}
@@ -324,14 +326,18 @@ export function MatchRequestView() {
 								: hasAcceptedTeam
 									? "팀으로 이동 가능"
 									: hasLiveMatch
-										? "내 응답 후 생성"
+										? canRespondToMatch
+											? "내 응답 후 생성"
+											: "팀원 응답 대기"
 										: "수락 후 생성"
 						}
 						value={
 							hasCurrentTeam || hasAcceptedTeam
 								? "가능"
 								: hasLiveMatch
-									? "수락 대기"
+									? canRespondToMatch
+										? "수락 대기"
+										: "대기 중"
 									: "대기"
 						}
 					/>
@@ -343,6 +349,7 @@ export function MatchRequestView() {
 						hasCurrentTeam={hasCurrentTeam}
 						hasLiveMatch={hasLiveMatch}
 						isSignedIn={isSignedIn}
+						needsResponse={canRespondToMatch}
 						status={status}
 					/>
 				)}
@@ -641,6 +648,7 @@ interface MatchProgressPanelProps {
 	hasCurrentTeam: boolean;
 	hasLiveMatch: boolean;
 	isSignedIn: boolean;
+	needsResponse: boolean;
 	status?: MatchStatus;
 }
 
@@ -649,6 +657,7 @@ function MatchProgressPanel({
 	hasCurrentTeam,
 	hasLiveMatch,
 	isSignedIn,
+	needsResponse,
 	status,
 }: MatchProgressPanelProps) {
 	const isTeamReady = hasAcceptedTeam || hasCurrentTeam || status === "MATCHED";
@@ -662,7 +671,9 @@ function MatchProgressPanel({
 		},
 		{
 			description: hasLiveMatch
-				? "팀 후보가 도착했습니다. 세션에서 응답을 마무리하세요."
+				? needsResponse
+					? "팀 후보가 도착했습니다. 세션에서 응답을 마무리하세요."
+					: "내 응답은 완료됐고 남은 팀원의 응답을 기다립니다."
 				: "조건이 맞는 팀 후보가 생기면 이 단계로 넘어갑니다.",
 			label: "팀 후보 확인",
 		},
@@ -679,8 +690,12 @@ function MatchProgressPanel({
 			<div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
 				<div className="min-w-0">
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant={hasLiveMatch ? "warm" : "brand"}>
-							{hasLiveMatch ? "응답 필요" : "매칭 흐름"}
+						<Badge variant={needsResponse ? "warm" : "brand"}>
+							{needsResponse
+								? "응답 필요"
+								: hasLiveMatch
+									? "응답 완료"
+									: "매칭 흐름"}
 						</Badge>
 						{status ? (
 							<Badge variant="neutral">{statusMeta[status].label}</Badge>
@@ -688,12 +703,16 @@ function MatchProgressPanel({
 					</div>
 					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
 						{hasLiveMatch
-							? "도착한 매칭 세션을 확인하고 팀 생성을 결정하세요"
+							? needsResponse
+								? "도착한 매칭 세션을 확인하고 팀 생성을 결정하세요"
+								: "내 응답은 완료됐고 팀원의 응답을 기다립니다"
 							: "요청 작성부터 팀 생성까지 한 흐름으로 진행됩니다"}
 					</h2>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
 						{hasLiveMatch
-							? "아래 매칭 세션에서 현재 제안의 프로젝트와 팀원 정보를 확인하고 바로 응답합니다."
+							? needsResponse
+								? "아래 매칭 세션에서 현재 제안의 프로젝트와 팀원 정보를 확인하고 바로 응답합니다."
+								: "매칭 세션에서 현재 제안과 팀원 응답 상태를 확인할 수 있습니다."
 							: "역할 선택, 제안 확인, 팀 스페이스 진입이 끊기지 않도록 현재 위치를 표시합니다."}
 					</p>
 				</div>

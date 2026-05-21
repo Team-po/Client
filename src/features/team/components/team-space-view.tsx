@@ -548,6 +548,9 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 	);
 	const [checklist, setChecklist] = useState(demoTeamSpace.checklist);
 	const [messages, setMessages] = useState(demoTeamSpace.messages);
+	const [isGithubLinked, setIsGithubLinked] = useState(
+		demoTeamSpace.githubSummary.projectGroupGithubLinked,
+	);
 	const activeStepIndex = useMemo(
 		() => lifecycleSteps.findIndex((step) => step.status === lifecycleStatus),
 		[lifecycleStatus],
@@ -641,7 +644,12 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					<div className="flex gap-2 overflow-x-auto p-2">
 						{tabs.map((tab) => {
 							const Icon = tab.icon;
-							const badge = getTeamTabBadge(tab.id, checklist, messages);
+							const badge = getTeamTabBadge(
+								tab.id,
+								checklist,
+								messages,
+								isGithubLinked,
+							);
 							const isSelected = selectedTab === tab.id;
 
 							return (
@@ -695,7 +703,12 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 							onStatusChange={handleChecklistStatusChange}
 						/>
 					) : null}
-					{selectedTab === "github" ? <GithubPanel /> : null}
+					{selectedTab === "github" ? (
+						<GithubPanel
+							isProjectGroupGithubLinked={isGithubLinked}
+							onProjectGroupGithubLinkedChange={setIsGithubLinked}
+						/>
+					) : null}
 					{selectedTab === "chat" ? (
 						<ChatPanel messages={messages} onSend={handleSendMessage} />
 					) : null}
@@ -802,6 +815,7 @@ function getTeamTabBadge(
 	tabId: TeamTab,
 	checklist: TeamChecklistItem[],
 	messages: TeamMessage[],
+	isGithubLinked: boolean,
 ) {
 	if (tabId === "checklist") {
 		const openTaskCount = checklist.filter(
@@ -811,7 +825,7 @@ function getTeamTabBadge(
 	}
 
 	if (tabId === "github") {
-		return demoTeamSpace.githubSummary.projectGroupGithubLinked ? null : "설정";
+		return isGithubLinked ? null : "설정";
 	}
 
 	if (tabId === "chat") {
@@ -1356,7 +1370,13 @@ function ChecklistPanel({
 	);
 }
 
-function GithubPanel() {
+function GithubPanel({
+	isProjectGroupGithubLinked,
+	onProjectGroupGithubLinkedChange,
+}: {
+	isProjectGroupGithubLinked: boolean;
+	onProjectGroupGithubLinkedChange: (isLinked: boolean) => void;
+}) {
 	const initialSelectedRepoIds =
 		demoTeamSpace.githubSummary.connectedRepos.length > 0
 			? demoTeamSpace.githubSummary.connectedRepos.map((repo) => repo.id)
@@ -1366,9 +1386,6 @@ function GithubPanel() {
 	);
 	const [installationStatus, setInstallationStatus] = useState(
 		demoTeamSpace.githubSummary.appInstallation.status,
-	);
-	const [projectGroupGithubLinked, setProjectGroupGithubLinked] = useState(
-		demoTeamSpace.githubSummary.projectGroupGithubLinked,
 	);
 	const [selectedRepoIds, setSelectedRepoIds] = useState<string[]>(
 		initialSelectedRepoIds,
@@ -1410,10 +1427,10 @@ function GithubPanel() {
 			ready: connectedRepos.length > 0,
 		},
 		{
-			description: projectGroupGithubLinked ? "기여도 집계 가능" : "연동 전",
+			description: isProjectGroupGithubLinked ? "기여도 집계 가능" : "연동 전",
 			icon: ShieldCheck,
 			label: "TeamSpace",
-			ready: projectGroupGithubLinked,
+			ready: isProjectGroupGithubLinked,
 		},
 	];
 
@@ -1425,7 +1442,7 @@ function GithubPanel() {
 		});
 		setInstallationStatus("installed");
 		setConnectedRepos([]);
-		setProjectGroupGithubLinked(false);
+		onProjectGroupGithubLinkedChange(false);
 		setSelectedRepoIds((current) =>
 			current.length > 0
 				? current
@@ -1449,7 +1466,7 @@ function GithubPanel() {
 		}
 
 		setConnectedRepos(selectedRepositories);
-		setProjectGroupGithubLinked(true);
+		onProjectGroupGithubLinkedChange(true);
 	}
 
 	return (
@@ -1654,8 +1671,8 @@ function GithubPanel() {
 									확인합니다.
 								</p>
 							</div>
-							<Badge variant={projectGroupGithubLinked ? "brand" : "neutral"}>
-								{projectGroupGithubLinked ? "linked" : "not linked"}
+							<Badge variant={isProjectGroupGithubLinked ? "brand" : "neutral"}>
+								{isProjectGroupGithubLinked ? "linked" : "not linked"}
 							</Badge>
 						</div>
 						{connectedRepos.length > 0 ? (
@@ -1703,9 +1720,9 @@ function GithubPanel() {
 									기여량이 많을수록 색과 밀도가 진해집니다.
 								</p>
 							</div>
-							<Badge variant={projectGroupGithubLinked ? "brand" : "neutral"}>
+							<Badge variant={isProjectGroupGithubLinked ? "brand" : "neutral"}>
 								open PR{" "}
-								{projectGroupGithubLinked
+								{isProjectGroupGithubLinked
 									? demoTeamSpace.githubSummary.openPrs
 									: "-"}
 							</Badge>
@@ -1715,19 +1732,19 @@ function GithubPanel() {
 								<div
 									className={cn(
 										"aspect-square rounded-sm transition-transform hover:scale-110",
-										projectGroupGithubLinked
+										isProjectGroupGithubLinked
 											? contributionLevelClass[day.level]
 											: "bg-secondary/60",
 									)}
 									key={day.id}
 									title={`${day.label}: level ${
-										projectGroupGithubLinked ? day.level : 0
+										isProjectGroupGithubLinked ? day.level : 0
 									}`}
 								/>
 							))}
 						</div>
 						<p className="mt-4 text-sm leading-6 text-muted-foreground">
-							{projectGroupGithubLinked
+							{isProjectGroupGithubLinked
 								? demoTeamSpace.githubSummary.weeklySummary
 								: "저장소를 연결하면 커밋, PR, 리뷰, 이슈 기준으로 팀원별 기여 흐름을 집계합니다."}
 						</p>
@@ -1757,14 +1774,14 @@ function GithubPanel() {
 												<span
 													className={cn(
 														"size-4 rounded-sm",
-														projectGroupGithubLinked
+														isProjectGroupGithubLinked
 															? contributionLevelClass[contribution.level]
 															: "bg-secondary",
 													)}
 												/>
 											</div>
 											<p className="mt-2 text-xs leading-5 text-muted-foreground">
-												{projectGroupGithubLinked
+												{isProjectGroupGithubLinked
 													? `커밋 ${contribution.commits} · PR ${contribution.prs} · 리뷰 ${contribution.reviews} · 이슈 ${contribution.issues}`
 													: "저장소 연결 후 기여 수치가 표시됩니다."}
 											</p>
@@ -1777,7 +1794,7 @@ function GithubPanel() {
 				</div>
 				<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
 					<p className="text-sm font-semibold text-brand-ink">최근 활동</p>
-					{projectGroupGithubLinked ? (
+					{isProjectGroupGithubLinked ? (
 						<div className="mt-4 grid gap-3 md:grid-cols-3">
 							{demoTeamSpace.githubSummary.recentActivities.map((activity) => (
 								<div
