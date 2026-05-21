@@ -128,7 +128,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		useRevokeProjectGroupAdminPermissionMutation();
 	const [adminPermissionFeedback, setAdminPermissionFeedback] =
 		useState<AdminPermissionFeedback | null>(null);
-	const projectGroup = projectGroupQuery.data;
+	const projectGroup = isSignedIn ? projectGroupQuery.data : null;
 	const currentMember = useMemo(
 		() =>
 			projectGroup?.members.find(

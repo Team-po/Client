@@ -137,15 +137,20 @@ export function MatchRequestView() {
 		"hidden" | "offered" | "accepted" | "declined"
 	>("hidden");
 	const projectInfoError = getProjectInfoError(form);
-	const noActiveRequest = statusQuery.data === null;
-	const status = statusQuery.data?.status;
+	const projectRequestStatus = isSignedIn ? statusQuery.data : null;
+	const noActiveRequest = projectRequestStatus === null;
+	const status = projectRequestStatus?.status;
 	const activeMatchId =
-		statusQuery.data?.status === "MATCHING" ? statusQuery.data.matchId : null;
+		projectRequestStatus?.status === "MATCHING"
+			? projectRequestStatus.matchId
+			: null;
 	const matchMembersQuery = useMatchMembersQuery(activeMatchId);
 	const matchProjectQuery = useMatchProjectQuery(activeMatchId);
 	const acceptMutation = useAcceptMatchMutation(activeMatchId);
 	const rejectMutation = useRejectMatchMutation(activeMatchId);
-	const currentProjectGroup = projectGroupQuery.data ?? undefined;
+	const currentProjectGroup = isSignedIn
+		? (projectGroupQuery.data ?? undefined)
+		: undefined;
 	const hasCurrentTeam = Boolean(currentProjectGroup);
 	const currentMatchMember =
 		currentUserId && matchMembersQuery.data

@@ -141,7 +141,11 @@ export function ProfileView() {
 		deleteForm.confirm.length > 0 ? deleteConfirmError : undefined;
 	const isDeleteAuthNumberInvalid = !/^\d{6}$/.test(deleteForm.authNumber);
 	const currentUser = currentUserQuery.data;
-	const currentProjectGroup = projectGroupQuery.data ?? undefined;
+	const currentProjectGroup = isSignedIn
+		? (projectGroupQuery.data ?? undefined)
+		: undefined;
+	const projectGroupError = isSignedIn ? projectGroupQuery.error : null;
+	const isProjectGroupLoading = isSignedIn && projectGroupQuery.isLoading;
 	const hasCurrentTeam = Boolean(currentProjectGroup);
 	const showMockTeamPreview = useMockTeamSurface && hasCurrentTeam;
 	const isProfileDirty = currentUser
@@ -169,13 +173,13 @@ export function ProfileView() {
 		? demoTeamSpace.name
 		: currentProjectGroup?.projectName ||
 			getCurrentTeamName({
-				error: projectGroupQuery.error,
-				isLoading: projectGroupQuery.isLoading,
+				error: projectGroupError,
+				isLoading: isProjectGroupLoading,
 			});
 	const currentTeamMetric = getCurrentTeamMetric({
-		error: projectGroupQuery.error,
+		error: projectGroupError,
 		isMock: showMockTeamPreview,
-		isLoading: projectGroupQuery.isLoading,
+		isLoading: isProjectGroupLoading,
 		projectGroup: currentProjectGroup,
 	});
 
@@ -460,8 +464,8 @@ export function ProfileView() {
 								<MockCurrentTeamPanel />
 							) : (
 								<RealCurrentTeamPanel
-									error={projectGroupQuery.error}
-									isLoading={projectGroupQuery.isLoading}
+									error={projectGroupError}
+									isLoading={isProjectGroupLoading}
 									onRetry={() => void projectGroupQuery.refetch()}
 									projectGroup={currentProjectGroup}
 								/>

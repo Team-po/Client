@@ -1,5 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	type QueryClient,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 
+import { matchQueryKeys } from "@/features/match/hooks/use-match-queries";
+import { projectGroupQueryKeys } from "@/features/project-groups/hooks/use-project-group-queries";
 import {
 	exchangeGithubOAuthCode,
 	login,
@@ -23,7 +30,6 @@ import {
 	updateCurrentUser,
 	validateDeleteUserEmail,
 } from "@/lib/api/users";
-import { projectGroupQueryKeys } from "@/features/project-groups/hooks/use-project-group-queries";
 import type {
 	CreateUserRequest,
 	GithubOAuthTokenRequest,
@@ -42,9 +48,9 @@ const authQueryKeys = {
 	currentUser: ["users", "me"] as const,
 };
 
-function clearProjectGroupQueryData(
-	queryClient: ReturnType<typeof useQueryClient>,
-) {
+export function clearAuthScopedQueryData(queryClient: QueryClient) {
+	queryClient.removeQueries({ queryKey: authQueryKeys.currentUser });
+	queryClient.removeQueries({ queryKey: matchQueryKeys.all });
 	queryClient.removeQueries({ queryKey: projectGroupQueryKeys.all });
 	queryClient.setQueryData(projectGroupQueryKeys.me, null);
 }
@@ -64,7 +70,7 @@ export function useLoginMutation() {
 		mutationFn: (payload: LoginRequest) => login(payload),
 		onSuccess: (response) => {
 			setAuthSession(response);
-			clearProjectGroupQueryData(queryClient);
+			clearAuthScopedQueryData(queryClient);
 			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
 		},
 	});
@@ -78,7 +84,7 @@ export function useGithubOAuthTokenMutation() {
 			exchangeGithubOAuthCode(payload),
 		onSuccess: (response) => {
 			setAuthSession(response);
-			clearProjectGroupQueryData(queryClient);
+			clearAuthScopedQueryData(queryClient);
 			queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser });
 		},
 	});
@@ -168,10 +174,7 @@ export function useEditPasswordMutation() {
 		mutationFn: (payload: EditPasswordRequest) => editPassword(payload),
 		onSuccess: () => {
 			clearAuthSession();
-			clearProjectGroupQueryData(queryClient);
-			queryClient.removeQueries({
-				queryKey: authQueryKeys.currentUser,
-			});
+			clearAuthScopedQueryData(queryClient);
 		},
 	});
 }
@@ -196,10 +199,7 @@ export function useDeleteCurrentUserMutation() {
 		mutationFn: () => deleteCurrentUser(),
 		onSuccess: () => {
 			clearAuthSession();
-			clearProjectGroupQueryData(queryClient);
-			queryClient.removeQueries({
-				queryKey: authQueryKeys.currentUser,
-			});
+			clearAuthScopedQueryData(queryClient);
 		},
 	});
 }

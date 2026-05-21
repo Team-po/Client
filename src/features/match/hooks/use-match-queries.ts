@@ -19,6 +19,7 @@ import type {
 } from "@/lib/types/match";
 
 export const matchQueryKeys = {
+	all: ["match"] as const,
 	members: (matchId: number) => ["match", matchId, "members"] as const,
 	project: (matchId: number) => ["match", matchId, "project"] as const,
 	status: ["match", "status"] as const,

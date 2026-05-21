@@ -1,8 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { clearAuthScopedQueryData } from "@/features/auth/hooks/use-auth-queries";
 import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { clearAuthSession, getAuthSession } from "@/lib/api/auth-session";
 import { cn } from "@/lib/utils";
@@ -19,9 +21,10 @@ const authLinks = [
 export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const [isSignedIn, setIsSignedIn] = useState(() => Boolean(getAuthSession()));
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
-	const hasProjectGroup = Boolean(projectGroupQuery.data);
+	const hasProjectGroup = isSignedIn && Boolean(projectGroupQuery.data);
 
 	useEffect(() => {
 		function syncAuthState() {
@@ -40,6 +43,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 
 	function handleLogout() {
 		clearAuthSession();
+		clearAuthScopedQueryData(queryClient);
 		setIsSignedIn(false);
 		navigate("/");
 	}

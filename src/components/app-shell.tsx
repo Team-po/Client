@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	ArrowUpRight,
 	LayoutDashboard,
@@ -10,6 +11,7 @@ import type { ComponentType, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { clearAuthScopedQueryData } from "@/features/auth/hooks/use-auth-queries";
 import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { clearAuthSession, getAuthSession } from "@/lib/api/auth-session";
 import { cn } from "@/lib/utils";
@@ -201,9 +203,10 @@ function AppTopBar({ actions, description, eyebrow, title }: AppTopBarProps) {
 function AppSidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const isSignedIn = Boolean(getAuthSession());
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
-	const hasProjectGroup = Boolean(projectGroupQuery.data);
+	const hasProjectGroup = isSignedIn && Boolean(projectGroupQuery.data);
 	const flowHref = hasProjectGroup ? "/team" : "/match";
 	const flowLabel = hasProjectGroup ? "팀 스페이스 열기" : "매칭 요청하기";
 	const flowDescription = hasProjectGroup
@@ -212,6 +215,7 @@ function AppSidebar() {
 
 	function handleLogout() {
 		clearAuthSession();
+		clearAuthScopedQueryData(queryClient);
 		navigate("/");
 	}
 
