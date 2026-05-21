@@ -171,6 +171,7 @@ export function MatchRequestView() {
 			(!currentMatchMember ||
 				(!currentMatchMember.isHost && currentMatchMember.isAccepted !== true)),
 	);
+	const hasLiveMatch = Boolean(activeMatchId && !isMatchingAccessBlocked);
 	const isSubmitDisabled =
 		!isSignedIn ||
 		isMatchingAccessBlocked ||
@@ -292,31 +293,59 @@ export function MatchRequestView() {
 						tone={
 							hasCurrentTeam || offerStatus === "accepted"
 								? "emerald"
-								: "primary"
+								: hasLiveMatch || offerStatus === "offered"
+									? "amber"
+									: "primary"
 						}
 						value={
 							hasCurrentTeam
 								? "잠김"
-								: offerStatus === "accepted"
-									? "수락 완료"
-									: offerStatus === "hidden"
-										? "대기"
-										: "도착"
+								: hasLiveMatch
+									? "응답 필요"
+									: offerStatus === "accepted"
+										? "수락 완료"
+										: offerStatus === "hidden"
+											? "대기"
+											: "도착"
 						}
 					/>
 					<MetricCard
 						label="팀 생성"
-						tone={hasCurrentTeam || hasAcceptedTeam ? "emerald" : "primary"}
+						tone={
+							hasCurrentTeam || hasAcceptedTeam
+								? "emerald"
+								: hasLiveMatch
+									? "amber"
+									: "primary"
+						}
 						trend={
 							hasCurrentTeam
 								? "이미 팀 스페이스 보유"
 								: hasAcceptedTeam
 									? "팀으로 이동 가능"
-									: "수락 후 생성"
+									: hasLiveMatch
+										? "내 응답 후 생성"
+										: "수락 후 생성"
 						}
-						value={hasCurrentTeam || hasAcceptedTeam ? "가능" : "대기"}
+						value={
+							hasCurrentTeam || hasAcceptedTeam
+								? "가능"
+								: hasLiveMatch
+									? "수락 대기"
+									: "대기"
+						}
 					/>
 				</div>
+
+				{isMatchingAccessBlocked ? null : (
+					<MatchProgressPanel
+						hasAcceptedTeam={hasAcceptedTeam}
+						hasCurrentTeam={hasCurrentTeam}
+						hasLiveMatch={hasLiveMatch}
+						isSignedIn={isSignedIn}
+						status={status}
+					/>
+				)}
 
 				{!isSignedIn ? (
 					<AppPanel>
@@ -340,23 +369,25 @@ export function MatchRequestView() {
 				) : null}
 
 				{activeMatchId && !isMatchingAccessBlocked ? (
-					<MatchSessionCard
-						canRespond={canRespondToMatch}
-						currentMember={currentMatchMember}
-						matchId={activeMatchId}
-						members={matchMembersQuery.data?.members}
-						membersError={matchMembersQuery.error}
-						membersLoading={matchMembersQuery.isLoading}
-						onAccept={() => void handleAcceptMatch()}
-						onReject={() => void rejectMutation.mutateAsync()}
-						project={matchProjectQuery.data}
-						projectError={matchProjectQuery.error}
-						projectLoading={matchProjectQuery.isLoading}
-						responseError={acceptMutation.error ?? rejectMutation.error}
-						responsePending={
-							acceptMutation.isPending || rejectMutation.isPending
-						}
-					/>
+					<div id="match-session">
+						<MatchSessionCard
+							canRespond={canRespondToMatch}
+							currentMember={currentMatchMember}
+							matchId={activeMatchId}
+							members={matchMembersQuery.data?.members}
+							membersError={matchMembersQuery.error}
+							membersLoading={matchMembersQuery.isLoading}
+							onAccept={() => void handleAcceptMatch()}
+							onReject={() => void rejectMutation.mutateAsync()}
+							project={matchProjectQuery.data}
+							projectError={matchProjectQuery.error}
+							projectLoading={matchProjectQuery.isLoading}
+							responseError={acceptMutation.error ?? rejectMutation.error}
+							responsePending={
+								acceptMutation.isPending || rejectMutation.isPending
+							}
+						/>
+					</div>
 				) : null}
 
 				{isMatchingAccessBlocked ? null : (
@@ -441,7 +472,9 @@ export function MatchRequestView() {
 								</div>
 							</AppPanel>
 
-							{apiConfig.useMocks && offerStatus !== "hidden" ? (
+							{hasLiveMatch ? (
+								<MatchLiveHintPanel canRespond={canRespondToMatch} />
+							) : apiConfig.useMocks && offerStatus !== "hidden" ? (
 								<MatchOfferPanel
 									onAccept={handleMockOfferAccept}
 									onDecline={() => setOfferStatus("declined")}
@@ -459,6 +492,11 @@ export function MatchRequestView() {
 
 						<AppPanel>
 							<AppPanelHeader
+								action={
+									status && canCancel ? (
+										<Badge variant="neutral">현재 요청 진행 중</Badge>
+									) : null
+								}
 								description="역할만 선택해도 대기열에 등록됩니다. 프로젝트를 제안하려면 제목, 설명, MVP를 모두 입력해 주세요."
 								eyebrow="Request"
 								title="매칭 요청 작성"
@@ -595,6 +633,147 @@ export function MatchRequestView() {
 				)}
 			</div>
 		</AppShell>
+	);
+}
+
+interface MatchProgressPanelProps {
+	hasAcceptedTeam: boolean;
+	hasCurrentTeam: boolean;
+	hasLiveMatch: boolean;
+	isSignedIn: boolean;
+	status?: MatchStatus;
+}
+
+function MatchProgressPanel({
+	hasAcceptedTeam,
+	hasCurrentTeam,
+	hasLiveMatch,
+	isSignedIn,
+	status,
+}: MatchProgressPanelProps) {
+	const isTeamReady = hasAcceptedTeam || hasCurrentTeam || status === "MATCHED";
+	const currentStep = isTeamReady ? 2 : hasLiveMatch ? 1 : 0;
+	const steps = [
+		{
+			description: isSignedIn
+				? "역할과 프로젝트 힌트를 보내 대기열에 들어갑니다."
+				: "로그인 후 매칭 요청을 보낼 수 있습니다.",
+			label: "요청 작성",
+		},
+		{
+			description: hasLiveMatch
+				? "팀 후보가 도착했습니다. 세션에서 응답을 마무리하세요."
+				: "조건이 맞는 팀 후보가 생기면 이 단계로 넘어갑니다.",
+			label: "팀 후보 확인",
+		},
+		{
+			description: isTeamReady
+				? "팀 스페이스가 열렸습니다."
+				: "전원이 수락하면 협업 공간이 생성됩니다.",
+			label: "팀 생성",
+		},
+	] as const;
+
+	return (
+		<AppPanel className="border-primary/20">
+			<div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge variant={hasLiveMatch ? "warm" : "brand"}>
+							{hasLiveMatch ? "응답 필요" : "매칭 흐름"}
+						</Badge>
+						{status ? (
+							<Badge variant="neutral">{statusMeta[status].label}</Badge>
+						) : null}
+					</div>
+					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
+						{hasLiveMatch
+							? "도착한 매칭 세션을 확인하고 팀 생성을 결정하세요"
+							: "요청 작성부터 팀 생성까지 한 흐름으로 진행됩니다"}
+					</h2>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						{hasLiveMatch
+							? "아래 매칭 세션에서 현재 제안의 프로젝트와 팀원 정보를 확인하고 바로 응답합니다."
+							: "역할 선택, 제안 확인, 팀 스페이스 진입이 끊기지 않도록 현재 위치를 표시합니다."}
+					</p>
+				</div>
+
+				<div className="grid min-w-0 gap-2 sm:grid-cols-3 lg:w-[31rem]">
+					{steps.map((step, index) => {
+						const isComplete = index < currentStep;
+						const isActive = index === currentStep;
+
+						return (
+							<div
+								className={cn(
+									"rounded-lg border p-3 transition-colors",
+									isActive
+										? "border-primary/25 bg-primary/5"
+										: isComplete
+											? "border-emerald-500/25 bg-emerald-50"
+											: "border-border/70 bg-white",
+								)}
+								key={step.label}
+							>
+								<div className="flex items-center gap-2">
+									<span
+										className={cn(
+											"flex size-6 shrink-0 items-center justify-center rounded-md border font-mono text-[11px] font-semibold",
+											isActive
+												? "border-primary bg-primary text-primary-foreground"
+												: isComplete
+													? "border-emerald-500 bg-emerald-500 text-white"
+													: "border-border bg-secondary text-muted-foreground",
+										)}
+									>
+										{index + 1}
+									</span>
+									<p className="text-sm font-semibold text-brand-ink">
+										{step.label}
+									</p>
+								</div>
+								<p className="mt-2 text-xs leading-5 text-muted-foreground">
+									{step.description}
+								</p>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function MatchLiveHintPanel({ canRespond }: { canRespond: boolean }) {
+	return (
+		<AppPanel className="border-amber-500/25 bg-amber-50/70">
+			<AppPanelHeader
+				action={
+					<Badge variant={canRespond ? "warm" : "neutral"}>
+						{canRespond ? "내 응답 대기" : "응답 확인됨"}
+					</Badge>
+				}
+				description="현재 도착한 제안은 위 매칭 세션 카드에서만 응답합니다."
+				eyebrow="Next action"
+				title={
+					canRespond
+						? "매칭 세션에서 결정하세요"
+						: "팀원의 응답을 기다리는 중입니다"
+				}
+			/>
+			<div className="grid gap-3 p-5">
+				<p className="rounded-lg border border-amber-500/20 bg-white p-4 text-sm leading-6 text-amber-800">
+					프로젝트와 팀원 구성을 다시 확인한 뒤 한 번의 응답으로 다음 단계로
+					넘어갑니다.
+				</p>
+				<Button asChild variant="outline">
+					<a href="#match-session">
+						<ArrowRight data-icon="inline-start" />
+						매칭 세션 보기
+					</a>
+				</Button>
+			</div>
+		</AppPanel>
 	);
 }
 
@@ -936,8 +1115,15 @@ function MatchSessionCard({
 	return (
 		<AppPanel className="border-primary/20">
 			<AppPanelHeader
-				action={<Badge variant="brand">#{matchId}</Badge>}
-				description="팀원과 프로젝트 정보를 확인한 뒤 수락 또는 거절할 수 있습니다."
+				action={
+					<div className="flex flex-wrap justify-end gap-2">
+						<Badge variant={canRespond ? "warm" : "brand"}>
+							{canRespond ? "응답 필요" : "응답 완료"}
+						</Badge>
+						<Badge variant="brand">#{matchId}</Badge>
+					</div>
+				}
+				description="팀원과 프로젝트 정보를 확인한 뒤 이 카드에서 바로 수락 또는 거절할 수 있습니다."
 				eyebrow="Live session"
 				title="매칭 세션"
 			/>
@@ -995,6 +1181,18 @@ function MatchSessionCard({
 					) : null}
 
 					<div className="flex flex-col gap-3 border-border/60 border-t pt-4">
+						<div
+							className={cn(
+								"rounded-lg border p-3 text-sm leading-6",
+								canRespond
+									? "border-amber-500/25 bg-amber-50 text-amber-800"
+									: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
+							)}
+						>
+							{canRespond
+								? "지금 할 일은 이 매칭을 수락하거나 거절하는 것입니다. 수락하면 팀 스페이스로 이동합니다."
+								: "내 응답은 완료되었습니다. 남은 팀원의 응답이 끝나면 팀 스페이스가 열립니다."}
+						</div>
 						{currentMember?.isHost ? (
 							<FieldDescription>
 								프로젝트 제안자는 자동으로 수락 처리됩니다.

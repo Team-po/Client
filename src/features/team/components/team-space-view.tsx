@@ -631,16 +631,24 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					</div>
 				) : null}
 
+				<TeamFocusPanel
+					checklist={checklist}
+					lifecycleStatus={lifecycleStatus}
+					onSelectTab={setSelectedTab}
+				/>
+
 				<AppPanel>
 					<div className="flex gap-2 overflow-x-auto p-2">
 						{tabs.map((tab) => {
 							const Icon = tab.icon;
+							const badge = getTeamTabBadge(tab.id, checklist, messages);
+							const isSelected = selectedTab === tab.id;
 
 							return (
 								<button
 									className={cn(
 										"flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors",
-										selectedTab === tab.id
+										isSelected
 											? "bg-primary text-primary-foreground shadow-soft"
 											: "text-muted-foreground hover:bg-secondary hover:text-foreground",
 									)}
@@ -650,6 +658,18 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 								>
 									<Icon className="size-4" />
 									{tab.label}
+									{badge ? (
+										<span
+											className={cn(
+												"rounded-md px-1.5 py-0.5 font-mono text-[10px] leading-none",
+												isSelected
+													? "bg-white/20 text-primary-foreground"
+													: "bg-secondary text-muted-foreground",
+											)}
+										>
+											{badge}
+										</span>
+									) : null}
 								</button>
 							);
 						})}
@@ -682,6 +702,129 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 				</section>
 			</div>
 		</AppShell>
+	);
+}
+
+function TeamFocusPanel({
+	checklist,
+	lifecycleStatus,
+	onSelectTab,
+}: {
+	checklist: TeamChecklistItem[];
+	lifecycleStatus: ProjectLifecycleStatus;
+	onSelectTab: (tab: TeamTab) => void;
+}) {
+	const openTasks = checklist.filter((item) => item.status !== "done");
+	const doneTasks = checklist.length - openTasks.length;
+	const primaryTask =
+		checklist.find((item) => item.status === "doing") ??
+		checklist.find((item) => item.status === "todo") ??
+		checklist[0];
+
+	return (
+		<AppPanel className="border-primary/20">
+			<div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge variant="brand">오늘의 핵심</Badge>
+						<Badge variant="neutral">
+							{getLifecycleLabel(lifecycleStatus)}
+						</Badge>
+					</div>
+					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
+						{primaryTask
+							? primaryTask.title
+							: "새 작업을 추가해 다음 액션을 정하세요"}
+					</h2>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						{primaryTask
+							? `${primaryTask.assignee} 담당 · ${primaryTask.dueLabel} · ${checklistLabels[primaryTask.status]}`
+							: "체크리스트에서 첫 작업을 만들면 팀 홈 상단에 바로 강조됩니다."}
+					</p>
+				</div>
+
+				<div className="grid gap-3 sm:grid-cols-3 xl:w-[33rem]">
+					<div className="rounded-lg border border-border/70 bg-white p-3">
+						<p className="text-xs font-semibold text-muted-foreground">
+							남은 작업
+						</p>
+						<p className="mt-1 font-mono text-2xl font-semibold text-brand-ink">
+							{openTasks.length}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border/70 bg-white p-3">
+						<p className="text-xs font-semibold text-muted-foreground">
+							완료 작업
+						</p>
+						<p className="mt-1 font-mono text-2xl font-semibold text-emerald-700">
+							{doneTasks}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border/70 bg-white p-3">
+						<p className="text-xs font-semibold text-muted-foreground">
+							다음 회의
+						</p>
+						<p className="mt-1 text-sm font-semibold leading-6 text-brand-ink">
+							{demoTeamSpace.nextMeetingLabel}
+						</p>
+					</div>
+				</div>
+
+				<div className="flex flex-col gap-2 sm:flex-row xl:col-span-2">
+					<Button onClick={() => onSelectTab("checklist")} type="button">
+						<CheckCircle2 data-icon="inline-start" />
+						체크리스트 열기
+					</Button>
+					<Button
+						onClick={() => onSelectTab("github")}
+						type="button"
+						variant="outline"
+					>
+						<GitPullRequest data-icon="inline-start" />
+						GitHub 연동
+					</Button>
+					<Button
+						onClick={() => onSelectTab("chat")}
+						type="button"
+						variant="outline"
+					>
+						<MessageSquareText data-icon="inline-start" />
+						채팅 열기
+						<ArrowRight data-icon="inline-end" />
+					</Button>
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function getTeamTabBadge(
+	tabId: TeamTab,
+	checklist: TeamChecklistItem[],
+	messages: TeamMessage[],
+) {
+	if (tabId === "checklist") {
+		const openTaskCount = checklist.filter(
+			(item) => item.status !== "done",
+		).length;
+		return openTaskCount > 0 ? String(openTaskCount) : "완료";
+	}
+
+	if (tabId === "github") {
+		return demoTeamSpace.githubSummary.projectGroupGithubLinked ? null : "설정";
+	}
+
+	if (tabId === "chat") {
+		return String(messages.length);
+	}
+
+	return null;
+}
+
+function getLifecycleLabel(status: ProjectLifecycleStatus) {
+	return (
+		lifecycleOptions.find((option) => option.status === status)?.label ??
+		"상태 미정"
 	);
 }
 
