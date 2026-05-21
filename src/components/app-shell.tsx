@@ -255,12 +255,12 @@ function AppSidebar() {
 								(hasProjectGroup || isCheckingProjectGroup),
 						);
 						const className = cn(
-							"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
+							"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 							isDisabled
 								? "cursor-not-allowed text-muted-foreground/55"
 								: isActive
 									? "bg-primary text-primary-foreground shadow-soft"
-									: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+									: "text-muted-foreground hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground hover:shadow-soft active:translate-y-0",
 						);
 
 						if (isDisabled) {
@@ -295,12 +295,12 @@ function AppSidebar() {
 								(hasProjectGroup || isCheckingProjectGroup),
 						);
 						const className = cn(
-							"flex size-9 items-center justify-center rounded-lg border transition-colors",
+							"flex size-9 items-center justify-center rounded-lg border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 							isDisabled
 								? "cursor-not-allowed border-border/70 bg-secondary/40 text-muted-foreground/55"
 								: isActive
 									? "border-primary bg-primary text-primary-foreground"
-									: "border-border/70 bg-white text-muted-foreground",
+									: "border-border/70 bg-white text-muted-foreground hover:-translate-y-0.5 hover:border-primary/25 hover:text-foreground hover:shadow-soft active:translate-y-0",
 						);
 
 						if (isDisabled) {
@@ -341,11 +341,11 @@ function AppSidebar() {
 						{flowDescription}
 					</p>
 					<Link
-						className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary"
+						className="group mt-3 inline-flex items-center gap-1 rounded-md text-sm font-semibold text-primary transition-colors hover:text-primary/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						to={flowHref}
 					>
 						{flowLabel}
-						<ArrowUpRight className="size-3.5" />
+						<ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
 					</Link>
 				</div>
 
