@@ -38,7 +38,11 @@ import {
 } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
+import {
+	useGrantProjectGroupAdminPermissionMutation,
+	useMyProjectGroupQuery,
+	useRevokeProjectGroupAdminPermissionMutation,
+} from "@/features/project-groups/hooks/use-project-group-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -53,6 +57,10 @@ import type {
 import { cn } from "@/lib/utils";
 
 type TeamTab = "overview" | "guide" | "rules" | "checklist" | "github" | "chat";
+type AdminPermissionFeedback = {
+	message: string;
+	tone: "error" | "success";
+};
 
 const lifecycleSteps: Array<{
 	label: string;
@@ -114,6 +122,67 @@ export function TeamSpaceView() {
 
 function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
+	const grantAdminPermissionMutation =
+		useGrantProjectGroupAdminPermissionMutation();
+	const revokeAdminPermissionMutation =
+		useRevokeProjectGroupAdminPermissionMutation();
+	const [adminPermissionFeedback, setAdminPermissionFeedback] =
+		useState<AdminPermissionFeedback | null>(null);
+	const projectGroup = projectGroupQuery.data;
+	const currentMember = useMemo(
+		() =>
+			projectGroup?.members.find(
+				(member) => member.userId === projectGroup.currentUserId,
+			),
+		[projectGroup],
+	);
+	const canManageAdminPermissions = currentMember?.groupRole === "HOST";
+	const isAdminPermissionPending =
+		grantAdminPermissionMutation.isPending ||
+		revokeAdminPermissionMutation.isPending;
+	const pendingAdminPermissionTargetId = grantAdminPermissionMutation.isPending
+		? grantAdminPermissionMutation.variables.targetUserId
+		: revokeAdminPermissionMutation.isPending
+			? revokeAdminPermissionMutation.variables.targetUserId
+			: null;
+
+	function handleAdminPermissionChange(member: ProjectGroupMember) {
+		if (!projectGroup) {
+			return;
+		}
+
+		const isRevoking = member.admin;
+		const payload = {
+			projectGroupId: projectGroup.projectGroupId,
+			targetUserId: member.userId,
+		};
+
+		setAdminPermissionFeedback(null);
+
+		const mutationOptions = {
+			onError: (error: unknown) => {
+				setAdminPermissionFeedback({
+					message: getApiErrorMessage(error),
+					tone: "error" as const,
+				});
+			},
+			onSuccess: () => {
+				setAdminPermissionFeedback({
+					message: `${member.nickname}님의 관리자 권한을 ${
+						isRevoking ? "회수했습니다" : "부여했습니다"
+					}.`,
+					tone: "success" as const,
+				});
+			},
+		};
+
+		if (isRevoking) {
+			revokeAdminPermissionMutation.mutate(payload, mutationOptions);
+			return;
+		}
+
+		grantAdminPermissionMutation.mutate(payload, mutationOptions);
+	}
 
 	return (
 		<AppShell
@@ -135,7 +204,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 			}
 			description="서버에 연결된 내 팀 스페이스 정보를 확인합니다."
 			eyebrow="Team workspace"
-			title={projectGroupQuery.data?.projectName ?? "팀 스페이스"}
+			title={projectGroup?.projectName ?? "팀 스페이스"}
 		>
 			<div className="grid gap-5">
 				{!isSignedIn ? (
@@ -176,17 +245,17 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					/>
 				) : null}
 
-				{projectGroupQuery.data ? (
+				{projectGroup ? (
 					<>
 						<AppPanel className="border-primary/20">
 							<AppPanelHeader
 								action={<Badge variant="neutral">ACTIVE</Badge>}
 								description={
-									projectGroupQuery.data.projectDescription ??
+									projectGroup.projectDescription ??
 									"프로젝트 설명이 아직 없습니다."
 								}
 								eyebrow="Project"
-								title={projectGroupQuery.data.projectTitle}
+								title={projectGroup.projectTitle}
 							/>
 							<div className="grid gap-4 p-5">
 								<div className="rounded-lg border border-border bg-white p-4">
@@ -194,16 +263,25 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 										MVP
 									</p>
 									<p className="mt-2 text-sm leading-6 text-brand-ink">
-										{projectGroupQuery.data.projectMvp ??
-											"프로젝트 MVP가 아직 없습니다."}
+										{projectGroup.projectMvp ?? "프로젝트 MVP가 아직 없습니다."}
 									</p>
 								</div>
+								<RealAdminPermissionStatus
+									canManageAdminPermissions={canManageAdminPermissions}
+									feedback={adminPermissionFeedback}
+								/>
 								<div className="grid gap-3 md:grid-cols-2">
-									{projectGroupQuery.data.members.map((member) => (
+									{projectGroup.members.map((member) => (
 										<RealProjectGroupMemberCard
-											currentUserId={projectGroupQuery.data.currentUserId}
+											canManageAdminPermissions={canManageAdminPermissions}
+											currentUserId={projectGroup.currentUserId}
+											isAdminPermissionPending={isAdminPermissionPending}
 											key={member.userId}
 											member={member}
+											onAdminPermissionChange={handleAdminPermissionChange}
+											pendingAdminPermissionTargetId={
+												pendingAdminPermissionTargetId
+											}
 										/>
 									))}
 								</div>
@@ -215,16 +293,14 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 								label="팀 멤버"
 								tone="primary"
 								trend="ACTIVE 팀"
-								value={String(projectGroupQuery.data.members.length)}
+								value={String(projectGroup.members.length)}
 							/>
 							<MetricCard
 								label="관리자"
 								tone="emerald"
 								trend="권한 관리 가능"
 								value={String(
-									projectGroupQuery.data.members.filter(
-										(member) => member.admin,
-									).length,
+									projectGroup.members.filter((member) => member.admin).length,
 								)}
 							/>
 							<MetricCard
@@ -232,9 +308,8 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 								tone="amber"
 								trend="팀 스페이스"
 								value={
-									projectGroupQuery.data.members.find(
-										(member) =>
-											member.userId === projectGroupQuery.data.currentUserId,
+									projectGroup.members.find(
+										(member) => member.userId === projectGroup.currentUserId,
 									)?.groupRole ?? "MEMBER"
 								}
 							/>
@@ -242,7 +317,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					</>
 				) : null}
 
-				{projectGroupQuery.data ? null : (
+				{projectGroup ? null : (
 					<div className="grid gap-4 md:grid-cols-3">
 						<MetricCard
 							label="현재 연결"
@@ -303,17 +378,83 @@ function RealTeamNotice({
 	);
 }
 
-function RealProjectGroupMemberCard({
-	currentUserId,
-	member,
+function RealAdminPermissionStatus({
+	canManageAdminPermissions,
+	feedback,
 }: {
+	canManageAdminPermissions: boolean;
+	feedback: AdminPermissionFeedback | null;
+}) {
+	return (
+		<div
+			className={cn(
+				"flex flex-col gap-3 rounded-lg border p-4 text-sm sm:flex-row sm:items-center sm:justify-between",
+				canManageAdminPermissions
+					? "border-primary/20 bg-primary/5"
+					: "border-border bg-secondary/30",
+			)}
+		>
+			<div className="flex min-w-0 items-center gap-3">
+				<div
+					className={cn(
+						"grid size-9 shrink-0 place-items-center rounded-lg",
+						canManageAdminPermissions
+							? "bg-primary/10 text-primary"
+							: "bg-white text-muted-foreground",
+					)}
+				>
+					<ShieldCheck className="size-4" />
+				</div>
+				<div className="min-w-0">
+					<p className="font-semibold text-brand-ink">관리자 권한 관리</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						{canManageAdminPermissions
+							? "팀원 카드에서 권한을 조정할 수 있습니다."
+							: "방장 계정에서만 권한을 변경할 수 있습니다."}
+					</p>
+				</div>
+			</div>
+			<div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+				<Badge variant={canManageAdminPermissions ? "brand" : "neutral"}>
+					{canManageAdminPermissions ? "HOST" : "READ ONLY"}
+				</Badge>
+				{feedback ? (
+					<output
+						className={cn(
+							"text-xs font-medium",
+							feedback.tone === "success" ? "text-emerald-700" : "text-red-600",
+						)}
+					>
+						{feedback.message}
+					</output>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
+function RealProjectGroupMemberCard({
+	canManageAdminPermissions,
+	currentUserId,
+	isAdminPermissionPending,
+	member,
+	onAdminPermissionChange,
+	pendingAdminPermissionTargetId,
+}: {
+	canManageAdminPermissions: boolean;
 	currentUserId: number;
+	isAdminPermissionPending: boolean;
 	member: ProjectGroupMember;
+	onAdminPermissionChange: (member: ProjectGroupMember) => void;
+	pendingAdminPermissionTargetId: number | null;
 }) {
 	const profileImageSrc = getProjectGroupMemberImageSrc(member.profileImage);
+	const canChangeThisMember =
+		canManageAdminPermissions && member.groupRole === "MEMBER";
+	const isThisMemberPending = pendingAdminPermissionTargetId === member.userId;
 
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-white p-4 shadow-crisp">
+		<div className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4 shadow-crisp sm:flex-row sm:items-center sm:justify-between">
 			<div className="flex min-w-0 items-center gap-3">
 				<div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-secondary text-sm font-bold text-brand-ink">
 					{profileImageSrc ? (
@@ -341,13 +482,39 @@ function RealProjectGroupMemberCard({
 					</p>
 				</div>
 			</div>
-			<div className="flex shrink-0 flex-col items-end gap-2">
-				<Badge variant={member.groupRole === "HOST" ? "brand" : "neutral"}>
-					{member.groupRole}
-				</Badge>
-				<Badge variant={member.admin ? "warm" : "neutral"}>
-					{member.admin ? "ADMIN" : "MEMBER"}
-				</Badge>
+			<div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+				<div className="flex items-center gap-2">
+					<Badge variant={member.groupRole === "HOST" ? "brand" : "neutral"}>
+						{member.groupRole}
+					</Badge>
+					<Badge variant={member.admin ? "warm" : "neutral"}>
+						{member.admin ? "ADMIN" : "MEMBER"}
+					</Badge>
+				</div>
+				{canChangeThisMember ? (
+					<Button
+						disabled={isAdminPermissionPending}
+						onClick={() => onAdminPermissionChange(member)}
+						size="sm"
+						variant={member.admin ? "outline" : "default"}
+					>
+						{isThisMemberPending ? (
+							<LoaderCircle className="animate-spin" data-icon="inline-start" />
+						) : (
+							<ShieldCheck data-icon="inline-start" />
+						)}
+						{isThisMemberPending
+							? "처리 중"
+							: member.admin
+								? "권한 회수"
+								: "관리자 부여"}
+					</Button>
+				) : null}
+				{canManageAdminPermissions && member.groupRole === "HOST" ? (
+					<span className="text-xs font-medium text-muted-foreground">
+						방장 권한 고정
+					</span>
+				) : null}
 			</div>
 		</div>
 	);
