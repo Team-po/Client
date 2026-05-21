@@ -47,10 +47,12 @@ import {
 	hasValidationErrors,
 	validateProfileEditForm,
 } from "@/features/auth/lib/validation";
+import { useMyProjectGroupQuery } from "@/features/project-groups/hooks/use-project-group-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
-import { getApiErrorMessage } from "@/lib/api/client";
+import { ApiError, getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
+import type { MyProjectGroup } from "@/lib/types/project-group";
 import type { UserProfile } from "@/lib/types/user";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +63,9 @@ export function ProfileView() {
 	const isSignedIn = Boolean(getAuthSession());
 	const showMockTeamPreview = apiConfig.useMocks;
 	const currentUserQuery = useCurrentUserQuery();
+	const projectGroupQuery = useMyProjectGroupQuery(
+		isSignedIn && !showMockTeamPreview,
+	);
 	const updateCurrentUserMutation = useUpdateCurrentUserMutation();
 	const editPasswordMutation = useEditPasswordMutation();
 	const startGithubAccountLinkMutation = useStartGithubAccountLinkMutation();
@@ -151,6 +156,19 @@ export function ProfileView() {
 		deleteCurrentUserMutation.isPending ||
 		Boolean(deleteConfirmError) ||
 		!/^\d{6}$/.test(deleteForm.authNumber);
+	const currentTeamName = showMockTeamPreview
+		? demoTeamSpace.name
+		: projectGroupQuery.data?.projectName ||
+			getCurrentTeamName({
+				error: projectGroupQuery.error,
+				isLoading: projectGroupQuery.isLoading,
+			});
+	const currentTeamMetric = getCurrentTeamMetric({
+		error: projectGroupQuery.error,
+		isMock: showMockTeamPreview,
+		isLoading: projectGroupQuery.isLoading,
+		projectGroup: projectGroupQuery.data,
+	});
 
 	function markTouched(field: keyof typeof touched) {
 		setTouched((current) => ({
@@ -332,12 +350,7 @@ export function ProfileView() {
 
 				{currentUser ? (
 					<>
-						<div
-							className={cn(
-								"grid gap-4",
-								showMockTeamPreview ? "md:grid-cols-4" : "md:grid-cols-3",
-							)}
-						>
+						<div className="grid gap-4 md:grid-cols-4">
 							<MetricCard label="개발 레벨" value={`Lv.${currentUser.level}`} />
 							<MetricCard
 								label="매너 온도"
@@ -352,14 +365,12 @@ export function ProfileView() {
 								}
 								value={currentUser.description ? "완료" : "보완"}
 							/>
-							{showMockTeamPreview ? (
-								<MetricCard
-									label="현재 팀"
-									tone="primary"
-									trend={demoTeamSpace.nextMeetingLabel}
-									value="1"
-								/>
-							) : null}
+							<MetricCard
+								label="현재 팀"
+								tone={currentTeamMetric.tone}
+								trend={currentTeamMetric.trend}
+								value={currentTeamMetric.value}
+							/>
 						</div>
 
 						<div className="grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
@@ -398,11 +409,7 @@ export function ProfileView() {
 											<InfoTile label="역할 힌트" value="FE 중심 협업" />
 											<InfoTile
 												label={showMockTeamPreview ? "팀 상태" : "팀 정보"}
-												value={
-													showMockTeamPreview
-														? demoTeamSpace.name
-														: "연결 준비 중"
-												}
+												value={currentTeamName}
 											/>
 										</div>
 									</div>
@@ -412,7 +419,12 @@ export function ProfileView() {
 							{showMockTeamPreview ? (
 								<MockCurrentTeamPanel />
 							) : (
-								<RealTeamStatusPanel />
+								<RealCurrentTeamPanel
+									error={projectGroupQuery.error}
+									isLoading={projectGroupQuery.isLoading}
+									onRetry={() => void projectGroupQuery.refetch()}
+									projectGroup={projectGroupQuery.data}
+								/>
 							)}
 						</div>
 
@@ -469,6 +481,85 @@ export function ProfileView() {
 	);
 }
 
+function getCurrentTeamName({
+	error,
+	isLoading,
+}: {
+	error: unknown;
+	isLoading: boolean;
+}) {
+	if (isLoading) {
+		return "조회 중";
+	}
+
+	if (isProjectGroupNotFoundError(error)) {
+		return "팀 없음";
+	}
+
+	if (error) {
+		return "조회 실패";
+	}
+
+	return "팀 없음";
+}
+
+function getCurrentTeamMetric({
+	error,
+	isLoading,
+	isMock,
+	projectGroup,
+}: {
+	error: unknown;
+	isLoading: boolean;
+	isMock: boolean;
+	projectGroup?: MyProjectGroup;
+}) {
+	if (isMock) {
+		return {
+			tone: "primary" as const,
+			trend: demoTeamSpace.nextMeetingLabel,
+			value: "1",
+		};
+	}
+
+	if (projectGroup) {
+		return {
+			tone: "primary" as const,
+			trend: `${projectGroup.members.length}명 참여 중`,
+			value: "1",
+		};
+	}
+
+	if (isLoading) {
+		return {
+			tone: "primary" as const,
+			trend: "팀 조회 중",
+			value: "...",
+		};
+	}
+
+	if (error && !isProjectGroupNotFoundError(error)) {
+		return {
+			tone: "rose" as const,
+			trend: "다시 조회 필요",
+			value: "!",
+		};
+	}
+
+	return {
+		tone: "amber" as const,
+		trend: "매칭 완료 후 생성",
+		value: "0",
+	};
+}
+
+function isProjectGroupNotFoundError(error: unknown) {
+	return (
+		error instanceof ApiError &&
+		(error.status === 404 || error.code === "PROJECT_GROUP_NOT_FOUND")
+	);
+}
+
 function MockCurrentTeamPanel() {
 	return (
 		<AppPanel>
@@ -503,7 +594,76 @@ function MockCurrentTeamPanel() {
 	);
 }
 
-function RealTeamStatusPanel() {
+function RealCurrentTeamPanel({
+	error,
+	isLoading,
+	onRetry,
+	projectGroup,
+}: {
+	error: unknown;
+	isLoading: boolean;
+	onRetry: () => void;
+	projectGroup?: MyProjectGroup;
+}) {
+	if (projectGroup) {
+		return (
+			<AppPanel>
+				<AppPanelHeader
+					action={
+						<Button asChild variant="outline">
+							<Link to="/team">
+								<ArrowRight data-icon="inline-start" />
+								열기
+							</Link>
+						</Button>
+					}
+					description={
+						projectGroup.projectDescription ?? "프로젝트 설명이 아직 없습니다."
+					}
+					eyebrow="Current team"
+					title={projectGroup.projectName}
+				/>
+				<div className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+					<div>
+						<p className="text-lg font-semibold text-brand-ink">
+							{projectGroup.projectTitle}
+						</p>
+						<p className="mt-2 text-sm leading-6 text-muted-foreground">
+							{projectGroup.projectDescription ??
+								"프로젝트 설명이 아직 없습니다."}
+						</p>
+					</div>
+					<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
+						<p className="font-mono text-3xl font-semibold text-primary">
+							{projectGroup.members.length}
+						</p>
+						<p className="mt-1 text-xs font-semibold text-primary">팀원</p>
+					</div>
+				</div>
+			</AppPanel>
+		);
+	}
+
+	if (isLoading) {
+		return (
+			<AppPanel>
+				<AppPanelHeader
+					description="내 팀 스페이스 정보를 서버에서 불러오고 있습니다."
+					eyebrow="Team workspace"
+					title="팀 정보를 확인하는 중입니다"
+				/>
+				<div className="grid gap-4 p-5">
+					<div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+						<LoaderCircle className="size-4 animate-spin" />
+						<span>내 팀 스페이스를 불러오고 있습니다.</span>
+					</div>
+				</div>
+			</AppPanel>
+		);
+	}
+
+	const isLookupError = Boolean(error) && !isProjectGroupNotFoundError(error);
+
 	return (
 		<AppPanel>
 			<AppPanelHeader
@@ -515,21 +675,41 @@ function RealTeamStatusPanel() {
 						</Link>
 					</Button>
 				}
-				description="팀 조회 API가 연결되면 이 영역에서 실제 팀 정보를 확인할 수 있습니다."
+				description={
+					isLookupError
+						? "서버 응답을 확인하지 못했습니다. 잠시 후 다시 시도하세요."
+						: "아직 활성 팀 스페이스가 없으면 매칭 상태를 먼저 확인하세요."
+				}
 				eyebrow="Team workspace"
-				title="팀 정보 연결 준비 중"
+				title={
+					isLookupError
+						? "팀 정보를 불러오지 못했습니다"
+						: "활성 팀 스페이스가 없습니다"
+				}
 			/>
 			<div className="grid gap-4 p-5">
 				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-					현재 서버에는 내 팀을 조회하는 API가 없어 실제 팀 정보를 표시하지
-					않습니다. 매칭 상태는 매칭 화면에서 확인할 수 있습니다.
+					{getApiErrorMessage(
+						error,
+						isLookupError
+							? "팀 정보를 불러오지 못했습니다."
+							: "소속된 팀 스페이스를 찾을 수 없습니다.",
+					)}
 				</div>
-				<Button asChild className="w-fit">
-					<Link to="/match">
-						<ArrowRight data-icon="inline-start" />
-						매칭 상태 확인
-					</Link>
-				</Button>
+				<div className="flex flex-wrap gap-2">
+					{isLookupError ? null : (
+						<Button asChild className="w-fit">
+							<Link to="/match">
+								<ArrowRight data-icon="inline-start" />
+								매칭 상태 확인
+							</Link>
+						</Button>
+					)}
+					<Button className="w-fit" onClick={onRetry} variant="outline">
+						<RefreshCcw data-icon="inline-start" />
+						다시 조회
+					</Button>
+				</div>
 			</div>
 		</AppPanel>
 	);
