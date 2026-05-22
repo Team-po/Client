@@ -869,14 +869,14 @@ function RoleCard({
 		<button
 			aria-pressed={active}
 			className={cn(
-				"min-h-32 rounded-lg border bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-soft",
+				"group min-h-32 rounded-lg border bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 				active ? "border-primary bg-primary/5 shadow-soft" : "border-border/70",
 			)}
 			onClick={onClick}
 			type="button"
 		>
 			<div className="flex items-center justify-between">
-				<span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+				<span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-105">
 					<Icon className="size-5" />
 				</span>
 				{active ? <CheckCircle2 className="size-4 text-primary" /> : null}

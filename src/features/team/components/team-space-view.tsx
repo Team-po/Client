@@ -654,11 +654,12 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 
 							return (
 								<button
+									aria-pressed={isSelected}
 									className={cn(
-										"flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors",
+										"flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-all duration-200 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 										isSelected
 											? "bg-primary text-primary-foreground shadow-soft"
-											: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+											: "text-muted-foreground hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground hover:shadow-soft",
 									)}
 									key={tab.id}
 									onClick={() => setSelectedTab(tab.id)}

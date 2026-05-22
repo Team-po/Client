@@ -78,7 +78,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 							{isMatchingLinkDisabled ? (
 								<span
 									aria-disabled="true"
-									className="cursor-not-allowed text-sm text-muted-foreground/55"
+									className="cursor-not-allowed rounded-md px-1.5 py-1 text-sm text-muted-foreground/55"
 									title={matchingDisabledTitle}
 								>
 									매칭
@@ -86,7 +86,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 							) : (
 								<Link
 									className={cn(
-										"text-sm text-muted-foreground transition-colors hover:text-foreground",
+										"rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-px hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0",
 										location.pathname === "/match" && "text-foreground",
 									)}
 									to="/match"
@@ -96,7 +96,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 							)}
 							<Link
 								className={cn(
-									"text-sm text-muted-foreground transition-colors hover:text-foreground",
+									"rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-px hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0",
 									location.pathname === "/team" && "text-foreground",
 								)}
 								to="/team"
@@ -105,7 +105,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 							</Link>
 							<Link
 								className={cn(
-									"text-sm text-muted-foreground transition-colors hover:text-foreground",
+									"rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-all duration-200 hover:-translate-y-px hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0",
 									location.pathname === "/me" && "text-foreground",
 								)}
 								to="/me"

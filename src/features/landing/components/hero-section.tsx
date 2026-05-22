@@ -49,7 +49,7 @@ export function HeroSection() {
 			<div className="ds-grid-overlay absolute inset-0 -z-10 opacity-70" />
 
 			<Container className="grid items-center gap-8 md:grid-cols-[0.95fr_1.05fr] lg:grid-cols-[1.05fr_0.95fr]">
-				<div className="space-y-6 animate-rise-in">
+				<div className="space-y-6 motion-safe:animate-rise-in">
 					<Badge
 						variant="brand"
 						className="w-fit gap-2 px-3.5 py-1.5 text-[11px]"
@@ -81,7 +81,7 @@ export function HeroSection() {
 							className="group relative gap-2 overflow-hidden shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 active:translate-y-0"
 						>
 							<Link to="/match">
-								<span className="absolute inset-0 z-0 -translate-x-[150%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shine_1.5s_ease-in-out_infinite]" />
+								<span className="absolute inset-0 z-0 -translate-x-[150%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent motion-safe:group-hover:animate-[shine_1.5s_ease-in-out_infinite]" />
 								<span className="relative z-10 flex items-center gap-2">
 									대기열 등록 시작
 									<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
@@ -100,10 +100,7 @@ export function HeroSection() {
 
 					<div className="grid max-w-xl gap-2 rounded-lg border border-primary/15 bg-white/80 p-2.5 shadow-crisp sm:grid-cols-3">
 						{heroFlowSteps.map((step) => (
-							<div
-								className="rounded-md px-3 py-2 transition-colors hover:bg-primary/5"
-								key={step.label}
-							>
+							<div className="rounded-md px-3 py-2" key={step.label}>
 								<p className="font-mono text-xs font-semibold text-primary">
 									{step.label}
 								</p>
@@ -118,11 +115,11 @@ export function HeroSection() {
 					</div>
 				</div>
 
-				<div className="relative animate-rise-in [animation-delay:140ms]">
+				<div className="relative motion-safe:animate-rise-in motion-safe:[animation-delay:140ms]">
 					<Surface
 						variant="glass"
 						spacing="spacious"
-						className="space-y-5 animate-float"
+						className="space-y-5 motion-safe:animate-float"
 					>
 						<div className="space-y-2">
 							<p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
