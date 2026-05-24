@@ -20,7 +20,17 @@ import type {
 	MatchStatus,
 	ProjectRequestPayload,
 } from "@/lib/types/match";
+import type {
+	CreateProjectChecklistRequest,
+	ProjectChecklist,
+	ProjectChecklistStatus,
+	UpdateProjectChecklistRequest,
+} from "@/lib/types/project-checklist";
 import type { MyProjectGroup } from "@/lib/types/project-group";
+import type {
+	GithubAppInstallationCompleteRequest,
+	GithubInstallationStatus,
+} from "@/lib/types/team-space";
 import type {
 	EditPasswordRequest,
 	UpdateCurrentUserRequest,
@@ -35,6 +45,11 @@ let activeMatchId: number | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
+let activeProjectChecklists: ProjectChecklist[] = createMockProjectChecklists();
+let nextProjectChecklistId = 103;
+let githubInstallationStatus: GithubInstallationStatus =
+	createDisconnectedGithubStatus();
+let pendingGithubInstallationState: string | null = null;
 let deleteEmailAuthSentUserId: number | null = null;
 let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
@@ -77,6 +92,7 @@ function syncSessionFromRequest(request: Request) {
 		resetDeleteEmailState();
 		resetMatchState();
 		activeProjectGroup = createMockProjectGroup();
+		resetTeamSpaceApiState();
 		return;
 	}
 
@@ -86,6 +102,7 @@ function syncSessionFromRequest(request: Request) {
 		resetDeleteEmailState();
 		resetMatchState();
 		activeProjectGroup = null;
+		resetTeamSpaceApiState();
 		return;
 	}
 
@@ -95,6 +112,7 @@ function syncSessionFromRequest(request: Request) {
 		resetDeleteEmailState();
 		resetMatchState();
 		activeProjectGroup = null;
+		resetTeamSpaceApiState();
 	}
 }
 
@@ -208,6 +226,23 @@ function resetMatchState() {
 	activeMatchProject = null;
 }
 
+function resetTeamSpaceApiState() {
+	activeProjectChecklists = activeProjectGroup
+		? createMockProjectChecklists()
+		: [];
+	nextProjectChecklistId = 103;
+	githubInstallationStatus = createDisconnectedGithubStatus();
+	pendingGithubInstallationState = null;
+}
+
+function createDisconnectedGithubStatus(): GithubInstallationStatus {
+	return {
+		connected: false,
+		organizationLogin: null,
+		repositoryCount: 0,
+	};
+}
+
 function isValidMatchRole(value: string): value is MatchRole {
 	return ["BACKEND", "FRONTEND", "DESIGN"].includes(value);
 }
@@ -228,6 +263,83 @@ function hasPartialProjectInfo(body: ProjectRequestPayload) {
 	];
 
 	return fields.some(Boolean) && !fields.every(Boolean);
+}
+
+function isValidProjectChecklistStatus(
+	value: string,
+): value is ProjectChecklistStatus {
+	return ["TODO", "DONE"].includes(value);
+}
+
+function normalizeOptionalText(value: string | null | undefined) {
+	const trimmedValue = value?.trim();
+	return trimmedValue ? trimmedValue : null;
+}
+
+function findProjectGroupMember(userId: number | null | undefined) {
+	if (typeof userId !== "number") {
+		return null;
+	}
+
+	return (
+		activeProjectGroup?.members.find((member) => member.userId === userId) ??
+		null
+	);
+}
+
+function assertSignedIn() {
+	if (!currentUser) {
+		return buildErrorResponse(
+			401,
+			"로그인이 필요합니다.",
+			"NO_AUTHENTICATED_USER",
+		);
+	}
+
+	return null;
+}
+
+function assertProjectGroupAccess(projectGroupId: number) {
+	const authError = assertSignedIn();
+
+	if (authError) {
+		return authError;
+	}
+
+	if (
+		!activeProjectGroup ||
+		activeProjectGroup.projectGroupId !== projectGroupId
+	) {
+		return buildErrorResponse(
+			403,
+			"팀 스페이스 접근 권한이 없습니다.",
+			"PROJECT_GROUP_ACCESS_DENIED",
+		);
+	}
+
+	return null;
+}
+
+function assertProjectGroupHost(projectGroupId: number) {
+	const accessError = assertProjectGroupAccess(projectGroupId);
+
+	if (accessError) {
+		return accessError;
+	}
+
+	const currentMember = activeProjectGroup?.members.find(
+		(member) => member.userId === currentUserId,
+	);
+
+	if (currentMember?.groupRole !== "HOST") {
+		return buildErrorResponse(
+			403,
+			"팀 스페이스 호스트만 Github Organization 연결을 진행할 수 있습니다.",
+			"PROJECT_GROUP_PERMISSION_DENIED",
+		);
+	}
+
+	return null;
 }
 
 function createMockMatchSession(body: ProjectRequestPayload) {
@@ -385,6 +497,69 @@ function createMockProjectGroup(): MyProjectGroup {
 	};
 }
 
+function createMockProjectChecklists(): ProjectChecklist[] {
+	const currentMember = activeProjectGroup?.members.find(
+		(member) => member.userId === currentUserId,
+	);
+	const backendMember = activeProjectGroup?.members.find(
+		(member) => member.memberRole === "BACKEND",
+	);
+
+	return [
+		{
+			aiAdvice: {
+				considerations: [
+					"응답 코드와 에러 코드는 API 문서에 같이 남깁니다.",
+					"실패 케이스는 MSW에서 먼저 재현할 수 있게 둡니다.",
+				],
+				improvementPoints: ["공통 에러 메시지 매핑을 재사용합니다."],
+				recommendedFlow: [
+					"서버 컨트롤러와 DTO를 먼저 확인합니다.",
+					"Client 타입과 request 함수를 맞춥니다.",
+					"실패 응답을 화면에서 확인합니다.",
+				],
+				summary: "API 계약을 기준으로 체크리스트를 정리하세요.",
+			},
+			assigneeNickname: backendMember?.nickname ?? "api_builder",
+			assigneeUserId: backendMember?.userId ?? 2,
+			createdAt: "2026-05-17T10:00:00Z",
+			createdByNickname: currentMember?.nickname ?? "preview",
+			createdByUserId: currentUserId,
+			description: "서버 응답과 Client 처리 흐름을 함께 검증합니다.",
+			dueDate: "2026-05-28",
+			id: 100,
+			status: "TODO",
+			title: "API 계약 동기화",
+		},
+		{
+			aiAdvice: null,
+			assigneeNickname: currentMember?.nickname ?? "preview",
+			assigneeUserId: currentUserId,
+			createdAt: "2026-05-18T09:30:00Z",
+			createdByNickname: currentMember?.nickname ?? "preview",
+			createdByUserId: currentUserId,
+			description: "팀 스페이스 홈에서 가장 먼저 볼 작업을 정합니다.",
+			dueDate: "2026-05-30",
+			id: 101,
+			status: "DONE",
+			title: "첫 스프린트 작업 정리",
+		},
+		{
+			aiAdvice: null,
+			assigneeNickname: null,
+			assigneeUserId: null,
+			createdAt: "2026-05-19T08:10:00Z",
+			createdByNickname: currentMember?.nickname ?? "preview",
+			createdByUserId: currentUserId,
+			description: null,
+			dueDate: null,
+			id: 102,
+			status: "TODO",
+			title: "GitHub Organization 연결 확인",
+		},
+	];
+}
+
 function createProjectGroupFromActiveMatch(): MyProjectGroup | null {
 	if (!activeMatchProject || activeMatchMembers.length === 0) {
 		return null;
@@ -426,6 +601,7 @@ function completeMatchIfEveryoneAccepted() {
 
 	matchStatus = "MATCHED";
 	activeProjectGroup = createProjectGroupFromActiveMatch();
+	resetTeamSpaceApiState();
 }
 
 export const handlers = [
@@ -460,6 +636,7 @@ export const handlers = [
 			resetDeleteEmailState();
 			resetMatchState();
 			activeProjectGroup = createMockProjectGroup();
+			resetTeamSpaceApiState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -505,6 +682,7 @@ export const handlers = [
 			resetDeleteEmailState();
 			resetMatchState();
 			activeProjectGroup = null;
+			resetTeamSpaceApiState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -524,6 +702,7 @@ export const handlers = [
 			resetDeleteEmailState();
 			resetMatchState();
 			activeProjectGroup = null;
+			resetTeamSpaceApiState();
 
 			return HttpResponse.json(buildSession());
 		}
@@ -788,6 +967,7 @@ export const handlers = [
 		resetDeleteEmailState();
 		resetMatchState();
 		activeProjectGroup = null;
+		resetTeamSpaceApiState();
 
 		return new HttpResponse(null, { status: 200 });
 	}),
@@ -971,6 +1151,7 @@ export const handlers = [
 		activeMatchMembers = [];
 		activeMatchProject = null;
 		activeProjectGroup = null;
+		resetTeamSpaceApiState();
 
 		return new HttpResponse(null, { status: 200 });
 	}),
@@ -1275,6 +1456,353 @@ export const handlers = [
 			}
 
 			targetMember.admin = false;
+			return new HttpResponse(null, { status: 200 });
+		},
+	),
+
+	http.get(
+		getPath("/project-groups/:projectGroupId/checklists"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			return HttpResponse.json(activeProjectChecklists);
+		},
+	),
+
+	http.post(
+		getPath("/project-groups/:projectGroupId/checklists"),
+		async ({ params, request }) => {
+			const body = (await request.json()) as CreateProjectChecklistRequest;
+
+			await delay(350);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			if (!body.title?.trim() || body.title.length > 255) {
+				return buildErrorResponse(
+					400,
+					"체크리스트 제목은 필수입니다.",
+					"INVALID_INPUT_FIELD",
+					{ title: "체크리스트 제목은 255자 이하로 입력해 주세요." },
+				);
+			}
+
+			const assignee = findProjectGroupMember(body.assigneeUserId);
+
+			if (typeof body.assigneeUserId === "number" && !assignee) {
+				return buildErrorResponse(
+					400,
+					"담당자는 현재 팀 멤버여야 합니다.",
+					"PROJECT_CHECKLIST_ASSIGNEE_NOT_MEMBER",
+				);
+			}
+
+			const currentMember = findProjectGroupMember(currentUserId);
+			const checklist: ProjectChecklist = {
+				aiAdvice: null,
+				assigneeNickname: assignee?.nickname ?? null,
+				assigneeUserId: assignee?.userId ?? null,
+				createdAt: new Date().toISOString(),
+				createdByNickname: currentMember?.nickname ?? "preview",
+				createdByUserId: currentUserId,
+				description: normalizeOptionalText(body.description),
+				dueDate: body.dueDate ?? null,
+				id: nextProjectChecklistId,
+				status: "TODO",
+				title: body.title.trim(),
+			};
+
+			nextProjectChecklistId += 1;
+			activeProjectChecklists = [...activeProjectChecklists, checklist];
+
+			return HttpResponse.json(checklist, { status: 201 });
+		},
+	),
+
+	http.patch(
+		getPath("/project-groups/:projectGroupId/checklists/:checklistId"),
+		async ({ params, request }) => {
+			const body = (await request.json()) as UpdateProjectChecklistRequest;
+
+			await delay(350);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const checklistId = Number(params.checklistId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const checklist = activeProjectChecklists.find(
+				(candidate) => candidate.id === checklistId,
+			);
+
+			if (!checklist) {
+				return buildErrorResponse(
+					404,
+					"체크리스트를 찾을 수 없습니다.",
+					"PROJECT_CHECKLIST_NOT_FOUND",
+				);
+			}
+
+			if (
+				!body.title?.trim() ||
+				body.title.length > 255 ||
+				!isValidProjectChecklistStatus(body.status)
+			) {
+				return buildErrorResponse(
+					400,
+					"입력한 정보를 다시 확인해 주세요.",
+					"INVALID_INPUT_FIELD",
+				);
+			}
+
+			const assignee = findProjectGroupMember(body.assigneeUserId);
+
+			if (typeof body.assigneeUserId === "number" && !assignee) {
+				return buildErrorResponse(
+					400,
+					"담당자는 현재 팀 멤버여야 합니다.",
+					"PROJECT_CHECKLIST_ASSIGNEE_NOT_MEMBER",
+				);
+			}
+
+			const updatedChecklist: ProjectChecklist = {
+				...checklist,
+				assigneeNickname: assignee?.nickname ?? null,
+				assigneeUserId: assignee?.userId ?? null,
+				description: normalizeOptionalText(body.description),
+				dueDate: body.dueDate ?? null,
+				status: body.status,
+				title: body.title.trim(),
+			};
+
+			activeProjectChecklists = activeProjectChecklists.map((candidate) =>
+				candidate.id === checklistId ? updatedChecklist : candidate,
+			);
+
+			return HttpResponse.json(updatedChecklist);
+		},
+	),
+
+	http.delete(
+		getPath("/project-groups/:projectGroupId/checklists/:checklistId"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const checklistId = Number(params.checklistId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const checklistExists = activeProjectChecklists.some(
+				(candidate) => candidate.id === checklistId,
+			);
+
+			if (!checklistExists) {
+				return buildErrorResponse(
+					404,
+					"체크리스트를 찾을 수 없습니다.",
+					"PROJECT_CHECKLIST_NOT_FOUND",
+				);
+			}
+
+			activeProjectChecklists = activeProjectChecklists.filter(
+				(candidate) => candidate.id !== checklistId,
+			);
+
+			return new HttpResponse(null, { status: 204 });
+		},
+	),
+
+	http.post(
+		getPath("/project-groups/:projectGroupId/checklists/:checklistId/advice"),
+		async ({ params, request }) => {
+			await delay(600);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const checklistId = Number(params.checklistId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const checklist = activeProjectChecklists.find(
+				(candidate) => candidate.id === checklistId,
+			);
+
+			if (!checklist) {
+				return buildErrorResponse(
+					404,
+					"체크리스트를 찾을 수 없습니다.",
+					"PROJECT_CHECKLIST_NOT_FOUND",
+				);
+			}
+
+			if (!checklist.description) {
+				return buildErrorResponse(
+					400,
+					"체크리스트 설명이 있어야 AI 조언을 생성할 수 있습니다.",
+					"PROJECT_CHECKLIST_DESCRIPTION_REQUIRED_FOR_AI",
+				);
+			}
+
+			if (checklist.title.includes("서버 오류")) {
+				return buildErrorResponse(
+					500,
+					"Gemini API 응답 형식이 올바르지 않습니다.",
+					"GEMINI_INVALID_RESPONSE",
+				);
+			}
+
+			const aiAdvice = {
+				considerations: [
+					"완료 기준을 한 문장으로 먼저 정리하세요.",
+					"담당자와 마감일을 실제 일정에 맞춰 조정하세요.",
+				],
+				improvementPoints: ["체크리스트 설명에 검증 방법을 추가하세요."],
+				recommendedFlow: [
+					"작업 범위를 작게 나눕니다.",
+					"서버 응답과 화면 상태를 함께 확인합니다.",
+					"완료 후 팀 스페이스에서 결과를 공유합니다.",
+				],
+				summary: `${checklist.title} 작업은 검증 기준부터 고정하는 편이 좋습니다.`,
+			};
+			const updatedChecklist: ProjectChecklist = {
+				...checklist,
+				aiAdvice,
+			};
+
+			activeProjectChecklists = activeProjectChecklists.map((candidate) =>
+				candidate.id === checklistId ? updatedChecklist : candidate,
+			);
+
+			return HttpResponse.json({
+				aiAdvice,
+				checklistId,
+			});
+		},
+	),
+
+	http.get(
+		getPath("/team-space/:projectGroupId/github/status"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			return HttpResponse.json(githubInstallationStatus);
+		},
+	),
+
+	http.post(
+		getPath("/team-space/:projectGroupId/github/install-url"),
+		async ({ params, request }) => {
+			await delay(350);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const hostError = assertProjectGroupHost(projectGroupId);
+
+			if (hostError) {
+				return hostError;
+			}
+
+			if (githubInstallationStatus.connected) {
+				return buildErrorResponse(
+					409,
+					"이미 Github Organization이 연결된 팀 스페이스입니다.",
+					"GITHUB_APP_INSTALLATION_ALREADY_EXISTS",
+				);
+			}
+
+			pendingGithubInstallationState = crypto.randomUUID();
+
+			return HttpResponse.json({
+				installUrl: `https://github.com/apps/team-po/installations/new?state=${pendingGithubInstallationState}`,
+			});
+		},
+	),
+
+	http.post(
+		getPath("/team-space/:projectGroupId/github/installations/complete"),
+		async ({ params, request }) => {
+			const body =
+				(await request.json()) as GithubAppInstallationCompleteRequest;
+
+			await delay(400);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const hostError = assertProjectGroupHost(projectGroupId);
+
+			if (hostError) {
+				return hostError;
+			}
+
+			if (
+				body.setupAction !== "install" ||
+				!pendingGithubInstallationState ||
+				body.state !== pendingGithubInstallationState
+			) {
+				return buildErrorResponse(
+					400,
+					"GitHub App 설치 요청 상태가 만료되었거나 올바르지 않습니다.",
+					"INVALID_GITHUB_APP_INSTALLATION_STATE",
+				);
+			}
+
+			if (body.installationId === 500) {
+				return buildErrorResponse(
+					502,
+					"GitHub API 요청에 실패했습니다.",
+					"GITHUB_API_REQUEST_FAILED",
+				);
+			}
+
+			if (githubInstallationStatus.connected) {
+				return buildErrorResponse(
+					409,
+					"이미 Github Organization이 연결된 팀 스페이스입니다.",
+					"GITHUB_APP_INSTALLATION_ALREADY_EXISTS",
+				);
+			}
+
+			pendingGithubInstallationState = null;
+			githubInstallationStatus = {
+				connected: true,
+				organizationLogin: "team-po-labs",
+				repositoryCount: 2,
+			};
+
 			return new HttpResponse(null, { status: 200 });
 		},
 	),
