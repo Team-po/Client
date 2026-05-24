@@ -28,7 +28,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import {
 	AppPanel,
@@ -43,11 +43,30 @@ import {
 	useMyProjectGroupQuery,
 	useRevokeProjectGroupAdminPermissionMutation,
 } from "@/features/project-groups/hooks/use-project-group-queries";
+import {
+	useCreateProjectChecklistMutation,
+	useDeleteProjectChecklistMutation,
+	useGenerateChecklistAdviceMutation,
+	useProjectChecklistsQuery,
+	useUpdateProjectChecklistMutation,
+} from "@/features/team/hooks/use-project-checklist-queries";
+import {
+	useCompleteGithubAppInstallationMutation,
+	useCreateGithubAppInstallationUrlMutation,
+	useGithubInstallationStatusQuery,
+} from "@/features/team/hooks/use-team-space-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
-import type { ProjectGroupMember } from "@/lib/types/project-group";
+import type {
+	ProjectChecklist,
+	ProjectChecklistStatus,
+} from "@/lib/types/project-checklist";
+import type {
+	MyProjectGroup,
+	ProjectGroupMember,
+} from "@/lib/types/project-group";
 import type {
 	GithubRepositorySummary,
 	ProjectLifecycleStatus,
@@ -57,10 +76,11 @@ import type {
 import { cn } from "@/lib/utils";
 
 type TeamTab = "overview" | "guide" | "rules" | "checklist" | "github" | "chat";
-type AdminPermissionFeedback = {
+type ActionFeedback = {
 	message: string;
 	tone: "error" | "success";
 };
+type AdminPermissionFeedback = ActionFeedback;
 
 const lifecycleSteps: Array<{
 	label: string;
@@ -102,6 +122,16 @@ const checklistLabels: Record<TeamChecklistItem["status"], string> = {
 	todo: "할 일",
 };
 
+const projectChecklistStatusLabels: Record<ProjectChecklistStatus, string> = {
+	DONE: "완료",
+	TODO: "할 일",
+};
+
+const projectChecklistStatusTone: Record<ProjectChecklistStatus, string> = {
+	DONE: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
+	TODO: "border-border bg-secondary/45 text-muted-foreground",
+};
+
 const contributionLevelClass = [
 	"bg-secondary",
 	"bg-emerald-100",
@@ -121,13 +151,21 @@ export function TeamSpaceView() {
 }
 
 function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
+	const [searchParams, setSearchParams] = useSearchParams();
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
 	const grantAdminPermissionMutation =
 		useGrantProjectGroupAdminPermissionMutation();
 	const revokeAdminPermissionMutation =
 		useRevokeProjectGroupAdminPermissionMutation();
+	const {
+		isPending: isCompletingGithubInstallation,
+		mutate: completeGithubAppInstallation,
+	} = useCompleteGithubAppInstallationMutation();
 	const [adminPermissionFeedback, setAdminPermissionFeedback] =
 		useState<AdminPermissionFeedback | null>(null);
+	const [githubCompletionFeedback, setGithubCompletionFeedback] =
+		useState<ActionFeedback | null>(null);
+	const completedGithubInstallationKeyRef = useRef<string | null>(null);
 	const projectGroup = isSignedIn ? projectGroupQuery.data : null;
 	const currentMember = useMemo(
 		() =>
@@ -145,6 +183,68 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		: revokeAdminPermissionMutation.isPending
 			? revokeAdminPermissionMutation.variables.targetUserId
 			: null;
+
+	useEffect(() => {
+		const installationIdParam = searchParams.get("installation_id");
+		const setupAction = searchParams.get("setup_action");
+		const state = searchParams.get("state");
+
+		if (!projectGroup || !installationIdParam || !setupAction || !state) {
+			return;
+		}
+
+		const completionKey = `${projectGroup.projectGroupId}:${installationIdParam}:${setupAction}:${state}`;
+
+		if (completedGithubInstallationKeyRef.current === completionKey) {
+			return;
+		}
+
+		const installationId = Number(installationIdParam);
+		completedGithubInstallationKeyRef.current = completionKey;
+
+		if (!Number.isFinite(installationId)) {
+			setGithubCompletionFeedback({
+				message: "GitHub App 설치 정보를 확인할 수 없습니다.",
+				tone: "error",
+			});
+			return;
+		}
+
+		setGithubCompletionFeedback(null);
+		completeGithubAppInstallation(
+			{
+				installationId,
+				projectGroupId: projectGroup.projectGroupId,
+				setupAction,
+				state,
+			},
+			{
+				onError: (error: unknown) => {
+					completedGithubInstallationKeyRef.current = null;
+					setGithubCompletionFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					const nextSearchParams = new URLSearchParams(searchParams);
+					nextSearchParams.delete("installation_id");
+					nextSearchParams.delete("setup_action");
+					nextSearchParams.delete("state");
+					setSearchParams(nextSearchParams, { replace: true });
+					setGithubCompletionFeedback({
+						message: "GitHub App 설치를 팀 스페이스에 연결했습니다.",
+						tone: "success",
+					});
+				},
+			},
+		);
+	}, [
+		projectGroup,
+		searchParams,
+		setSearchParams,
+		completeGithubAppInstallation,
+	]);
 
 	function handleAdminPermissionChange(member: ProjectGroupMember) {
 		if (!projectGroup) {
@@ -314,6 +414,14 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 								}
 							/>
 						</div>
+
+						<RealProjectChecklistsPanel projectGroup={projectGroup} />
+						<RealGithubInstallationPanel
+							canManageGithubInstallation={canManageAdminPermissions}
+							completionFeedback={githubCompletionFeedback}
+							isCompletingInstallation={isCompletingGithubInstallation}
+							projectGroup={projectGroup}
+						/>
 					</>
 				) : null}
 
@@ -516,6 +624,607 @@ function RealProjectGroupMemberCard({
 					</span>
 				) : null}
 			</div>
+		</div>
+	);
+}
+
+function RealProjectChecklistsPanel({
+	projectGroup,
+}: {
+	projectGroup: MyProjectGroup;
+}) {
+	const checklistQuery = useProjectChecklistsQuery(projectGroup.projectGroupId);
+	const createChecklistMutation = useCreateProjectChecklistMutation();
+	const updateChecklistMutation = useUpdateProjectChecklistMutation();
+	const deleteChecklistMutation = useDeleteProjectChecklistMutation();
+	const generateAdviceMutation = useGenerateChecklistAdviceMutation();
+	const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
+	const [draft, setDraft] = useState({
+		assigneeUserId: "",
+		description: "",
+		dueDate: "",
+		title: "",
+	});
+	const checklists = checklistQuery.data ?? [];
+	const pendingChecklistId = updateChecklistMutation.isPending
+		? (updateChecklistMutation.variables?.checklistId ?? null)
+		: deleteChecklistMutation.isPending
+			? (deleteChecklistMutation.variables?.checklistId ?? null)
+			: generateAdviceMutation.isPending
+				? (generateAdviceMutation.variables?.checklistId ?? null)
+				: null;
+
+	function handleCreateChecklist(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+
+		const title = draft.title.trim();
+
+		if (!title) {
+			setFeedback({
+				message: "체크리스트 제목을 입력해 주세요.",
+				tone: "error",
+			});
+			return;
+		}
+
+		setFeedback(null);
+		createChecklistMutation.mutate(
+			{
+				assigneeUserId: draft.assigneeUserId
+					? Number(draft.assigneeUserId)
+					: null,
+				description: draft.description.trim() || null,
+				dueDate: draft.dueDate || null,
+				projectGroupId: projectGroup.projectGroupId,
+				title,
+			},
+			{
+				onError: (error: unknown) => {
+					setFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					setDraft({
+						assigneeUserId: "",
+						description: "",
+						dueDate: "",
+						title: "",
+					});
+					setFeedback({
+						message: "체크리스트를 추가했습니다.",
+						tone: "success",
+					});
+				},
+			},
+		);
+	}
+
+	function handleStatusChange(
+		checklist: ProjectChecklist,
+		status: ProjectChecklistStatus,
+	) {
+		setFeedback(null);
+		updateChecklistMutation.mutate(
+			{
+				assigneeUserId: checklist.assigneeUserId,
+				checklistId: checklist.id,
+				description: checklist.description,
+				dueDate: checklist.dueDate,
+				projectGroupId: projectGroup.projectGroupId,
+				status,
+				title: checklist.title,
+			},
+			{
+				onError: (error: unknown) => {
+					setFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+			},
+		);
+	}
+
+	function handleDeleteChecklist(checklist: ProjectChecklist) {
+		setFeedback(null);
+		deleteChecklistMutation.mutate(
+			{
+				checklistId: checklist.id,
+				projectGroupId: projectGroup.projectGroupId,
+			},
+			{
+				onError: (error: unknown) => {
+					setFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					setFeedback({
+						message: "체크리스트를 삭제했습니다.",
+						tone: "success",
+					});
+				},
+			},
+		);
+	}
+
+	function handleGenerateAdvice(checklist: ProjectChecklist) {
+		setFeedback(null);
+		generateAdviceMutation.mutate(
+			{
+				checklistId: checklist.id,
+				projectGroupId: projectGroup.projectGroupId,
+			},
+			{
+				onError: (error: unknown) => {
+					setFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					setFeedback({
+						message: "AI 조언을 생성했습니다.",
+						tone: "success",
+					});
+				},
+			},
+		);
+	}
+
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={<Badge variant="neutral">{checklists.length} tasks</Badge>}
+				description="팀 작업을 등록하고 담당자, 마감일, AI 조언을 관리합니다."
+				eyebrow="Checklist"
+				title="프로젝트 체크리스트"
+			/>
+			<div className="grid gap-5 p-5">
+				<form
+					className="grid gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp lg:grid-cols-[1fr_1.2fr_10rem_12rem_auto]"
+					onSubmit={handleCreateChecklist}
+				>
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="real-checklist-title"
+					>
+						제목
+						<input
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							id="real-checklist-title"
+							maxLength={255}
+							onChange={(event) =>
+								setDraft((current) => ({
+									...current,
+									title: event.target.value,
+								}))
+							}
+							placeholder="작업 제목"
+							value={draft.title}
+						/>
+					</label>
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="real-checklist-description"
+					>
+						설명
+						<input
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							id="real-checklist-description"
+							maxLength={3000}
+							onChange={(event) =>
+								setDraft((current) => ({
+									...current,
+									description: event.target.value,
+								}))
+							}
+							placeholder="작업 설명"
+							value={draft.description}
+						/>
+					</label>
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="real-checklist-due-date"
+					>
+						마감일
+						<input
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							id="real-checklist-due-date"
+							onChange={(event) =>
+								setDraft((current) => ({
+									...current,
+									dueDate: event.target.value,
+								}))
+							}
+							type="date"
+							value={draft.dueDate}
+						/>
+					</label>
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="real-checklist-assignee"
+					>
+						담당자
+						<select
+							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							id="real-checklist-assignee"
+							onChange={(event) =>
+								setDraft((current) => ({
+									...current,
+									assigneeUserId: event.target.value,
+								}))
+							}
+							value={draft.assigneeUserId}
+						>
+							<option value="">미지정</option>
+							{projectGroup.members.map((member) => (
+								<option key={member.userId} value={member.userId}>
+									{member.nickname}
+								</option>
+							))}
+						</select>
+					</label>
+					<div className="flex items-end">
+						<Button
+							className="w-full lg:w-auto"
+							disabled={createChecklistMutation.isPending}
+							type="submit"
+						>
+							{createChecklistMutation.isPending ? (
+								<LoaderCircle
+									className="animate-spin"
+									data-icon="inline-start"
+								/>
+							) : (
+								<Plus data-icon="inline-start" />
+							)}
+							추가
+						</Button>
+					</div>
+				</form>
+
+				<RealActionFeedback feedback={feedback} />
+
+				{checklistQuery.isLoading ? (
+					<RealInlineStatus
+						icon={<LoaderCircle className="size-4 animate-spin" />}
+						message="체크리스트를 불러오고 있습니다."
+					/>
+				) : null}
+
+				{checklistQuery.error ? (
+					<RealInlineStatus
+						message={getApiErrorMessage(checklistQuery.error)}
+					/>
+				) : null}
+
+				<div className="grid gap-3">
+					{checklists.map((checklist) => {
+						const isPending = pendingChecklistId === checklist.id;
+
+						return (
+							<div
+								className="grid gap-4 rounded-lg border border-border/70 bg-white p-4 shadow-crisp xl:grid-cols-[1fr_auto]"
+								key={checklist.id}
+							>
+								<div className="min-w-0">
+									<div className="flex flex-wrap items-center gap-2">
+										<Badge
+											className={projectChecklistStatusTone[checklist.status]}
+											variant="neutral"
+										>
+											{projectChecklistStatusLabels[checklist.status]}
+										</Badge>
+										<p className="text-sm font-semibold text-brand-ink">
+											{checklist.title}
+										</p>
+									</div>
+									<p className="mt-2 text-sm leading-6 text-muted-foreground">
+										{checklist.description ?? "설명이 없습니다."}
+									</p>
+									<div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+										<span>담당 {checklist.assigneeNickname ?? "미지정"}</span>
+										<span>마감 {checklist.dueDate ?? "미정"}</span>
+										<span>생성 {checklist.createdByNickname}</span>
+									</div>
+									{checklist.aiAdvice ? (
+										<RealChecklistAdvice checklist={checklist} />
+									) : null}
+								</div>
+								<div className="flex flex-wrap items-start gap-2 xl:justify-end">
+									<Button
+										disabled={isPending}
+										onClick={() =>
+											handleStatusChange(
+												checklist,
+												checklist.status === "DONE" ? "TODO" : "DONE",
+											)
+										}
+										size="sm"
+										type="button"
+										variant="outline"
+									>
+										{isPending &&
+										updateChecklistMutation.variables?.checklistId ===
+											checklist.id ? (
+											<LoaderCircle
+												className="animate-spin"
+												data-icon="inline-start"
+											/>
+										) : (
+											<CheckCircle2 data-icon="inline-start" />
+										)}
+										{checklist.status === "DONE" ? "다시 열기" : "완료"}
+									</Button>
+									<Button
+										disabled={isPending}
+										onClick={() => handleGenerateAdvice(checklist)}
+										size="sm"
+										type="button"
+										variant="outline"
+									>
+										{isPending &&
+										generateAdviceMutation.variables?.checklistId ===
+											checklist.id ? (
+											<LoaderCircle
+												className="animate-spin"
+												data-icon="inline-start"
+											/>
+										) : (
+											<Sparkles data-icon="inline-start" />
+										)}
+										AI 조언
+									</Button>
+									<Button
+										disabled={isPending}
+										onClick={() => handleDeleteChecklist(checklist)}
+										size="icon"
+										type="button"
+										variant="ghost"
+									>
+										{isPending &&
+										deleteChecklistMutation.variables?.checklistId ===
+											checklist.id ? (
+											<LoaderCircle className="size-4 animate-spin" />
+										) : (
+											<Trash2 />
+										)}
+									</Button>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealChecklistAdvice({ checklist }: { checklist: ProjectChecklist }) {
+	if (!checklist.aiAdvice) {
+		return null;
+	}
+
+	return (
+		<div className="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-4">
+			<p className="text-sm font-semibold text-primary">
+				{checklist.aiAdvice.summary}
+			</p>
+			<div className="mt-3 grid gap-3 md:grid-cols-3">
+				<RealAdviceList
+					items={checklist.aiAdvice.recommendedFlow}
+					title="추천 흐름"
+				/>
+				<RealAdviceList
+					items={checklist.aiAdvice.considerations}
+					title="고려 사항"
+				/>
+				<RealAdviceList
+					items={checklist.aiAdvice.improvementPoints}
+					title="개선 포인트"
+				/>
+			</div>
+		</div>
+	);
+}
+
+function RealAdviceList({ items, title }: { items: string[]; title: string }) {
+	return (
+		<div>
+			<p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+				{title}
+			</p>
+			<ul className="mt-2 grid gap-2 text-xs leading-5 text-muted-foreground">
+				{items.map((item) => (
+					<li key={item}>{item}</li>
+				))}
+			</ul>
+		</div>
+	);
+}
+
+function RealGithubInstallationPanel({
+	canManageGithubInstallation,
+	completionFeedback,
+	isCompletingInstallation,
+	projectGroup,
+}: {
+	canManageGithubInstallation: boolean;
+	completionFeedback: ActionFeedback | null;
+	isCompletingInstallation: boolean;
+	projectGroup: MyProjectGroup;
+}) {
+	const githubStatusQuery = useGithubInstallationStatusQuery(
+		projectGroup.projectGroupId,
+	);
+	const createInstallUrlMutation = useCreateGithubAppInstallationUrlMutation();
+	const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
+	const githubStatus = githubStatusQuery.data;
+	const canCreateInstallUrl =
+		githubStatusQuery.isSuccess &&
+		canManageGithubInstallation &&
+		!githubStatus?.connected &&
+		!createInstallUrlMutation.isPending;
+
+	function handleCreateInstallUrl() {
+		setFeedback(null);
+		createInstallUrlMutation.mutate(projectGroup.projectGroupId, {
+			onError: (error: unknown) => {
+				setFeedback({
+					message: getApiErrorMessage(error),
+					tone: "error",
+				});
+			},
+			onSuccess: ({ installUrl }) => {
+				window.location.assign(installUrl);
+			},
+		});
+	}
+
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={
+					<Badge variant={githubStatus?.connected ? "brand" : "neutral"}>
+						{githubStatus?.connected ? "connected" : "not connected"}
+					</Badge>
+				}
+				description="Organization 연결 상태와 저장소 집계 준비 상태를 확인합니다."
+				eyebrow="GitHub App"
+				title="Organization 연동"
+			/>
+			<div className="grid gap-5 p-5">
+				<RealActionFeedback feedback={completionFeedback ?? feedback} />
+
+				{githubStatusQuery.isLoading || isCompletingInstallation ? (
+					<RealInlineStatus
+						icon={<LoaderCircle className="size-4 animate-spin" />}
+						message={
+							isCompletingInstallation
+								? "GitHub App 설치를 완료하고 있습니다."
+								: "GitHub 연동 상태를 불러오고 있습니다."
+						}
+					/>
+				) : null}
+
+				{githubStatusQuery.error ? (
+					<RealInlineStatus
+						message={getApiErrorMessage(githubStatusQuery.error)}
+					/>
+				) : null}
+
+				<div className="grid gap-3 md:grid-cols-3">
+					<RealGithubStatusCard
+						label="Organization"
+						ready={githubStatus?.connected === true}
+						value={githubStatus?.organizationLogin ?? "연결 전"}
+					/>
+					<RealGithubStatusCard
+						label="Repositories"
+						ready={(githubStatus?.repositoryCount ?? 0) > 0}
+						value={`${githubStatus?.repositoryCount ?? 0}개`}
+					/>
+					<RealGithubStatusCard
+						label="Permission"
+						ready={canManageGithubInstallation}
+						value={canManageGithubInstallation ? "HOST" : "READ ONLY"}
+					/>
+				</div>
+
+				<div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-center sm:justify-between">
+					<div className="min-w-0">
+						<p className="text-sm font-semibold text-brand-ink">
+							TeamPo GitHub App
+						</p>
+						<p className="mt-1 text-sm leading-6 text-muted-foreground">
+							{githubStatus?.connected
+								? "Organization이 팀 스페이스에 연결되어 있습니다."
+								: "호스트가 GitHub 설치 흐름을 시작할 수 있습니다."}
+						</p>
+					</div>
+					<Button
+						disabled={!canCreateInstallUrl}
+						onClick={handleCreateInstallUrl}
+						type="button"
+					>
+						{createInstallUrlMutation.isPending ? (
+							<LoaderCircle className="animate-spin" data-icon="inline-start" />
+						) : (
+							<Github data-icon="inline-start" />
+						)}
+						설치 URL 발급
+					</Button>
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealGithubStatusCard({
+	label,
+	ready,
+	value,
+}: {
+	label: string;
+	ready: boolean;
+	value: string;
+}) {
+	return (
+		<div
+			className={cn(
+				"rounded-lg border p-4 shadow-crisp",
+				ready ? "border-primary/20 bg-primary/5" : "border-border/70 bg-white",
+			)}
+		>
+			<div className="flex items-center justify-between gap-3">
+				<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+					{label}
+				</p>
+				<Badge variant={ready ? "brand" : "neutral"}>
+					{ready ? "ready" : "pending"}
+				</Badge>
+			</div>
+			<p className="mt-3 truncate text-sm font-semibold text-brand-ink">
+				{value}
+			</p>
+		</div>
+	);
+}
+
+function RealActionFeedback({ feedback }: { feedback: ActionFeedback | null }) {
+	if (!feedback) {
+		return null;
+	}
+
+	return (
+		<output
+			className={cn(
+				"rounded-lg border px-4 py-3 text-sm font-medium",
+				feedback.tone === "success"
+					? "border-emerald-500/20 bg-emerald-50 text-emerald-700"
+					: "border-red-500/20 bg-red-50 text-red-700",
+			)}
+		>
+			{feedback.message}
+		</output>
+	);
+}
+
+function RealInlineStatus({
+	icon,
+	message,
+}: {
+	icon?: ReactNode;
+	message: string;
+}) {
+	return (
+		<div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+			{icon}
+			<span>{message}</span>
 		</div>
 	);
 }
