@@ -18,6 +18,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Trash2,
+	X,
 } from "lucide-react";
 import {
 	type ComponentType,
@@ -143,7 +144,7 @@ const contributionLevelClass = [
 export function TeamSpaceView() {
 	const [isSignedIn] = useState(() => Boolean(getAuthSession()));
 
-	if (!apiConfig.useMocks) {
+	if (!apiConfig.useMocks || isSignedIn) {
 		return <RealTeamSpaceView isSignedIn={isSignedIn} />;
 	}
 
@@ -645,6 +646,9 @@ function RealProjectChecklistsPanel({
 		dueDate: "",
 		title: "",
 	});
+	const [editingChecklistId, setEditingChecklistId] = useState<number | null>(
+		null,
+	);
 	const checklists = checklistQuery.data ?? [];
 	const pendingChecklistId = updateChecklistMutation.isPending
 		? (updateChecklistMutation.variables?.checklistId ?? null)
@@ -701,6 +705,73 @@ function RealProjectChecklistsPanel({
 		);
 	}
 
+	function handleStartEdit(checklist: ProjectChecklist) {
+		setFeedback(null);
+		setEditingChecklistId(checklist.id);
+	}
+
+	function handleCancelEdit() {
+		setEditingChecklistId(null);
+	}
+
+	function handleUpdateChecklist(
+		event: FormEvent<HTMLFormElement>,
+		checklist: ProjectChecklist,
+	) {
+		event.preventDefault();
+
+		const formData = new FormData(event.currentTarget);
+		const title = getChecklistFormValue(formData, "title").trim();
+		const description = getChecklistFormValue(formData, "description").trim();
+		const dueDate = getChecklistFormValue(formData, "dueDate");
+		const assigneeUserId = getChecklistFormValue(formData, "assigneeUserId");
+		const status = getChecklistFormValue(formData, "status");
+
+		if (!title) {
+			setFeedback({
+				message: "체크리스트 제목을 입력해 주세요.",
+				tone: "error",
+			});
+			return;
+		}
+
+		if (!isProjectChecklistStatus(status)) {
+			setFeedback({
+				message: "체크리스트 상태를 다시 선택해 주세요.",
+				tone: "error",
+			});
+			return;
+		}
+
+		setFeedback(null);
+		updateChecklistMutation.mutate(
+			{
+				assigneeUserId: assigneeUserId ? Number(assigneeUserId) : null,
+				checklistId: checklist.id,
+				description: description || null,
+				dueDate: dueDate || null,
+				projectGroupId: projectGroup.projectGroupId,
+				status,
+				title,
+			},
+			{
+				onError: (error: unknown) => {
+					setFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					handleCancelEdit();
+					setFeedback({
+						message: "체크리스트를 수정했습니다.",
+						tone: "success",
+					});
+				},
+			},
+		);
+	}
+
 	function handleStatusChange(
 		checklist: ProjectChecklist,
 		status: ProjectChecklistStatus,
@@ -721,6 +792,12 @@ function RealProjectChecklistsPanel({
 					setFeedback({
 						message: getApiErrorMessage(error),
 						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					setFeedback({
+						message: "체크리스트 상태를 변경했습니다.",
+						tone: "success",
 					});
 				},
 			},
@@ -905,96 +982,224 @@ function RealProjectChecklistsPanel({
 				<div className="grid gap-3">
 					{checklists.map((checklist) => {
 						const isPending = pendingChecklistId === checklist.id;
+						const isEditing = editingChecklistId === checklist.id;
 
 						return (
 							<div
 								className="grid gap-4 rounded-lg border border-border/70 bg-white p-4 shadow-crisp xl:grid-cols-[1fr_auto]"
 								key={checklist.id}
 							>
-								<div className="min-w-0">
-									<div className="flex flex-wrap items-center gap-2">
-										<Badge
-											className={projectChecklistStatusTone[checklist.status]}
-											variant="neutral"
-										>
-											{projectChecklistStatusLabels[checklist.status]}
-										</Badge>
-										<p className="text-sm font-semibold text-brand-ink">
-											{checklist.title}
-										</p>
-									</div>
-									<p className="mt-2 text-sm leading-6 text-muted-foreground">
-										{checklist.description ?? "설명이 없습니다."}
-									</p>
-									<div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-										<span>담당 {checklist.assigneeNickname ?? "미지정"}</span>
-										<span>마감 {checklist.dueDate ?? "미정"}</span>
-										<span>생성 {checklist.createdByNickname}</span>
-									</div>
-									{checklist.aiAdvice ? (
-										<RealChecklistAdvice checklist={checklist} />
-									) : null}
-								</div>
-								<div className="flex flex-wrap items-start gap-2 xl:justify-end">
-									<Button
-										disabled={isPending}
-										onClick={() =>
-											handleStatusChange(
-												checklist,
-												checklist.status === "DONE" ? "TODO" : "DONE",
-											)
+								{isEditing ? (
+									<form
+										className="grid gap-3 xl:col-span-2"
+										onSubmit={(event) =>
+											handleUpdateChecklist(event, checklist)
 										}
-										size="sm"
-										type="button"
-										variant="outline"
 									>
-										{isPending &&
-										updateChecklistMutation.variables?.checklistId ===
-											checklist.id ? (
-											<LoaderCircle
-												className="animate-spin"
-												data-icon="inline-start"
-											/>
-										) : (
-											<CheckCircle2 data-icon="inline-start" />
-										)}
-										{checklist.status === "DONE" ? "다시 열기" : "완료"}
-									</Button>
-									<Button
-										disabled={isPending}
-										onClick={() => handleGenerateAdvice(checklist)}
-										size="sm"
-										type="button"
-										variant="outline"
-									>
-										{isPending &&
-										generateAdviceMutation.variables?.checklistId ===
-											checklist.id ? (
-											<LoaderCircle
-												className="animate-spin"
-												data-icon="inline-start"
-											/>
-										) : (
-											<Sparkles data-icon="inline-start" />
-										)}
-										AI 조언
-									</Button>
-									<Button
-										disabled={isPending}
-										onClick={() => handleDeleteChecklist(checklist)}
-										size="icon"
-										type="button"
-										variant="ghost"
-									>
-										{isPending &&
-										deleteChecklistMutation.variables?.checklistId ===
-											checklist.id ? (
-											<LoaderCircle className="size-4 animate-spin" />
-										) : (
-											<Trash2 />
-										)}
-									</Button>
-								</div>
+										<div className="grid gap-3 lg:grid-cols-[1fr_1.2fr_9rem_10rem_12rem]">
+											<label
+												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												htmlFor={`real-checklist-edit-title-${checklist.id}`}
+											>
+												제목
+												<input
+													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													defaultValue={checklist.title}
+													id={`real-checklist-edit-title-${checklist.id}`}
+													maxLength={255}
+													name="title"
+												/>
+											</label>
+											<label
+												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												htmlFor={`real-checklist-edit-description-${checklist.id}`}
+											>
+												설명
+												<input
+													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													defaultValue={checklist.description ?? ""}
+													id={`real-checklist-edit-description-${checklist.id}`}
+													maxLength={3000}
+													name="description"
+												/>
+											</label>
+											<label
+												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												htmlFor={`real-checklist-edit-status-${checklist.id}`}
+											>
+												상태
+												<select
+													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													defaultValue={checklist.status}
+													id={`real-checklist-edit-status-${checklist.id}`}
+													name="status"
+												>
+													<option value="TODO">할 일</option>
+													<option value="DONE">완료</option>
+												</select>
+											</label>
+											<label
+												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												htmlFor={`real-checklist-edit-due-date-${checklist.id}`}
+											>
+												마감일
+												<input
+													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													defaultValue={checklist.dueDate ?? ""}
+													id={`real-checklist-edit-due-date-${checklist.id}`}
+													name="dueDate"
+													type="date"
+												/>
+											</label>
+											<label
+												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												htmlFor={`real-checklist-edit-assignee-${checklist.id}`}
+											>
+												담당자
+												<select
+													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													defaultValue={checklist.assigneeUserId ?? ""}
+													id={`real-checklist-edit-assignee-${checklist.id}`}
+													name="assigneeUserId"
+												>
+													<option value="">미지정</option>
+													{projectGroup.members.map((member) => (
+														<option key={member.userId} value={member.userId}>
+															{member.nickname}
+														</option>
+													))}
+												</select>
+											</label>
+										</div>
+										<div className="flex flex-wrap justify-end gap-2">
+											<Button
+												disabled={isPending}
+												onClick={handleCancelEdit}
+												type="button"
+												variant="outline"
+											>
+												<X data-icon="inline-start" />
+												취소
+											</Button>
+											<Button disabled={isPending} type="submit">
+												{isPending &&
+												updateChecklistMutation.variables?.checklistId ===
+													checklist.id ? (
+													<LoaderCircle
+														className="animate-spin"
+														data-icon="inline-start"
+													/>
+												) : (
+													<Save data-icon="inline-start" />
+												)}
+												저장
+											</Button>
+										</div>
+									</form>
+								) : (
+									<>
+										<div className="min-w-0">
+											<div className="flex flex-wrap items-center gap-2">
+												<Badge
+													className={
+														projectChecklistStatusTone[checklist.status]
+													}
+													variant="neutral"
+												>
+													{projectChecklistStatusLabels[checklist.status]}
+												</Badge>
+												<p className="text-sm font-semibold text-brand-ink">
+													{checklist.title}
+												</p>
+											</div>
+											<p className="mt-2 text-sm leading-6 text-muted-foreground">
+												{checklist.description ?? "설명이 없습니다."}
+											</p>
+											<div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+												<span>
+													담당 {checklist.assigneeNickname ?? "미지정"}
+												</span>
+												<span>마감 {checklist.dueDate ?? "미정"}</span>
+												<span>생성 {checklist.createdByNickname}</span>
+											</div>
+											{checklist.aiAdvice ? (
+												<RealChecklistAdvice checklist={checklist} />
+											) : null}
+										</div>
+										<div className="flex flex-wrap items-start gap-2 xl:justify-end">
+											<Button
+												disabled={isPending}
+												onClick={() => handleStartEdit(checklist)}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												<PencilLine data-icon="inline-start" />
+												수정
+											</Button>
+											<Button
+												disabled={isPending}
+												onClick={() =>
+													handleStatusChange(
+														checklist,
+														checklist.status === "DONE" ? "TODO" : "DONE",
+													)
+												}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												{isPending &&
+												updateChecklistMutation.variables?.checklistId ===
+													checklist.id ? (
+													<LoaderCircle
+														className="animate-spin"
+														data-icon="inline-start"
+													/>
+												) : (
+													<CheckCircle2 data-icon="inline-start" />
+												)}
+												{checklist.status === "DONE" ? "다시 열기" : "완료"}
+											</Button>
+											<Button
+												disabled={isPending}
+												onClick={() => handleGenerateAdvice(checklist)}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												{isPending &&
+												generateAdviceMutation.variables?.checklistId ===
+													checklist.id ? (
+													<LoaderCircle
+														className="animate-spin"
+														data-icon="inline-start"
+													/>
+												) : (
+													<Sparkles data-icon="inline-start" />
+												)}
+												AI 조언
+											</Button>
+											<Button
+												aria-label="체크리스트 삭제"
+												disabled={isPending}
+												onClick={() => handleDeleteChecklist(checklist)}
+												size="icon"
+												title="체크리스트 삭제"
+												type="button"
+												variant="ghost"
+											>
+												{isPending &&
+												deleteChecklistMutation.variables?.checklistId ===
+													checklist.id ? (
+													<LoaderCircle className="size-4 animate-spin" />
+												) : (
+													<Trash2 />
+												)}
+											</Button>
+										</div>
+									</>
+								)}
 							</div>
 						);
 					})}
@@ -1045,6 +1250,17 @@ function RealAdviceList({ items, title }: { items: string[]; title: string }) {
 			</ul>
 		</div>
 	);
+}
+
+function getChecklistFormValue(formData: FormData, key: string) {
+	const value = formData.get(key);
+	return typeof value === "string" ? value : "";
+}
+
+function isProjectChecklistStatus(
+	value: string,
+): value is ProjectChecklistStatus {
+	return value === "TODO" || value === "DONE";
 }
 
 function RealGithubInstallationPanel({

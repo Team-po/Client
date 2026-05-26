@@ -6,7 +6,9 @@
 - Matching UI lives in `src/features/match/*`.
 - Team workspace UI lives in `src/features/team/*`.
 - Shared domain types live in `src/lib/types/*`.
-- API request functions stay in `src/lib/api/*`; the current team-space preview uses local demo data only because backend endpoints are not ready yet.
+- API request functions stay in `src/lib/api/*`.
+- `/team` uses project group, checklist, admin permission, and GitHub App installation request functions when a user is signed in.
+- In mock API mode, signed-in `/team` calls the same request functions through MSW; signed-out `/team` keeps the richer local demo workspace as a preview.
 
 ## Current User Flow
 
@@ -16,8 +18,8 @@
 
 ## Temporary UI State
 
-- Team workspace editing is currently local-only React state.
-- Editable surfaces include team name, lifecycle status, rules Markdown, checklist items, GitHub connection preview, random reviewer, and team messages.
-- Replace these local state handlers with `src/lib/api/*` request functions when backend endpoints are available.
+- Real API mode and signed-in mock mode use `src/lib/api/*` request functions for implemented team-space server capabilities.
+- Signed-out mock mode still keeps team name, lifecycle status, rules Markdown, GitHub repository preview, random reviewer, and team messages in local React state.
+- Move remaining mock-only team surfaces to `src/lib/api/*` when matching backend endpoints are introduced.
 
 Presentation routes under `/deck/team-po*` are intentionally unchanged.
