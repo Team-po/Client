@@ -710,8 +710,14 @@ function RealProjectChecklistsPanel({
 		setEditingChecklistId(checklist.id);
 	}
 
-	function handleCancelEdit() {
-		setEditingChecklistId(null);
+	function handleCancelEdit(checklistId?: number) {
+		setEditingChecklistId((currentChecklistId) => {
+			if (checklistId === undefined || currentChecklistId === checklistId) {
+				return null;
+			}
+
+			return currentChecklistId;
+		});
 	}
 
 	function handleUpdateChecklist(
@@ -762,7 +768,7 @@ function RealProjectChecklistsPanel({
 					});
 				},
 				onSuccess: () => {
-					handleCancelEdit();
+					handleCancelEdit(checklist.id);
 					setFeedback({
 						message: "체크리스트를 수정했습니다.",
 						tone: "success",
@@ -1074,7 +1080,7 @@ function RealProjectChecklistsPanel({
 										<div className="flex flex-wrap justify-end gap-2">
 											<Button
 												disabled={isPending}
-												onClick={handleCancelEdit}
+												onClick={() => handleCancelEdit()}
 												type="button"
 												variant="outline"
 											>
