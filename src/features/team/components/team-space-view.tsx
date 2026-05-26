@@ -657,8 +657,12 @@ function RealProjectChecklistsPanel({
 			: generateAdviceMutation.isPending
 				? (generateAdviceMutation.variables?.checklistId ?? null)
 				: null;
+	const isChecklistActionPending =
+		updateChecklistMutation.isPending ||
+		deleteChecklistMutation.isPending ||
+		generateAdviceMutation.isPending;
 
-	function handleCreateChecklist(event: FormEvent<HTMLFormElement>) {
+	async function handleCreateChecklist(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		const title = draft.title.trim();
@@ -672,8 +676,8 @@ function RealProjectChecklistsPanel({
 		}
 
 		setFeedback(null);
-		createChecklistMutation.mutate(
-			{
+		try {
+			await createChecklistMutation.mutateAsync({
 				assigneeUserId: draft.assigneeUserId
 					? Number(draft.assigneeUserId)
 					: null,
@@ -681,28 +685,23 @@ function RealProjectChecklistsPanel({
 				dueDate: draft.dueDate || null,
 				projectGroupId: projectGroup.projectGroupId,
 				title,
-			},
-			{
-				onError: (error: unknown) => {
-					setFeedback({
-						message: getApiErrorMessage(error),
-						tone: "error",
-					});
-				},
-				onSuccess: () => {
-					setDraft({
-						assigneeUserId: "",
-						description: "",
-						dueDate: "",
-						title: "",
-					});
-					setFeedback({
-						message: "체크리스트를 추가했습니다.",
-						tone: "success",
-					});
-				},
-			},
-		);
+			});
+			setDraft({
+				assigneeUserId: "",
+				description: "",
+				dueDate: "",
+				title: "",
+			});
+			setFeedback({
+				message: "체크리스트를 추가했습니다.",
+				tone: "success",
+			});
+		} catch (error: unknown) {
+			setFeedback({
+				message: getApiErrorMessage(error),
+				tone: "error",
+			});
+		}
 	}
 
 	function handleStartEdit(checklist: ProjectChecklist) {
@@ -720,7 +719,7 @@ function RealProjectChecklistsPanel({
 		});
 	}
 
-	function handleUpdateChecklist(
+	async function handleUpdateChecklist(
 		event: FormEvent<HTMLFormElement>,
 		checklist: ProjectChecklist,
 	) {
@@ -750,8 +749,8 @@ function RealProjectChecklistsPanel({
 		}
 
 		setFeedback(null);
-		updateChecklistMutation.mutate(
-			{
+		try {
+			await updateChecklistMutation.mutateAsync({
 				assigneeUserId: assigneeUserId ? Number(assigneeUserId) : null,
 				checklistId: checklist.id,
 				description: description || null,
@@ -759,32 +758,27 @@ function RealProjectChecklistsPanel({
 				projectGroupId: projectGroup.projectGroupId,
 				status,
 				title,
-			},
-			{
-				onError: (error: unknown) => {
-					setFeedback({
-						message: getApiErrorMessage(error),
-						tone: "error",
-					});
-				},
-				onSuccess: () => {
-					handleCancelEdit(checklist.id);
-					setFeedback({
-						message: "체크리스트를 수정했습니다.",
-						tone: "success",
-					});
-				},
-			},
-		);
+			});
+			handleCancelEdit(checklist.id);
+			setFeedback({
+				message: "체크리스트를 수정했습니다.",
+				tone: "success",
+			});
+		} catch (error: unknown) {
+			setFeedback({
+				message: getApiErrorMessage(error),
+				tone: "error",
+			});
+		}
 	}
 
-	function handleStatusChange(
+	async function handleStatusChange(
 		checklist: ProjectChecklist,
 		status: ProjectChecklistStatus,
 	) {
 		setFeedback(null);
-		updateChecklistMutation.mutate(
-			{
+		try {
+			await updateChecklistMutation.mutateAsync({
 				assigneeUserId: checklist.assigneeUserId,
 				checklistId: checklist.id,
 				description: checklist.description,
@@ -792,70 +786,55 @@ function RealProjectChecklistsPanel({
 				projectGroupId: projectGroup.projectGroupId,
 				status,
 				title: checklist.title,
-			},
-			{
-				onError: (error: unknown) => {
-					setFeedback({
-						message: getApiErrorMessage(error),
-						tone: "error",
-					});
-				},
-				onSuccess: () => {
-					setFeedback({
-						message: "체크리스트 상태를 변경했습니다.",
-						tone: "success",
-					});
-				},
-			},
-		);
+			});
+			setFeedback({
+				message: "체크리스트 상태를 변경했습니다.",
+				tone: "success",
+			});
+		} catch (error: unknown) {
+			setFeedback({
+				message: getApiErrorMessage(error),
+				tone: "error",
+			});
+		}
 	}
 
-	function handleDeleteChecklist(checklist: ProjectChecklist) {
+	async function handleDeleteChecklist(checklist: ProjectChecklist) {
 		setFeedback(null);
-		deleteChecklistMutation.mutate(
-			{
+		try {
+			await deleteChecklistMutation.mutateAsync({
 				checklistId: checklist.id,
 				projectGroupId: projectGroup.projectGroupId,
-			},
-			{
-				onError: (error: unknown) => {
-					setFeedback({
-						message: getApiErrorMessage(error),
-						tone: "error",
-					});
-				},
-				onSuccess: () => {
-					setFeedback({
-						message: "체크리스트를 삭제했습니다.",
-						tone: "success",
-					});
-				},
-			},
-		);
+			});
+			setFeedback({
+				message: "체크리스트를 삭제했습니다.",
+				tone: "success",
+			});
+		} catch (error: unknown) {
+			setFeedback({
+				message: getApiErrorMessage(error),
+				tone: "error",
+			});
+		}
 	}
 
-	function handleGenerateAdvice(checklist: ProjectChecklist) {
+	async function handleGenerateAdvice(checklist: ProjectChecklist) {
 		setFeedback(null);
-		generateAdviceMutation.mutate(
-			{
+		try {
+			await generateAdviceMutation.mutateAsync({
 				checklistId: checklist.id,
 				projectGroupId: projectGroup.projectGroupId,
-			},
-			{
-				onError: (error: unknown) => {
-					setFeedback({
-						message: getApiErrorMessage(error),
-						tone: "error",
-					});
-				},
-				onSuccess: () => {
-					setFeedback({
-						message: "AI 조언을 생성했습니다.",
-						tone: "success",
-					});
-				},
-			},
-		);
+			});
+			setFeedback({
+				message: "AI 조언을 생성했습니다.",
+				tone: "success",
+			});
+		} catch (error: unknown) {
+			setFeedback({
+				message: getApiErrorMessage(error),
+				tone: "error",
+			});
+		}
 	}
 
 	return (
@@ -1079,7 +1058,7 @@ function RealProjectChecklistsPanel({
 										</div>
 										<div className="flex flex-wrap justify-end gap-2">
 											<Button
-												disabled={isPending}
+												disabled={isChecklistActionPending}
 												onClick={() => handleCancelEdit()}
 												type="button"
 												variant="outline"
@@ -1087,7 +1066,7 @@ function RealProjectChecklistsPanel({
 												<X data-icon="inline-start" />
 												취소
 											</Button>
-											<Button disabled={isPending} type="submit">
+											<Button disabled={isChecklistActionPending} type="submit">
 												{isPending &&
 												updateChecklistMutation.variables?.checklistId ===
 													checklist.id ? (
@@ -1134,7 +1113,7 @@ function RealProjectChecklistsPanel({
 										</div>
 										<div className="flex flex-wrap items-start gap-2 xl:justify-end">
 											<Button
-												disabled={isPending}
+												disabled={isChecklistActionPending}
 												onClick={() => handleStartEdit(checklist)}
 												size="sm"
 												type="button"
@@ -1144,7 +1123,7 @@ function RealProjectChecklistsPanel({
 												수정
 											</Button>
 											<Button
-												disabled={isPending}
+												disabled={isChecklistActionPending}
 												onClick={() =>
 													handleStatusChange(
 														checklist,
@@ -1168,7 +1147,7 @@ function RealProjectChecklistsPanel({
 												{checklist.status === "DONE" ? "다시 열기" : "완료"}
 											</Button>
 											<Button
-												disabled={isPending}
+												disabled={isChecklistActionPending}
 												onClick={() => handleGenerateAdvice(checklist)}
 												size="sm"
 												type="button"
@@ -1188,7 +1167,7 @@ function RealProjectChecklistsPanel({
 											</Button>
 											<Button
 												aria-label="체크리스트 삭제"
-												disabled={isPending}
+												disabled={isChecklistActionPending}
 												onClick={() => handleDeleteChecklist(checklist)}
 												size="icon"
 												title="체크리스트 삭제"
