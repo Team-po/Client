@@ -232,6 +232,9 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		Boolean(projectGroup),
 	);
 	const realChecklists = realChecklistQuery.data ?? [];
+	const checklistLoadErrorMessage = realChecklistQuery.error
+		? getApiErrorMessage(realChecklistQuery.error)
+		: null;
 	const currentMember = useMemo(
 		() =>
 			projectGroup?.members.find(
@@ -257,6 +260,8 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		if (!projectGroup || !installationIdParam || !setupAction || !state) {
 			return;
 		}
+
+		setSelectedTab("github");
 
 		const completionKey = `${projectGroup.projectGroupId}:${installationIdParam}:${setupAction}:${state}`;
 
@@ -372,6 +377,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 			rail={
 				projectGroup ? (
 					<RealTeamRail
+						checklistErrorMessage={checklistLoadErrorMessage}
 						checklists={realChecklists}
 						onSelectTab={setSelectedTab}
 						projectGroup={projectGroup}
@@ -422,18 +428,31 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 				{projectGroup ? (
 					<>
 						<RealTeamMetricsGrid
+							checklistErrorMessage={checklistLoadErrorMessage}
 							checklists={realChecklists}
 							projectGroup={projectGroup}
 						/>
 						<RealTeamFocusPanel
+							checklistErrorMessage={checklistLoadErrorMessage}
 							checklists={realChecklists}
 							isLoading={realChecklistQuery.isLoading}
 							onSelectTab={setSelectedTab}
 							projectGroup={projectGroup}
 						/>
+						{checklistLoadErrorMessage ? (
+							<RealInlineStatus
+								message={`체크리스트를 불러오지 못했습니다. ${checklistLoadErrorMessage}`}
+							/>
+						) : null}
 						<TeamTabList
 							getBadge={(tabId) =>
-								getRealTeamTabBadge(tabId, realChecklists, projectGroup)
+								getRealTeamTabBadge(
+									tabId,
+									realChecklists,
+									projectGroup,
+									realChecklistQuery.isLoading,
+									checklistLoadErrorMessage,
+								)
 							}
 							isDisabled={isRealTeamTabDisabled}
 							onSelectTab={setSelectedTab}
@@ -442,6 +461,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 						<section className="min-w-0">
 							{selectedTab === "overview" ? (
 								<RealOverviewPanel
+									checklistErrorMessage={checklistLoadErrorMessage}
 									checklists={realChecklists}
 									projectGroup={projectGroup}
 								/>
@@ -541,10 +561,12 @@ function RealTeamNotice({
 }
 
 function RealTeamRail({
+	checklistErrorMessage,
 	checklists,
 	onSelectTab,
 	projectGroup,
 }: {
+	checklistErrorMessage: string | null;
 	checklists: ProjectChecklist[];
 	onSelectTab: (tabId: TeamTab) => void;
 	projectGroup: MyProjectGroup;
@@ -569,9 +591,11 @@ function RealTeamRail({
 							오늘의 운영
 						</p>
 						<p className="mt-2 text-sm leading-6 text-brand-ink">
-							{summary.openCount > 0
-								? `${summary.openCount}개 체크리스트가 남아 있습니다.`
-								: "열린 체크리스트가 없습니다."}
+							{checklistErrorMessage
+								? "체크리스트를 불러오지 못했습니다."
+								: summary.openCount > 0
+									? `${summary.openCount}개 체크리스트가 남아 있습니다.`
+									: "열린 체크리스트가 없습니다."}
 						</p>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
@@ -583,8 +607,13 @@ function RealTeamRail({
 						</div>
 						<div>
 							<p className="text-xs text-muted-foreground">완료율</p>
-							<p className="mt-1 font-mono text-2xl font-semibold text-primary">
-								{summary.progress}%
+							<p
+								className={cn(
+									"mt-1 font-mono text-2xl font-semibold",
+									checklistErrorMessage ? "text-red-700" : "text-primary",
+								)}
+							>
+								{checklistErrorMessage ? "오류" : `${summary.progress}%`}
 							</p>
 						</div>
 					</div>
@@ -616,9 +645,11 @@ function RealTeamRail({
 }
 
 function RealTeamMetricsGrid({
+	checklistErrorMessage,
 	checklists,
 	projectGroup,
 }: {
+	checklistErrorMessage: string | null;
 	checklists: ProjectChecklist[];
 	projectGroup: MyProjectGroup;
 }) {
@@ -640,9 +671,13 @@ function RealTeamMetricsGrid({
 			/>
 			<MetricCard
 				label="체크리스트"
-				tone="emerald"
-				trend={`${summary.doneCount} / ${summary.totalCount} 완료`}
-				value={`${summary.progress}%`}
+				tone={checklistErrorMessage ? "rose" : "emerald"}
+				trend={
+					checklistErrorMessage
+						? "불러오기 실패"
+						: `${summary.doneCount} / ${summary.totalCount} 완료`
+				}
+				value={checklistErrorMessage ? "오류" : `${summary.progress}%`}
 			/>
 			<MetricCard
 				label="관리자"
@@ -661,11 +696,13 @@ function RealTeamMetricsGrid({
 }
 
 function RealTeamFocusPanel({
+	checklistErrorMessage,
 	checklists,
 	isLoading,
 	onSelectTab,
 	projectGroup,
 }: {
+	checklistErrorMessage: string | null;
 	checklists: ProjectChecklist[];
 	isLoading: boolean;
 	onSelectTab: (tabId: TeamTab) => void;
@@ -683,7 +720,10 @@ function RealTeamFocusPanel({
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="brand">오늘의 핵심</Badge>
 						<Badge variant="neutral">서버 API</Badge>
-						{primaryTask ? (
+						{checklistErrorMessage ? (
+							<Badge variant="neutral">오류</Badge>
+						) : null}
+						{!checklistErrorMessage && primaryTask ? (
 							<Badge variant="neutral">
 								{projectChecklistStatusLabels[primaryTask.status]}
 							</Badge>
@@ -692,14 +732,18 @@ function RealTeamFocusPanel({
 					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
 						{isLoading
 							? "체크리스트를 불러오는 중입니다"
-							: primaryTask?.title || projectGroup.projectTitle}
+							: checklistErrorMessage
+								? "체크리스트를 불러오지 못했습니다"
+								: primaryTask?.title || projectGroup.projectTitle}
 					</h2>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
-						{primaryTask
-							? `${primaryTask.assigneeNickname ?? "미지정"} 담당 · 마감 ${
-									primaryTask.dueDate ?? "미정"
-								}`
-							: "체크리스트를 만들면 팀 홈 상단에서 바로 이어서 볼 수 있습니다."}
+						{checklistErrorMessage
+							? checklistErrorMessage
+							: primaryTask
+								? `${primaryTask.assigneeNickname ?? "미지정"} 담당 · 마감 ${
+										primaryTask.dueDate ?? "미정"
+									}`
+								: "체크리스트를 만들면 팀 홈 상단에서 바로 이어서 볼 수 있습니다."}
 					</p>
 				</div>
 
@@ -709,7 +753,7 @@ function RealTeamFocusPanel({
 							남은 작업
 						</p>
 						<p className="mt-1 font-mono text-2xl font-semibold text-brand-ink">
-							{summary.openCount}
+							{checklistErrorMessage ? "-" : summary.openCount}
 						</p>
 					</div>
 					<div className="rounded-lg border border-border/70 bg-white p-3">
@@ -717,7 +761,7 @@ function RealTeamFocusPanel({
 							완료 작업
 						</p>
 						<p className="mt-1 font-mono text-2xl font-semibold text-emerald-700">
-							{summary.doneCount}
+							{checklistErrorMessage ? "-" : summary.doneCount}
 						</p>
 					</div>
 					<div className="rounded-lg border border-border/70 bg-white p-3">
@@ -756,9 +800,11 @@ function RealTeamFocusPanel({
 }
 
 function RealOverviewPanel({
+	checklistErrorMessage,
 	checklists,
 	projectGroup,
 }: {
+	checklistErrorMessage: string | null;
 	checklists: ProjectChecklist[];
 	projectGroup: MyProjectGroup;
 }) {
@@ -802,46 +848,55 @@ function RealOverviewPanel({
 					title="오늘의 진행"
 				/>
 				<div className="grid gap-4 p-5">
-					<div className="rounded-lg border border-primary/15 bg-primary/5 p-4">
-						<p className="text-sm font-semibold text-brand-ink">
-							체크리스트 {summary.doneCount}/{summary.totalCount} 완료
-						</p>
-						<progress
-							aria-label="체크리스트 완료율"
-							className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:bg-white [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
-							max={summary.totalCount || 1}
-							value={summary.doneCount}
+					{checklistErrorMessage ? (
+						<RealInlineStatus
+							message={`체크리스트를 불러오지 못했습니다. ${checklistErrorMessage}`}
 						/>
-					</div>
-					{checklists.slice(0, 3).map((checklist) => (
-						<div
-							className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-start"
-							key={checklist.id}
-						>
-							<span
-								className={cn(
-									"w-fit rounded-md border px-2 py-0.5 text-xs font-semibold",
-									projectChecklistStatusTone[checklist.status],
-								)}
-							>
-								{projectChecklistStatusLabels[checklist.status]}
-							</span>
-							<div className="min-w-0">
-								<p className="font-semibold text-brand-ink">
-									{checklist.title}
-								</p>
-								<p className="mt-1 text-sm text-muted-foreground">
-									담당 {checklist.assigneeNickname ?? "미지정"}
-								</p>
-							</div>
-						</div>
-					))}
-					{checklists.length === 0 ? (
-						<p className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-							아직 등록된 체크리스트가 없습니다. 체크리스트 탭에서 첫 작업을
-							만들어 주세요.
-						</p>
 					) : null}
+					{checklistErrorMessage ? null : (
+						<>
+							<div className="rounded-lg border border-primary/15 bg-primary/5 p-4">
+								<p className="text-sm font-semibold text-brand-ink">
+									체크리스트 {summary.doneCount}/{summary.totalCount} 완료
+								</p>
+								<progress
+									aria-label="체크리스트 완료율"
+									className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:bg-white [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
+									max={summary.totalCount || 1}
+									value={summary.doneCount}
+								/>
+							</div>
+							{checklists.slice(0, 3).map((checklist) => (
+								<div
+									className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-start"
+									key={checklist.id}
+								>
+									<span
+										className={cn(
+											"w-fit rounded-md border px-2 py-0.5 text-xs font-semibold",
+											projectChecklistStatusTone[checklist.status],
+										)}
+									>
+										{projectChecklistStatusLabels[checklist.status]}
+									</span>
+									<div className="min-w-0">
+										<p className="font-semibold text-brand-ink">
+											{checklist.title}
+										</p>
+										<p className="mt-1 text-sm text-muted-foreground">
+											담당 {checklist.assigneeNickname ?? "미지정"}
+										</p>
+									</div>
+								</div>
+							))}
+							{checklists.length === 0 ? (
+								<p className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+									아직 등록된 체크리스트가 없습니다. 체크리스트 탭에서 첫 작업을
+									만들어 주세요.
+								</p>
+							) : null}
+						</>
+					)}
 				</div>
 			</AppPanel>
 		</div>
@@ -1120,8 +1175,16 @@ function getRealTeamTabBadge(
 	tabId: TeamTab,
 	checklists: ProjectChecklist[],
 	projectGroup: MyProjectGroup,
+	isChecklistLoading: boolean,
+	checklistErrorMessage: string | null,
 ) {
 	if (tabId === "checklist") {
+		if (checklistErrorMessage) {
+			return "오류";
+		}
+		if (isChecklistLoading) {
+			return "조회";
+		}
 		const summary = getProjectChecklistSummary(checklists);
 		return summary.openCount > 0 ? String(summary.openCount) : "완료";
 	}
