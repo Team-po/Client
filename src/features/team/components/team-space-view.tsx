@@ -231,6 +231,10 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		projectGroup?.projectGroupId,
 		Boolean(projectGroup),
 	);
+	const githubStatusQuery = useGithubInstallationStatusQuery(
+		projectGroup?.projectGroupId,
+		Boolean(projectGroup),
+	);
 	const realChecklists = realChecklistQuery.data ?? [];
 	const checklistLoadErrorMessage = realChecklistQuery.error
 		? getApiErrorMessage(realChecklistQuery.error)
@@ -452,6 +456,8 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 									projectGroup,
 									realChecklistQuery.isLoading,
 									checklistLoadErrorMessage,
+									githubStatusQuery.data?.connected === true,
+									githubStatusQuery.isLoading || githubStatusQuery.isError,
 								)
 							}
 							isDisabled={isRealTeamTabDisabled}
@@ -1177,6 +1183,8 @@ function getRealTeamTabBadge(
 	projectGroup: MyProjectGroup,
 	isChecklistLoading: boolean,
 	checklistErrorMessage: string | null,
+	isGithubConnected: boolean,
+	isGithubStatusPending: boolean,
 ) {
 	if (tabId === "checklist") {
 		if (checklistErrorMessage) {
@@ -1194,7 +1202,10 @@ function getRealTeamTabBadge(
 	}
 
 	if (tabId === "github") {
-		return "설정";
+		if (isGithubConnected) {
+			return null;
+		}
+		return isGithubStatusPending ? "확인" : "설정";
 	}
 
 	if (tabId === "manage") {
