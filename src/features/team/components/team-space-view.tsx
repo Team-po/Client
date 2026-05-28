@@ -70,33 +70,24 @@ import type {
 } from "@/lib/types/project-group";
 import type {
 	GithubRepositorySummary,
-	ProjectLifecycleStatus,
 	TeamChecklistItem,
 	TeamMessage,
 } from "@/lib/types/team";
 import { cn } from "@/lib/utils";
 
-type TeamTab = "overview" | "guide" | "rules" | "checklist" | "github" | "chat";
+type TeamTab =
+	| "overview"
+	| "guide"
+	| "rules"
+	| "checklist"
+	| "github"
+	| "chat"
+	| "manage";
 type ActionFeedback = {
 	message: string;
 	tone: "error" | "success";
 };
 type AdminPermissionFeedback = ActionFeedback;
-
-const lifecycleSteps: Array<{
-	label: string;
-	status: ProjectLifecycleStatus;
-}> = [
-	{ label: "팀 결성", status: "forming" },
-	{ label: "진행 중", status: "active" },
-	{ label: "출시 준비", status: "shipping" },
-	{ label: "완료", status: "completed" },
-];
-
-const lifecycleOptions: Array<{
-	label: string;
-	status: ProjectLifecycleStatus;
-}> = [...lifecycleSteps, { label: "일시 중지", status: "paused" }];
 
 const tabs: Array<{
 	icon: ComponentType<{ className?: string }>;
@@ -109,6 +100,7 @@ const tabs: Array<{
 	{ icon: CheckCircle2, id: "checklist", label: "체크리스트" },
 	{ icon: GitPullRequest, id: "github", label: "GitHub" },
 	{ icon: MessageSquareText, id: "chat", label: "채팅" },
+	{ icon: Settings2, id: "manage", label: "관리" },
 ];
 
 const checklistTone: Record<TeamChecklistItem["status"], string> = {
@@ -133,6 +125,9 @@ const projectChecklistStatusTone: Record<ProjectChecklistStatus, string> = {
 	TODO: "border-border bg-secondary/45 text-muted-foreground",
 };
 
+const checklistControlClass =
+	"h-11 w-full min-w-0 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring";
+
 const contributionLevelClass = [
 	"bg-secondary",
 	"bg-emerald-100",
@@ -151,8 +146,72 @@ export function TeamSpaceView() {
 	return <MockTeamSpaceView isSignedIn={isSignedIn} />;
 }
 
+function TeamTabList({
+	getBadge,
+	isDisabled,
+	onSelectTab,
+	selectedTab,
+}: {
+	getBadge: (tabId: TeamTab) => string | null;
+	isDisabled?: (tabId: TeamTab) => boolean;
+	onSelectTab: (tabId: TeamTab) => void;
+	selectedTab: TeamTab;
+}) {
+	return (
+		<AppPanel>
+			<div className="flex flex-wrap gap-1.5 p-2">
+				{tabs.map((tab) => {
+					const Icon = tab.icon;
+					const badge = getBadge(tab.id);
+					const disabled = isDisabled?.(tab.id) ?? false;
+					const isSelected = selectedTab === tab.id;
+
+					return (
+						<button
+							aria-pressed={isSelected}
+							className={cn(
+								"flex h-10 shrink-0 items-center gap-2 rounded-lg px-2.5 text-sm font-semibold transition-all duration-200 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+								disabled
+									? "cursor-not-allowed text-muted-foreground/55 opacity-60"
+									: isSelected
+										? "bg-primary text-primary-foreground shadow-soft"
+										: "text-muted-foreground hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground hover:shadow-soft",
+							)}
+							disabled={disabled}
+							key={tab.id}
+							onClick={() => onSelectTab(tab.id)}
+							title={
+								disabled ? `${tab.label} 기능은 준비 중입니다.` : undefined
+							}
+							type="button"
+						>
+							<Icon className="size-4" />
+							{tab.label}
+							{badge ? (
+								<span
+									className={cn(
+										"rounded-md px-1.5 py-0.5 font-mono text-[10px] leading-none",
+										disabled
+											? "bg-secondary/80 text-muted-foreground"
+											: isSelected
+												? "bg-white/20 text-primary-foreground"
+												: "bg-secondary text-muted-foreground",
+									)}
+								>
+									{badge}
+								</span>
+							) : null}
+						</button>
+					);
+				})}
+			</div>
+		</AppPanel>
+	);
+}
+
 function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 	const [searchParams, setSearchParams] = useSearchParams();
+	const [selectedTab, setSelectedTab] = useState<TeamTab>("overview");
 	const projectGroupQuery = useMyProjectGroupQuery(isSignedIn);
 	const grantAdminPermissionMutation =
 		useGrantProjectGroupAdminPermissionMutation();
@@ -168,6 +227,11 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		useState<ActionFeedback | null>(null);
 	const completedGithubInstallationKeyRef = useRef<string | null>(null);
 	const projectGroup = isSignedIn ? projectGroupQuery.data : null;
+	const realChecklistQuery = useProjectChecklistsQuery(
+		projectGroup?.projectGroupId,
+		Boolean(projectGroup),
+	);
+	const realChecklists = realChecklistQuery.data ?? [];
 	const currentMember = useMemo(
 		() =>
 			projectGroup?.members.find(
@@ -303,8 +367,17 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					</Button>
 				</>
 			}
-			description="서버에 연결된 내 팀 스페이스 정보를 확인합니다."
+			description="팀 홈, 체크리스트, GitHub 연동, 관리 기능을 한 흐름에서 확인합니다."
 			eyebrow="Team workspace"
+			rail={
+				projectGroup ? (
+					<RealTeamRail
+						checklists={realChecklists}
+						onSelectTab={setSelectedTab}
+						projectGroup={projectGroup}
+					/>
+				) : undefined
+			}
 			title={projectGroup?.projectName ?? "팀 스페이스"}
 		>
 			<div className="grid gap-5">
@@ -348,81 +421,61 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 
 				{projectGroup ? (
 					<>
-						<AppPanel className="border-primary/20">
-							<AppPanelHeader
-								action={<Badge variant="neutral">ACTIVE</Badge>}
-								description={
-									projectGroup.projectDescription ??
-									"프로젝트 설명이 아직 없습니다."
-								}
-								eyebrow="Project"
-								title={projectGroup.projectTitle}
-							/>
-							<div className="grid gap-4 p-5">
-								<div className="rounded-lg border border-border bg-white p-4">
-									<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-										MVP
-									</p>
-									<p className="mt-2 text-sm leading-6 text-brand-ink">
-										{projectGroup.projectMvp ?? "프로젝트 MVP가 아직 없습니다."}
-									</p>
-								</div>
-								<RealAdminPermissionStatus
-									canManageAdminPermissions={canManageAdminPermissions}
-									feedback={adminPermissionFeedback}
-								/>
-								<div className="grid gap-3 md:grid-cols-2">
-									{projectGroup.members.map((member) => (
-										<RealProjectGroupMemberCard
-											canManageAdminPermissions={canManageAdminPermissions}
-											currentUserId={projectGroup.currentUserId}
-											isAdminPermissionPending={isAdminPermissionPending}
-											key={member.userId}
-											member={member}
-											onAdminPermissionChange={handleAdminPermissionChange}
-											pendingAdminPermissionTargetId={
-												pendingAdminPermissionTargetId
-											}
-										/>
-									))}
-								</div>
-							</div>
-						</AppPanel>
-
-						<div className="grid gap-4 md:grid-cols-3">
-							<MetricCard
-								label="팀 멤버"
-								tone="primary"
-								trend="ACTIVE 팀"
-								value={String(projectGroup.members.length)}
-							/>
-							<MetricCard
-								label="관리자"
-								tone="emerald"
-								trend="권한 관리 가능"
-								value={String(
-									projectGroup.members.filter((member) => member.admin).length,
-								)}
-							/>
-							<MetricCard
-								label="내 권한"
-								tone="amber"
-								trend="팀 스페이스"
-								value={
-									projectGroup.members.find(
-										(member) => member.userId === projectGroup.currentUserId,
-									)?.groupRole ?? "MEMBER"
-								}
-							/>
-						</div>
-
-						<RealProjectChecklistsPanel projectGroup={projectGroup} />
-						<RealGithubInstallationPanel
-							canManageGithubInstallation={canManageAdminPermissions}
-							completionFeedback={githubCompletionFeedback}
-							isCompletingInstallation={isCompletingGithubInstallation}
+						<RealTeamMetricsGrid
+							checklists={realChecklists}
 							projectGroup={projectGroup}
 						/>
+						<RealTeamFocusPanel
+							checklists={realChecklists}
+							isLoading={realChecklistQuery.isLoading}
+							onSelectTab={setSelectedTab}
+							projectGroup={projectGroup}
+						/>
+						<TeamTabList
+							getBadge={(tabId) =>
+								getRealTeamTabBadge(tabId, realChecklists, projectGroup)
+							}
+							isDisabled={isRealTeamTabDisabled}
+							onSelectTab={setSelectedTab}
+							selectedTab={selectedTab}
+						/>
+						<section className="min-w-0">
+							{selectedTab === "overview" ? (
+								<RealOverviewPanel
+									checklists={realChecklists}
+									projectGroup={projectGroup}
+								/>
+							) : null}
+							{selectedTab === "guide" ? (
+								<RealGuidePanel projectGroup={projectGroup} />
+							) : null}
+							{selectedTab === "rules" ? <RealRulesPanelDisabled /> : null}
+							{selectedTab === "checklist" ? (
+								<RealProjectChecklistsPanel projectGroup={projectGroup} />
+							) : null}
+							{selectedTab === "github" ? (
+								<RealGithubInstallationPanel
+									canManageGithubInstallation={canManageAdminPermissions}
+									completionFeedback={githubCompletionFeedback}
+									isCompletingInstallation={isCompletingGithubInstallation}
+									projectGroup={projectGroup}
+								/>
+							) : null}
+							{selectedTab === "chat" ? <RealChatPanelDisabled /> : null}
+							{selectedTab === "manage" ? (
+								<RealManagePanel
+									canManageAdminPermissions={canManageAdminPermissions}
+									currentUserId={projectGroup.currentUserId}
+									feedback={adminPermissionFeedback}
+									isAdminPermissionPending={isAdminPermissionPending}
+									onAdminPermissionChange={handleAdminPermissionChange}
+									pendingAdminPermissionTargetId={
+										pendingAdminPermissionTargetId
+									}
+									projectGroup={projectGroup}
+								/>
+							) : null}
+						</section>
 					</>
 				) : null}
 
@@ -485,6 +538,622 @@ function RealTeamNotice({
 			</div>
 		</AppPanel>
 	);
+}
+
+function RealTeamRail({
+	checklists,
+	onSelectTab,
+	projectGroup,
+}: {
+	checklists: ProjectChecklist[];
+	onSelectTab: (tabId: TeamTab) => void;
+	projectGroup: MyProjectGroup;
+}) {
+	const summary = getProjectChecklistSummary(checklists);
+	const currentMember = projectGroup.members.find(
+		(member) => member.userId === projectGroup.currentUserId,
+	);
+
+	return (
+		<div className="grid gap-5">
+			<AppPanel>
+				<AppPanelHeader
+					action={<Badge variant="brand">TEAM</Badge>}
+					description={projectGroup.projectTitle}
+					eyebrow="Workspace"
+					title={projectGroup.projectName}
+				/>
+				<div className="grid gap-4 p-5">
+					<div>
+						<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+							오늘의 운영
+						</p>
+						<p className="mt-2 text-sm leading-6 text-brand-ink">
+							{summary.openCount > 0
+								? `${summary.openCount}개 체크리스트가 남아 있습니다.`
+								: "열린 체크리스트가 없습니다."}
+						</p>
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<p className="text-xs text-muted-foreground">팀원</p>
+							<p className="mt-1 font-mono text-2xl font-semibold text-brand-ink">
+								{projectGroup.members.length}
+							</p>
+						</div>
+						<div>
+							<p className="text-xs text-muted-foreground">완료율</p>
+							<p className="mt-1 font-mono text-2xl font-semibold text-primary">
+								{summary.progress}%
+							</p>
+						</div>
+					</div>
+					<div className="rounded-lg border border-border/70 bg-secondary/35 p-3 text-xs leading-5 text-muted-foreground">
+						내 권한은{" "}
+						<span className="font-semibold text-brand-ink">
+							{currentMember?.groupRole ?? "MEMBER"}
+						</span>
+						입니다. 팀 설정과 멤버 권한은 관리 탭에서 확인합니다.
+					</div>
+					<div className="grid gap-2">
+						<Button onClick={() => onSelectTab("checklist")} type="button">
+							<CheckCircle2 data-icon="inline-start" />
+							체크리스트
+						</Button>
+						<Button
+							onClick={() => onSelectTab("manage")}
+							type="button"
+							variant="outline"
+						>
+							<Settings2 data-icon="inline-start" />
+							관리
+						</Button>
+					</div>
+				</div>
+			</AppPanel>
+		</div>
+	);
+}
+
+function RealTeamMetricsGrid({
+	checklists,
+	projectGroup,
+}: {
+	checklists: ProjectChecklist[];
+	projectGroup: MyProjectGroup;
+}) {
+	const summary = getProjectChecklistSummary(checklists);
+	const adminCount = projectGroup.members.filter(
+		(member) => member.admin,
+	).length;
+	const currentMember = projectGroup.members.find(
+		(member) => member.userId === projectGroup.currentUserId,
+	);
+
+	return (
+		<div className="grid gap-4 md:grid-cols-4">
+			<MetricCard
+				label="팀 멤버"
+				tone="primary"
+				trend="현재 팀"
+				value={String(projectGroup.members.length)}
+			/>
+			<MetricCard
+				label="체크리스트"
+				tone="emerald"
+				trend={`${summary.doneCount} / ${summary.totalCount} 완료`}
+				value={`${summary.progress}%`}
+			/>
+			<MetricCard
+				label="관리자"
+				tone="amber"
+				trend="권한 관리"
+				value={String(adminCount)}
+			/>
+			<MetricCard
+				label="내 권한"
+				tone="primary"
+				trend="팀 스페이스"
+				value={currentMember?.groupRole ?? "MEMBER"}
+			/>
+		</div>
+	);
+}
+
+function RealTeamFocusPanel({
+	checklists,
+	isLoading,
+	onSelectTab,
+	projectGroup,
+}: {
+	checklists: ProjectChecklist[];
+	isLoading: boolean;
+	onSelectTab: (tabId: TeamTab) => void;
+	projectGroup: MyProjectGroup;
+}) {
+	const summary = getProjectChecklistSummary(checklists);
+	const primaryTask =
+		checklists.find((checklist) => checklist.status === "TODO") ??
+		checklists[0];
+
+	return (
+		<AppPanel className="border-primary/20">
+			<div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge variant="brand">오늘의 핵심</Badge>
+						<Badge variant="neutral">서버 API</Badge>
+						{primaryTask ? (
+							<Badge variant="neutral">
+								{projectChecklistStatusLabels[primaryTask.status]}
+							</Badge>
+						) : null}
+					</div>
+					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
+						{isLoading
+							? "체크리스트를 불러오는 중입니다"
+							: primaryTask?.title || projectGroup.projectTitle}
+					</h2>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						{primaryTask
+							? `${primaryTask.assigneeNickname ?? "미지정"} 담당 · 마감 ${
+									primaryTask.dueDate ?? "미정"
+								}`
+							: "체크리스트를 만들면 팀 홈 상단에서 바로 이어서 볼 수 있습니다."}
+					</p>
+				</div>
+
+				<div className="grid gap-3 sm:grid-cols-3 xl:w-[33rem]">
+					<div className="rounded-lg border border-border/70 bg-white p-3">
+						<p className="text-xs font-semibold text-muted-foreground">
+							남은 작업
+						</p>
+						<p className="mt-1 font-mono text-2xl font-semibold text-brand-ink">
+							{summary.openCount}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border/70 bg-white p-3">
+						<p className="text-xs font-semibold text-muted-foreground">
+							완료 작업
+						</p>
+						<p className="mt-1 font-mono text-2xl font-semibold text-emerald-700">
+							{summary.doneCount}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border/70 bg-white p-3">
+						<p className="text-xs font-semibold text-muted-foreground">팀원</p>
+						<p className="mt-1 font-mono text-2xl font-semibold text-primary">
+							{projectGroup.members.length}
+						</p>
+					</div>
+				</div>
+
+				<div className="flex flex-col gap-2 sm:flex-row xl:col-span-2">
+					<Button onClick={() => onSelectTab("checklist")} type="button">
+						<CheckCircle2 data-icon="inline-start" />
+						체크리스트 열기
+					</Button>
+					<Button
+						onClick={() => onSelectTab("github")}
+						type="button"
+						variant="outline"
+					>
+						<GitPullRequest data-icon="inline-start" />
+						GitHub 연동
+					</Button>
+					<Button
+						onClick={() => onSelectTab("manage")}
+						type="button"
+						variant="outline"
+					>
+						<Settings2 data-icon="inline-start" />
+						관리 열기
+					</Button>
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealOverviewPanel({
+	checklists,
+	projectGroup,
+}: {
+	checklists: ProjectChecklist[];
+	projectGroup: MyProjectGroup;
+}) {
+	const summary = getProjectChecklistSummary(checklists);
+
+	return (
+		<div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
+			<AppPanel>
+				<AppPanelHeader
+					description={
+						projectGroup.projectDescription ?? "팀 설명이 아직 없습니다."
+					}
+					eyebrow="Team"
+					title={projectGroup.projectTitle}
+				/>
+				<div className="grid gap-5 p-5">
+					<div className="rounded-lg border border-border/70 bg-brand-warm p-4">
+						<p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+							MVP
+						</p>
+						<p className="mt-2 text-sm leading-6 text-brand-ink">
+							{projectGroup.projectMvp ?? "MVP가 아직 등록되지 않았습니다."}
+						</p>
+					</div>
+					<div className="grid gap-3">
+						{projectGroup.members.map((member) => (
+							<RealMemberSummaryCard
+								currentUserId={projectGroup.currentUserId}
+								key={member.userId}
+								member={member}
+							/>
+						))}
+					</div>
+				</div>
+			</AppPanel>
+
+			<AppPanel>
+				<AppPanelHeader
+					description="오늘 확인하면 좋은 팀 운영 상태입니다."
+					eyebrow="Today"
+					title="오늘의 진행"
+				/>
+				<div className="grid gap-4 p-5">
+					<div className="rounded-lg border border-primary/15 bg-primary/5 p-4">
+						<p className="text-sm font-semibold text-brand-ink">
+							체크리스트 {summary.doneCount}/{summary.totalCount} 완료
+						</p>
+						<progress
+							aria-label="체크리스트 완료율"
+							className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:bg-white [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
+							max={summary.totalCount || 1}
+							value={summary.doneCount}
+						/>
+					</div>
+					{checklists.slice(0, 3).map((checklist) => (
+						<div
+							className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-start"
+							key={checklist.id}
+						>
+							<span
+								className={cn(
+									"w-fit rounded-md border px-2 py-0.5 text-xs font-semibold",
+									projectChecklistStatusTone[checklist.status],
+								)}
+							>
+								{projectChecklistStatusLabels[checklist.status]}
+							</span>
+							<div className="min-w-0">
+								<p className="font-semibold text-brand-ink">
+									{checklist.title}
+								</p>
+								<p className="mt-1 text-sm text-muted-foreground">
+									담당 {checklist.assigneeNickname ?? "미지정"}
+								</p>
+							</div>
+						</div>
+					))}
+					{checklists.length === 0 ? (
+						<p className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+							아직 등록된 체크리스트가 없습니다. 체크리스트 탭에서 첫 작업을
+							만들어 주세요.
+						</p>
+					) : null}
+				</div>
+			</AppPanel>
+		</div>
+	);
+}
+
+function RealMemberSummaryCard({
+	currentUserId,
+	member,
+}: {
+	currentUserId: number;
+	member: ProjectGroupMember;
+}) {
+	const profileImageSrc = getProjectGroupMemberImageSrc(member.profileImage);
+
+	return (
+		<article className="grid gap-4 rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
+			<div className="flex min-w-0 items-center gap-3">
+				<div className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-primary/10 text-sm font-bold text-primary">
+					{profileImageSrc ? (
+						<img
+							alt=""
+							className="size-full object-cover"
+							src={profileImageSrc}
+						/>
+					) : (
+						member.nickname.slice(0, 1).toUpperCase()
+					)}
+				</div>
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<p className="min-w-0 break-all font-semibold text-brand-ink">
+							{member.nickname}
+						</p>
+						<Badge variant="neutral">
+							{formatMemberRole(member.memberRole)}
+						</Badge>
+						{member.userId === currentUserId ? (
+							<Badge variant="brand">ME</Badge>
+						) : null}
+					</div>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Lv.{member.level} · 온도 {member.temperature}
+					</p>
+				</div>
+			</div>
+			<div className="min-w-0">
+				<p className="text-sm leading-6 text-muted-foreground">
+					{member.groupRole === "HOST"
+						? "팀 운영과 관리 권한을 담당합니다."
+						: "팀 작업과 체크리스트를 함께 수행합니다."}
+				</p>
+				<div className="mt-3 flex flex-wrap gap-2">
+					<Badge variant={member.groupRole === "HOST" ? "brand" : "neutral"}>
+						{member.groupRole}
+					</Badge>
+					<Badge variant={member.admin ? "warm" : "neutral"}>
+						{member.admin ? "ADMIN" : "MEMBER"}
+					</Badge>
+				</div>
+			</div>
+		</article>
+	);
+}
+
+function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
+	const guideItems = [
+		{
+			body:
+				projectGroup.projectDescription ??
+				"팀 설명을 기준으로 이번 주 논의할 범위를 좁힙니다.",
+			title: "문제 정의 확인",
+		},
+		{
+			body:
+				projectGroup.projectMvp ??
+				"MVP가 등록되면 우선순위 기준으로 사용합니다.",
+			title: "MVP 우선순위",
+		},
+		{
+			body: "체크리스트와 GitHub 연동 상태를 보고 오늘 바로 실행할 작업을 정합니다.",
+			title: "실행 흐름 정리",
+		},
+	];
+
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="팀 정보와 체크리스트를 바탕으로 먼저 맞출 대화를 정리합니다."
+				eyebrow="Guide"
+				title="팀 운영 가이드"
+			/>
+			<div className="grid gap-4 p-5 md:grid-cols-3">
+				{guideItems.map((item) => (
+					<div
+						className="rounded-lg border border-border/70 bg-brand-warm p-5"
+						key={item.title}
+					>
+						<h3 className="text-lg font-semibold">{item.title}</h3>
+						<p className="mt-2 text-sm leading-7 text-muted-foreground">
+							{item.body}
+						</p>
+					</div>
+				))}
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealRulesPanelDisabled() {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={<Badge variant="neutral">준비 중</Badge>}
+				description="팀 규칙 저장 API가 연결되면 이 탭에서 직접 수정할 수 있습니다."
+				eyebrow="Rulebook"
+				title="팀 규칙"
+			/>
+			<div className="grid gap-4 p-5">
+				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-5">
+					<p className="text-sm font-semibold text-brand-ink">
+						아직 서버 기능이 준비되지 않았습니다.
+					</p>
+					<p className="mt-2 text-sm leading-6 text-muted-foreground">
+						규칙 조회/수정 API가 생기면 mock 프리뷰와 같은 규칙 편집 경험으로
+						연결합니다.
+					</p>
+				</div>
+				<textarea
+					className="min-h-56 rounded-lg border border-input bg-secondary/40 px-4 py-3 font-mono text-sm leading-7 text-muted-foreground"
+					defaultValue={"# 팀 규칙\n- 서버 API 연결 후 편집할 수 있습니다."}
+					disabled
+				/>
+				<div className="flex justify-end">
+					<Button disabled type="button">
+						<Save data-icon="inline-start" />
+						저장 준비 중
+					</Button>
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealChatPanelDisabled() {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={<Badge variant="neutral">준비 중</Badge>}
+				description="팀 채팅 API가 연결되기 전까지는 입력을 비활성화합니다."
+				eyebrow="Messages"
+				title="팀 채팅"
+			/>
+			<div className="flex h-[34rem] flex-col gap-5 p-5">
+				<div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-brand-warm p-4">
+					<div className="flex justify-start">
+						<div className="max-w-[min(34rem,88%)] rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
+							<p className="font-semibold text-brand-ink">Team-po</p>
+							<p className="mt-2 text-sm leading-6 text-muted-foreground">
+								채팅 기능은 API가 연결되면 활성화됩니다.
+							</p>
+						</div>
+					</div>
+				</div>
+				<form className="grid shrink-0 gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-[1fr_auto]">
+					<label
+						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						htmlFor="real-team-message"
+					>
+						메시지
+						<input
+							className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
+							disabled
+							id="real-team-message"
+							placeholder="채팅 API 연결 후 입력할 수 있습니다"
+						/>
+					</label>
+					<div className="flex items-end">
+						<Button disabled type="button">
+							<SendHorizontal data-icon="inline-start" />
+							전송
+						</Button>
+					</div>
+				</form>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealManagePanel({
+	canManageAdminPermissions,
+	currentUserId,
+	feedback,
+	isAdminPermissionPending,
+	onAdminPermissionChange,
+	pendingAdminPermissionTargetId,
+	projectGroup,
+}: {
+	canManageAdminPermissions: boolean;
+	currentUserId: number;
+	feedback: AdminPermissionFeedback | null;
+	isAdminPermissionPending: boolean;
+	onAdminPermissionChange: (member: ProjectGroupMember) => void;
+	pendingAdminPermissionTargetId: number | null;
+	projectGroup: MyProjectGroup;
+}) {
+	return (
+		<div className="grid gap-5">
+			<AppPanel>
+				<AppPanelHeader
+					action={<Badge variant="neutral">일부 준비 중</Badge>}
+					description="서버에 구현된 멤버 관리자 권한은 바로 조정하고, 아직 없는 팀 상태 편집은 비활성화했습니다."
+					eyebrow="Manage"
+					title="팀 관리"
+				/>
+				<div className="grid gap-5 p-5">
+					<div className="grid gap-4 lg:grid-cols-2">
+						<label className="grid gap-2 text-sm font-semibold text-brand-ink">
+							팀 이름
+							<input
+								className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
+								defaultValue={projectGroup.projectName}
+								disabled
+								readOnly
+							/>
+						</label>
+						<label className="grid gap-2 text-sm font-semibold text-brand-ink">
+							팀 상태
+							<select
+								className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
+								defaultValue="operating"
+								disabled
+							>
+								<option value="operating">운영 중</option>
+							</select>
+						</label>
+					</div>
+					<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+						팀 이름과 상태 편집 API는 아직 연결되지 않았습니다. 기능이 생기면 이
+						관리 탭 안에서 활성화합니다.
+					</div>
+				</div>
+			</AppPanel>
+
+			<AppPanel>
+				<AppPanelHeader
+					description="방장은 팀원 관리자 권한을 부여하거나 회수할 수 있습니다."
+					eyebrow="Members"
+					title="멤버 관리"
+				/>
+				<div className="grid gap-4 p-5">
+					<RealAdminPermissionStatus
+						canManageAdminPermissions={canManageAdminPermissions}
+						feedback={feedback}
+					/>
+					<div className="grid gap-3">
+						{projectGroup.members.map((member) => (
+							<RealProjectGroupMemberCard
+								canManageAdminPermissions={canManageAdminPermissions}
+								currentUserId={currentUserId}
+								isAdminPermissionPending={isAdminPermissionPending}
+								key={member.userId}
+								member={member}
+								onAdminPermissionChange={onAdminPermissionChange}
+								pendingAdminPermissionTargetId={pendingAdminPermissionTargetId}
+							/>
+						))}
+					</div>
+				</div>
+			</AppPanel>
+		</div>
+	);
+}
+
+function getRealTeamTabBadge(
+	tabId: TeamTab,
+	checklists: ProjectChecklist[],
+	projectGroup: MyProjectGroup,
+) {
+	if (tabId === "checklist") {
+		const summary = getProjectChecklistSummary(checklists);
+		return summary.openCount > 0 ? String(summary.openCount) : "완료";
+	}
+
+	if (tabId === "rules" || tabId === "chat") {
+		return "준비";
+	}
+
+	if (tabId === "github") {
+		return "설정";
+	}
+
+	if (tabId === "manage") {
+		return String(projectGroup.members.filter((member) => member.admin).length);
+	}
+
+	return null;
+}
+
+function isRealTeamTabDisabled(tabId: TeamTab) {
+	return tabId === "rules" || tabId === "chat";
+}
+
+function getProjectChecklistSummary(checklists: ProjectChecklist[]) {
+	const totalCount = checklists.length;
+	const doneCount = checklists.filter(
+		(checklist) => checklist.status === "DONE",
+	).length;
+	const openCount = totalCount - doneCount;
+	const progress = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+
+	return { doneCount, openCount, progress, totalCount };
 }
 
 function RealAdminPermissionStatus({
@@ -847,16 +1516,16 @@ function RealProjectChecklistsPanel({
 			/>
 			<div className="grid gap-5 p-5">
 				<form
-					className="grid gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp lg:grid-cols-[1fr_1.2fr_10rem_12rem_auto]"
+					className="grid min-w-0 max-w-full gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,10rem)_minmax(0,12rem)]"
 					onSubmit={handleCreateChecklist}
 				>
 					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 						htmlFor="real-checklist-title"
 					>
 						제목
 						<input
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className={checklistControlClass}
 							id="real-checklist-title"
 							maxLength={255}
 							onChange={(event) =>
@@ -870,12 +1539,12 @@ function RealProjectChecklistsPanel({
 						/>
 					</label>
 					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 						htmlFor="real-checklist-description"
 					>
 						설명
 						<input
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className={checklistControlClass}
 							id="real-checklist-description"
 							maxLength={3000}
 							onChange={(event) =>
@@ -889,12 +1558,12 @@ function RealProjectChecklistsPanel({
 						/>
 					</label>
 					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 						htmlFor="real-checklist-due-date"
 					>
 						마감일
 						<input
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className={checklistControlClass}
 							id="real-checklist-due-date"
 							onChange={(event) =>
 								setDraft((current) => ({
@@ -907,12 +1576,12 @@ function RealProjectChecklistsPanel({
 						/>
 					</label>
 					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
+						className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 						htmlFor="real-checklist-assignee"
 					>
 						담당자
 						<select
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+							className={checklistControlClass}
 							id="real-checklist-assignee"
 							onChange={(event) =>
 								setDraft((current) => ({
@@ -930,9 +1599,9 @@ function RealProjectChecklistsPanel({
 							))}
 						</select>
 					</label>
-					<div className="flex items-end">
+					<div className="flex items-end md:col-span-2 xl:col-span-4 xl:justify-end">
 						<Button
-							className="w-full lg:w-auto"
+							className="w-full sm:w-auto"
 							disabled={createChecklistMutation.isPending}
 							type="submit"
 						>
@@ -976,19 +1645,19 @@ function RealProjectChecklistsPanel({
 							>
 								{isEditing ? (
 									<form
-										className="grid gap-3 xl:col-span-2"
+										className="grid min-w-0 gap-3 xl:col-span-2"
 										onSubmit={(event) =>
 											handleUpdateChecklist(event, checklist)
 										}
 									>
-										<div className="grid gap-3 lg:grid-cols-[1fr_1.2fr_9rem_10rem_12rem]">
+										<div className="grid min-w-0 gap-3 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,8rem)_minmax(0,9rem)_minmax(0,10rem)]">
 											<label
-												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 												htmlFor={`real-checklist-edit-title-${checklist.id}`}
 											>
 												제목
 												<input
-													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													className={checklistControlClass}
 													defaultValue={checklist.title}
 													id={`real-checklist-edit-title-${checklist.id}`}
 													maxLength={255}
@@ -996,12 +1665,12 @@ function RealProjectChecklistsPanel({
 												/>
 											</label>
 											<label
-												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 												htmlFor={`real-checklist-edit-description-${checklist.id}`}
 											>
 												설명
 												<input
-													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													className={checklistControlClass}
 													defaultValue={checklist.description ?? ""}
 													id={`real-checklist-edit-description-${checklist.id}`}
 													maxLength={3000}
@@ -1009,12 +1678,12 @@ function RealProjectChecklistsPanel({
 												/>
 											</label>
 											<label
-												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 												htmlFor={`real-checklist-edit-status-${checklist.id}`}
 											>
 												상태
 												<select
-													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													className={checklistControlClass}
 													defaultValue={checklist.status}
 													id={`real-checklist-edit-status-${checklist.id}`}
 													name="status"
@@ -1024,12 +1693,12 @@ function RealProjectChecklistsPanel({
 												</select>
 											</label>
 											<label
-												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 												htmlFor={`real-checklist-edit-due-date-${checklist.id}`}
 											>
 												마감일
 												<input
-													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													className={checklistControlClass}
 													defaultValue={checklist.dueDate ?? ""}
 													id={`real-checklist-edit-due-date-${checklist.id}`}
 													name="dueDate"
@@ -1037,12 +1706,12 @@ function RealProjectChecklistsPanel({
 												/>
 											</label>
 											<label
-												className="grid gap-2 text-sm font-semibold text-brand-ink"
+												className="grid min-w-0 gap-2 text-sm font-semibold text-brand-ink"
 												htmlFor={`real-checklist-edit-assignee-${checklist.id}`}
 											>
 												담당자
 												<select
-													className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+													className={checklistControlClass}
 													defaultValue={checklist.assigneeUserId ?? ""}
 													id={`real-checklist-edit-assignee-${checklist.id}`}
 													name="assigneeUserId"
@@ -1451,8 +2120,6 @@ function formatMemberRole(role: ProjectGroupMember["memberRole"]) {
 function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 	const [selectedTab, setSelectedTab] = useState<TeamTab>("overview");
 	const [teamName, setTeamName] = useState(demoTeamSpace.name);
-	const [lifecycleStatus, setLifecycleStatus] =
-		useState<ProjectLifecycleStatus>(demoTeamSpace.lifecycleStatus);
 	const [rulesMarkdown, setRulesMarkdown] = useState(
 		demoTeamSpace.rulesMarkdown,
 	);
@@ -1460,10 +2127,6 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 	const [messages, setMessages] = useState(demoTeamSpace.messages);
 	const [isGithubLinked, setIsGithubLinked] = useState(
 		demoTeamSpace.githubSummary.projectGroupGithubLinked,
-	);
-	const activeStepIndex = useMemo(
-		() => lifecycleSteps.findIndex((step) => step.status === lifecycleStatus),
-		[lifecycleStatus],
 	);
 	const metrics = getTeamMetrics(checklist);
 
@@ -1515,10 +2178,9 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 			eyebrow={isSignedIn ? "Team workspace" : "Team workspace preview"}
 			rail={
 				<TeamRail
-					activeStepIndex={activeStepIndex}
-					lifecycleStatus={lifecycleStatus}
-					setLifecycleStatus={setLifecycleStatus}
-					setTeamName={setTeamName}
+					checklist={checklist}
+					isGithubLinked={isGithubLinked}
+					onSelectTab={setSelectedTab}
 					teamName={teamName}
 				/>
 			}
@@ -1544,56 +2206,15 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					</div>
 				) : null}
 
-				<TeamFocusPanel
-					checklist={checklist}
-					lifecycleStatus={lifecycleStatus}
+				<TeamFocusPanel checklist={checklist} onSelectTab={setSelectedTab} />
+
+				<TeamTabList
+					getBadge={(tabId) =>
+						getTeamTabBadge(tabId, checklist, messages, isGithubLinked)
+					}
 					onSelectTab={setSelectedTab}
+					selectedTab={selectedTab}
 				/>
-
-				<AppPanel>
-					<div className="flex gap-2 overflow-x-auto p-2">
-						{tabs.map((tab) => {
-							const Icon = tab.icon;
-							const badge = getTeamTabBadge(
-								tab.id,
-								checklist,
-								messages,
-								isGithubLinked,
-							);
-							const isSelected = selectedTab === tab.id;
-
-							return (
-								<button
-									aria-pressed={isSelected}
-									className={cn(
-										"flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-all duration-200 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-										isSelected
-											? "bg-primary text-primary-foreground shadow-soft"
-											: "text-muted-foreground hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground hover:shadow-soft",
-									)}
-									key={tab.id}
-									onClick={() => setSelectedTab(tab.id)}
-									type="button"
-								>
-									<Icon className="size-4" />
-									{tab.label}
-									{badge ? (
-										<span
-											className={cn(
-												"rounded-md px-1.5 py-0.5 font-mono text-[10px] leading-none",
-												isSelected
-													? "bg-white/20 text-primary-foreground"
-													: "bg-secondary text-muted-foreground",
-											)}
-										>
-											{badge}
-										</span>
-									) : null}
-								</button>
-							);
-						})}
-					</div>
-				</AppPanel>
 
 				<section className="min-w-0">
 					{selectedTab === "overview" ? (
@@ -1623,6 +2244,12 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					{selectedTab === "chat" ? (
 						<ChatPanel messages={messages} onSend={handleSendMessage} />
 					) : null}
+					{selectedTab === "manage" ? (
+						<MockManagePanel
+							onTeamNameChange={setTeamName}
+							teamName={teamName}
+						/>
+					) : null}
 				</section>
 			</div>
 		</AppShell>
@@ -1631,11 +2258,9 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 
 function TeamFocusPanel({
 	checklist,
-	lifecycleStatus,
 	onSelectTab,
 }: {
 	checklist: TeamChecklistItem[];
-	lifecycleStatus: ProjectLifecycleStatus;
 	onSelectTab: (tab: TeamTab) => void;
 }) {
 	const openTasks = checklist.filter((item) => item.status !== "done");
@@ -1651,9 +2276,7 @@ function TeamFocusPanel({
 				<div className="min-w-0">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="brand">오늘의 핵심</Badge>
-						<Badge variant="neutral">
-							{getLifecycleLabel(lifecycleStatus)}
-						</Badge>
+						<Badge variant="neutral">팀 운영</Badge>
 					</div>
 					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
 						{primaryTask
@@ -1714,6 +2337,14 @@ function TeamFocusPanel({
 					>
 						<MessageSquareText data-icon="inline-start" />
 						채팅 열기
+					</Button>
+					<Button
+						onClick={() => onSelectTab("manage")}
+						type="button"
+						variant="outline"
+					>
+						<Settings2 data-icon="inline-start" />
+						관리
 						<ArrowRight data-icon="inline-end" />
 					</Button>
 				</div>
@@ -1743,116 +2374,155 @@ function getTeamTabBadge(
 		return String(messages.length);
 	}
 
+	if (tabId === "manage") {
+		return "팀";
+	}
+
 	return null;
 }
 
-function getLifecycleLabel(status: ProjectLifecycleStatus) {
+function TeamRail({
+	checklist,
+	isGithubLinked,
+	onSelectTab,
+	teamName,
+}: {
+	checklist: TeamChecklistItem[];
+	isGithubLinked: boolean;
+	onSelectTab: (tabId: TeamTab) => void;
+	teamName: string;
+}) {
+	const openTasks = checklist.filter((item) => item.status !== "done").length;
+	const doneTasks = checklist.length - openTasks;
+
 	return (
-		lifecycleOptions.find((option) => option.status === status)?.label ??
-		"상태 미정"
+		<div className="grid gap-5">
+			<AppPanel>
+				<AppPanelHeader
+					description={demoTeamSpace.nextMeetingLabel}
+					eyebrow="Workspace"
+					title={teamName}
+				/>
+				<div className="grid gap-4 p-5">
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<p className="text-xs text-muted-foreground">남은 작업</p>
+							<p className="mt-1 font-mono text-2xl font-semibold text-brand-ink">
+								{openTasks}
+							</p>
+						</div>
+						<div>
+							<p className="text-xs text-muted-foreground">완료 작업</p>
+							<p className="mt-1 font-mono text-2xl font-semibold text-emerald-700">
+								{doneTasks}
+							</p>
+						</div>
+					</div>
+					<div className="rounded-lg border border-border/70 bg-secondary/35 p-3 text-xs leading-5 text-muted-foreground">
+						GitHub 연동은{" "}
+						<span className="font-semibold text-brand-ink">
+							{isGithubLinked ? "완료" : "설정 필요"}
+						</span>
+						상태입니다. 팀 설정과 멤버 관리는 관리 탭으로 이동했습니다.
+					</div>
+					<div className="grid gap-2">
+						<Button onClick={() => onSelectTab("checklist")} type="button">
+							<CheckCircle2 data-icon="inline-start" />
+							체크리스트
+						</Button>
+						<Button
+							onClick={() => onSelectTab("manage")}
+							type="button"
+							variant="outline"
+						>
+							<Settings2 data-icon="inline-start" />
+							관리
+						</Button>
+					</div>
+				</div>
+			</AppPanel>
+		</div>
 	);
 }
 
-function TeamRail({
-	activeStepIndex,
-	lifecycleStatus,
-	setLifecycleStatus,
-	setTeamName,
+function MockManagePanel({
+	onTeamNameChange,
 	teamName,
 }: {
-	activeStepIndex: number;
-	lifecycleStatus: ProjectLifecycleStatus;
-	setLifecycleStatus: (status: ProjectLifecycleStatus) => void;
-	setTeamName: (name: string) => void;
+	onTeamNameChange: (name: string) => void;
 	teamName: string;
 }) {
 	return (
 		<div className="grid gap-5">
 			<AppPanel>
 				<AppPanelHeader
-					description={demoTeamSpace.nextMeetingLabel}
-					eyebrow="Lifecycle"
-					title="프로젝트 단계"
+					action={<Badge variant="warm">local preview</Badge>}
+					description="팀 설정 화면의 배치를 미리 보는 영역입니다. 서버에 없는 기능은 실서비스에서 비활성화됩니다."
+					eyebrow="Manage"
+					title="팀 관리"
 				/>
-				<div className="grid gap-4 p-5">
-					{lifecycleSteps.map((step, index) => {
-						const isDone = activeStepIndex >= 0 && index < activeStepIndex;
-						const isActive = index === activeStepIndex;
-
-						return (
-							<div className="flex items-start gap-3" key={step.status}>
-								<div
-									className={cn(
-										"flex size-8 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold",
-										isActive
-											? "border-primary bg-primary text-primary-foreground"
-											: isDone
-												? "border-emerald-500 bg-emerald-500 text-white"
-												: "border-border bg-white text-muted-foreground",
-									)}
-								>
-									{index + 1}
-								</div>
-								<div className="min-w-0">
-									<p className="font-semibold text-brand-ink">{step.label}</p>
-									<p className="mt-1 text-sm leading-6 text-muted-foreground">
-										{isActive
-											? "지금 진행 중인 단계입니다."
-											: isDone
-												? "이미 완료한 단계입니다."
-												: "다음에 진행할 단계입니다."}
-									</p>
-								</div>
-							</div>
-						);
-					})}
-					{lifecycleStatus === "paused" ? (
-						<div className="rounded-lg border border-amber-500/25 bg-amber-50 p-3 text-sm font-semibold text-amber-700">
-							프로젝트가 일시 중지 상태입니다.
-						</div>
-					) : null}
+				<div className="grid gap-5 p-5">
+					<div className="grid gap-4 lg:grid-cols-2">
+						<label
+							className="grid gap-2 text-sm font-semibold text-brand-ink"
+							htmlFor="mock-team-name"
+						>
+							팀 이름
+							<input
+								className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+								id="mock-team-name"
+								onChange={(event) => onTeamNameChange(event.target.value)}
+								value={teamName}
+							/>
+						</label>
+						<label
+							className="grid gap-2 text-sm font-semibold text-brand-ink"
+							htmlFor="mock-team-state"
+						>
+							팀 상태
+							<select
+								className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
+								defaultValue="operating"
+								disabled
+								id="mock-team-state"
+							>
+								<option value="operating">운영 중</option>
+							</select>
+						</label>
+					</div>
+					<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+						팀 운영 상태 변경은 서버 API가 연결되면 활성화됩니다.
+					</div>
 				</div>
 			</AppPanel>
 
 			<AppPanel>
 				<AppPanelHeader
-					description="팀 이름과 프로젝트 진행 상태를 조정합니다."
-					eyebrow="Controls"
-					title="팀 상태 편집"
+					description="현재 데모 멤버 구성을 확인합니다. 초대/내보내기는 아직 비활성화 상태입니다."
+					eyebrow="Members"
+					title="멤버 관리"
 				/>
-				<div className="grid gap-4 p-5">
-					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
-						htmlFor="team-name"
-					>
-						팀 이름
-						<input
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-							id="team-name"
-							onChange={(event) => setTeamName(event.target.value)}
-							value={teamName}
-						/>
-					</label>
-					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
-						htmlFor="team-status"
-					>
-						프로젝트 상태
-						<select
-							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-							id="team-status"
-							onChange={(event) =>
-								setLifecycleStatus(event.target.value as ProjectLifecycleStatus)
-							}
-							value={lifecycleStatus}
+				<div className="grid gap-3 p-5 md:grid-cols-2">
+					{demoTeamSpace.members.map((member) => (
+						<div
+							className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4 shadow-crisp sm:flex-row sm:items-center sm:justify-between"
+							key={member.id}
 						>
-							{lifecycleOptions.map((option) => (
-								<option key={option.status} value={option.status}>
-									{option.label}
-								</option>
-							))}
-						</select>
-					</label>
+							<div className="min-w-0">
+								<div className="flex flex-wrap items-center gap-2">
+									<p className="font-semibold text-brand-ink">{member.name}</p>
+									<Badge variant="neutral">{member.role}</Badge>
+								</div>
+								<p className="mt-1 text-xs text-muted-foreground">
+									Lv.{member.level} · 온도 {member.temperature.toFixed(1)}℃
+								</p>
+							</div>
+							<Button disabled size="sm" type="button" variant="outline">
+								<ShieldCheck data-icon="inline-start" />
+								권한 설정 준비 중
+							</Button>
+						</div>
+					))}
 				</div>
 			</AppPanel>
 		</div>

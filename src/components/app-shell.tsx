@@ -88,7 +88,7 @@ export function AppPanel({
 	return (
 		<section
 			className={cn(
-				"rounded-lg border border-border/70 bg-white shadow-crisp",
+				"min-w-0 rounded-lg border border-border/70 bg-white shadow-crisp",
 				className,
 			)}
 		>
@@ -150,7 +150,7 @@ export function MetricCard({
 		: "font-display";
 
 	return (
-		<div className="rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
+		<div className="min-w-0 rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
 			<div
 				className={cn(
 					"mb-4 inline-flex rounded-md border px-2 py-1 text-xs font-semibold",
@@ -160,7 +160,10 @@ export function MetricCard({
 				{label}
 			</div>
 			<p
-				className={cn("text-3xl font-semibold text-brand-ink", valueFontClass)}
+				className={cn(
+					"break-words text-3xl font-semibold text-brand-ink",
+					valueFontClass,
+				)}
 			>
 				{value}
 			</p>
