@@ -12,6 +12,7 @@ import {
 	MessageSquareText,
 	PencilLine,
 	Plus,
+	RefreshCw,
 	Save,
 	SendHorizontal,
 	Settings2,
@@ -1026,7 +1027,27 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 						title="AI 개발 가이드라인"
 					/>
 					<div className="p-5">
-						<RealInlineStatus message="팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다." />
+						<div className="grid gap-3">
+							<RealInlineStatus message="팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다. 잠시 후 자동으로 다시 확인합니다." />
+							<div>
+								<Button
+									disabled={devGuideQuery.isFetching}
+									onClick={() => void devGuideQuery.refetch()}
+									type="button"
+									variant="outline"
+								>
+									{devGuideQuery.isFetching ? (
+										<LoaderCircle
+											className="animate-spin"
+											data-icon="inline-start"
+										/>
+									) : (
+										<RefreshCw data-icon="inline-start" />
+									)}
+									다시 확인
+								</Button>
+							</div>
+						</div>
 					</div>
 				</AppPanel>
 			);
