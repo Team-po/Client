@@ -1305,6 +1305,30 @@ function RealGithubInstallationPanel({
 			connectedRepositories.map((repository) => repository.githubRepositoryId),
 		[connectedRepositories],
 	);
+	const availableGithubRepositoryIdSet = useMemo(
+		() =>
+			new Set(
+				availableRepositories.map(
+					(repository) => repository.githubRepositoryId,
+				),
+			),
+		[availableRepositories],
+	);
+	const configurableRepositories = useMemo(() => {
+		const repositoriesById = new Map<number, GithubRepository>();
+
+		for (const repository of availableRepositories) {
+			repositoriesById.set(repository.githubRepositoryId, repository);
+		}
+
+		for (const repository of connectedRepositories) {
+			if (!repositoriesById.has(repository.githubRepositoryId)) {
+				repositoriesById.set(repository.githubRepositoryId, repository);
+			}
+		}
+
+		return [...repositoriesById.values()];
+	}, [availableRepositories, connectedRepositories]);
 	const [selectedGithubRepositoryIds, setSelectedGithubRepositoryIds] =
 		useState<number[]>([]);
 	const selectedGithubRepositoryIdSet = useMemo(
@@ -1557,17 +1581,28 @@ function RealGithubInstallationPanel({
 										</div>
 									) : null}
 
-									{availableRepositories.map((repository) => (
-										<RealGithubRepositoryOption
-											disabled={!canChangeGithubRepositories}
-											key={repository.githubRepositoryId}
-											onToggle={handleGithubRepositoryToggle}
-											repository={repository}
-											selected={selectedGithubRepositoryIdSet.has(
-												repository.githubRepositoryId,
-											)}
-										/>
-									))}
+									{configurableRepositories.map((repository) => {
+										const selected = selectedGithubRepositoryIdSet.has(
+											repository.githubRepositoryId,
+										);
+										const available = availableGithubRepositoryIdSet.has(
+											repository.githubRepositoryId,
+										);
+
+										return (
+											<RealGithubRepositoryOption
+												disabled={
+													!canChangeGithubRepositories ||
+													(!available && !selected)
+												}
+												key={repository.githubRepositoryId}
+												onToggle={handleGithubRepositoryToggle}
+												repository={repository}
+												selected={selected}
+												unavailable={!available}
+											/>
+										);
+									})}
 
 									<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 										<p className="text-xs leading-5 text-muted-foreground">
@@ -1666,11 +1701,13 @@ function RealGithubRepositoryOption({
 	onToggle,
 	repository,
 	selected,
+	unavailable,
 }: {
 	disabled: boolean;
 	onToggle: (githubRepositoryId: number) => void;
 	repository: GithubRepository;
 	selected: boolean;
+	unavailable: boolean;
 }) {
 	return (
 		<label
@@ -1694,7 +1731,7 @@ function RealGithubRepositoryOption({
 					{repository.fullName}
 				</span>
 				<span className="mt-1 block text-xs text-muted-foreground">
-					{repository.repoName}
+					{unavailable ? "GitHub App 접근 권한 없음" : repository.repoName}
 				</span>
 			</span>
 		</label>
