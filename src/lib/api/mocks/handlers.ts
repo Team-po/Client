@@ -30,6 +30,7 @@ import type { MyProjectGroup } from "@/lib/types/project-group";
 import type {
 	GithubAppInstallationCompleteRequest,
 	GithubInstallationStatus,
+	GithubRepository,
 } from "@/lib/types/team-space";
 import type {
 	EditPasswordRequest,
@@ -50,6 +51,7 @@ let nextProjectChecklistId = 103;
 let githubInstallationStatus: GithubInstallationStatus =
 	createDisconnectedGithubStatus();
 let pendingGithubInstallationState: string | null = null;
+let selectedGithubRepositories: GithubRepository[] = [];
 let deleteEmailAuthSentUserId: number | null = null;
 let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
@@ -233,6 +235,7 @@ function resetTeamSpaceApiState() {
 	nextProjectChecklistId = 103;
 	githubInstallationStatus = createDisconnectedGithubStatus();
 	pendingGithubInstallationState = null;
+	selectedGithubRepositories = [];
 }
 
 function createDisconnectedGithubStatus(): GithubInstallationStatus {
@@ -240,6 +243,62 @@ function createDisconnectedGithubStatus(): GithubInstallationStatus {
 		connected: false,
 		organizationLogin: null,
 		repositoryCount: 0,
+	};
+}
+
+function createMockAvailableGithubRepositories(): GithubRepository[] {
+	return [
+		{
+			fullName: "team-po-labs/client",
+			githubRepositoryId: 100,
+			repoName: "client",
+		},
+		{
+			fullName: "team-po-labs/server",
+			githubRepositoryId: 200,
+			repoName: "server",
+		},
+		{
+			fullName: "team-po-labs/product-notes",
+			githubRepositoryId: 300,
+			repoName: "product-notes",
+		},
+	];
+}
+
+const availableGithubRepositories = createMockAvailableGithubRepositories();
+
+function parseGithubRepositoryIds(value: unknown): number[] | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const { githubRepositoryIds } = value as {
+		githubRepositoryIds?: unknown;
+	};
+
+	if (!Array.isArray(githubRepositoryIds)) {
+		return null;
+	}
+
+	if (
+		!githubRepositoryIds.every(
+			(repositoryId): repositoryId is number =>
+				typeof repositoryId === "number" &&
+				Number.isFinite(repositoryId) &&
+				Number.isInteger(repositoryId),
+		)
+	) {
+		return null;
+	}
+
+	return githubRepositoryIds;
+}
+
+function syncGithubRepositoryCount() {
+	githubInstallationStatus = {
+		...githubInstallationStatus,
+		repositoryCount: selectedGithubRepositories.length,
 	};
 }
 
@@ -1797,11 +1856,125 @@ export const handlers = [
 			}
 
 			pendingGithubInstallationState = null;
+			selectedGithubRepositories = [];
 			githubInstallationStatus = {
 				connected: true,
 				organizationLogin: "team-po-labs",
-				repositoryCount: 2,
+				repositoryCount: 0,
 			};
+
+			return new HttpResponse(null, { status: 200 });
+		},
+	),
+
+	http.get(
+		getPath("/team-space/:projectGroupId/github/available-repositories"),
+		async ({ params, request }) => {
+			await delay(300);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const hostError = assertProjectGroupHost(projectGroupId);
+
+			if (hostError) {
+				return hostError;
+			}
+
+			if (!githubInstallationStatus.connected) {
+				return buildErrorResponse(
+					404,
+					"Github Organization이 연결되지 않은 팀 스페이스입니다.",
+					"GITHUB_APP_INSTALLATION_NOT_CONNECTED",
+				);
+			}
+
+			return HttpResponse.json({
+				repositories: availableGithubRepositories,
+			});
+		},
+	),
+
+	http.get(
+		getPath("/team-space/:projectGroupId/github/repositories"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			return HttpResponse.json({
+				repositories: selectedGithubRepositories,
+			});
+		},
+	),
+
+	http.put(
+		getPath("/team-space/:projectGroupId/github/repositories"),
+		async ({ params, request }) => {
+			const body = await request.json();
+
+			await delay(400);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const hostError = assertProjectGroupHost(projectGroupId);
+
+			if (hostError) {
+				return hostError;
+			}
+
+			if (!githubInstallationStatus.connected) {
+				return buildErrorResponse(
+					404,
+					"Github Organization이 연결되지 않은 팀 스페이스입니다.",
+					"GITHUB_APP_INSTALLATION_NOT_CONNECTED",
+				);
+			}
+
+			const githubRepositoryIds = parseGithubRepositoryIds(body);
+
+			if (!githubRepositoryIds) {
+				return buildErrorResponse(
+					400,
+					"Github Repository 목록은 필수입니다.",
+					"INVALID_INPUT_FIELD",
+				);
+			}
+
+			const accessibleRepositoryIds = new Set(
+				availableGithubRepositories.map(
+					(repository) => repository.githubRepositoryId,
+				),
+			);
+			const selectedRepositoryIds = Array.from(new Set(githubRepositoryIds));
+
+			if (
+				selectedRepositoryIds.some(
+					(repositoryId) => !accessibleRepositoryIds.has(repositoryId),
+				)
+			) {
+				return buildErrorResponse(
+					400,
+					"선택한 Github Repository에 접근할 수 없습니다.",
+					"GITHUB_REPOSITORY_NOT_ACCESSIBLE",
+				);
+			}
+
+			selectedGithubRepositories = selectedRepositoryIds
+				.map((repositoryId) =>
+					availableGithubRepositories.find(
+						(repository) => repository.githubRepositoryId === repositoryId,
+					),
+				)
+				.filter((repository): repository is GithubRepository =>
+					Boolean(repository),
+				);
+			syncGithubRepositoryCount();
 
 			return new HttpResponse(null, { status: 200 });
 		},

@@ -3,6 +3,8 @@ import type {
 	GithubAppInstallationCompleteRequest,
 	GithubAppInstallationUrl,
 	GithubInstallationStatus,
+	GithubRepositoryListResponse,
+	SetGithubRepositoriesRequest,
 } from "@/lib/types/team-space";
 
 export function getGithubInstallationStatus(projectGroupId: number) {
@@ -37,4 +39,28 @@ export function completeGithubAppInstallation({
 			method: "POST",
 		},
 	);
+}
+
+export function getAvailableGithubRepositories(projectGroupId: number) {
+	return apiRequest<GithubRepositoryListResponse>(
+		`/team-space/${projectGroupId}/github/available-repositories`,
+	);
+}
+
+export function getGithubRepositories(projectGroupId: number) {
+	return apiRequest<GithubRepositoryListResponse>(
+		`/team-space/${projectGroupId}/github/repositories`,
+	);
+}
+
+export function setGithubRepositories({
+	githubRepositoryIds,
+	projectGroupId,
+}: SetGithubRepositoriesRequest) {
+	return apiRequest<void>(`/team-space/${projectGroupId}/github/repositories`, {
+		json: {
+			githubRepositoryIds,
+		},
+		method: "PUT",
+	});
 }

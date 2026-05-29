@@ -14,3 +14,18 @@ export interface GithubAppInstallationCompleteRequest {
 	setupAction: string;
 	state: string;
 }
+
+export interface GithubRepository {
+	fullName: string;
+	githubRepositoryId: number;
+	repoName: string;
+}
+
+export interface GithubRepositoryListResponse {
+	repositories: GithubRepository[];
+}
+
+export interface SetGithubRepositoriesRequest {
+	githubRepositoryIds: number[];
+	projectGroupId: number;
+}

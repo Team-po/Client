@@ -3,17 +3,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	completeGithubAppInstallation,
 	createGithubAppInstallationUrl,
+	getAvailableGithubRepositories,
 	getGithubInstallationStatus,
+	getGithubRepositories,
+	setGithubRepositories,
 } from "@/lib/api/team-space";
-import type { GithubAppInstallationCompleteRequest } from "@/lib/types/team-space";
+import type {
+	GithubAppInstallationCompleteRequest,
+	SetGithubRepositoriesRequest,
+} from "@/lib/types/team-space";
 
 export const teamSpaceQueryKeys = {
 	all: ["team-space"] as const,
+	githubAvailableRepositories: (projectGroupId: number) =>
+		["team-space", projectGroupId, "github", "available-repositories"] as const,
+	githubRepositories: (projectGroupId: number) =>
+		["team-space", projectGroupId, "github", "repositories"] as const,
 	githubStatus: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "status"] as const,
 };
 
 const githubStatusStaleTimeMs = 15_000;
+const githubRepositoryStaleTimeMs = 15_000;
 
 function requireProjectGroupId(projectGroupId: number | undefined) {
 	if (typeof projectGroupId !== "number") {
@@ -48,6 +59,41 @@ export function useCreateGithubAppInstallationUrlMutation() {
 	});
 }
 
+export function useAvailableGithubRepositoriesQuery(
+	projectGroupId: number | undefined,
+	enabled = true,
+) {
+	return useQuery({
+		enabled: enabled && typeof projectGroupId === "number",
+		queryFn: () =>
+			getAvailableGithubRepositories(requireProjectGroupId(projectGroupId)),
+		queryKey:
+			typeof projectGroupId === "number"
+				? teamSpaceQueryKeys.githubAvailableRepositories(projectGroupId)
+				: teamSpaceQueryKeys.all,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: githubRepositoryStaleTimeMs,
+	});
+}
+
+export function useGithubRepositoriesQuery(
+	projectGroupId: number | undefined,
+	enabled = true,
+) {
+	return useQuery({
+		enabled: enabled && typeof projectGroupId === "number",
+		queryFn: () => getGithubRepositories(requireProjectGroupId(projectGroupId)),
+		queryKey:
+			typeof projectGroupId === "number"
+				? teamSpaceQueryKeys.githubRepositories(projectGroupId)
+				: teamSpaceQueryKeys.all,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: githubRepositoryStaleTimeMs,
+	});
+}
+
 export function useCompleteGithubAppInstallationMutation() {
 	const queryClient = useQueryClient();
 
@@ -57,6 +103,40 @@ export function useCompleteGithubAppInstallationMutation() {
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({
 				queryKey: teamSpaceQueryKeys.githubStatus(variables.projectGroupId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.githubAvailableRepositories(
+					variables.projectGroupId,
+				),
+			});
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.githubRepositories(
+					variables.projectGroupId,
+				),
+			});
+		},
+	});
+}
+
+export function useSetGithubRepositoriesMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: SetGithubRepositoriesRequest) =>
+			setGithubRepositories(payload),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.githubStatus(variables.projectGroupId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.githubRepositories(
+					variables.projectGroupId,
+				),
+			});
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.githubAvailableRepositories(
+					variables.projectGroupId,
+				),
 			});
 		},
 	});
