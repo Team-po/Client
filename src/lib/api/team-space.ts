@@ -1,11 +1,16 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
+	DevGuideContent,
 	GithubAppInstallationCompleteRequest,
 	GithubAppInstallationUrl,
 	GithubInstallationStatus,
 	GithubRepositoryListResponse,
 	SetGithubRepositoriesRequest,
 } from "@/lib/types/team-space";
+
+export function getDevGuide(projectGroupId: number) {
+	return apiRequest<DevGuideContent>(`/team-space/${projectGroupId}/dev-guide`);
+}
 
 export function getGithubInstallationStatus(projectGroupId: number) {
 	return apiRequest<GithubInstallationStatus>(

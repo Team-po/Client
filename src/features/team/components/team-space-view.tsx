@@ -12,6 +12,7 @@ import {
 	MessageSquareText,
 	PencilLine,
 	Plus,
+	RefreshCw,
 	Save,
 	SendHorizontal,
 	Settings2,
@@ -55,6 +56,7 @@ import {
 	useAvailableGithubRepositoriesQuery,
 	useCompleteGithubAppInstallationMutation,
 	useCreateGithubAppInstallationUrlMutation,
+	useDevGuideQuery,
 	useGithubInstallationStatusQuery,
 	useGithubRepositoriesQuery,
 	useSetGithubRepositoriesMutation,
@@ -71,7 +73,7 @@ import type {
 	MyProjectGroup,
 	ProjectGroupMember,
 } from "@/lib/types/project-group";
-import type { GithubRepository } from "@/lib/types/team-space";
+import type { DevGuideContent, GithubRepository } from "@/lib/types/team-space";
 import type {
 	GithubRepositorySummary,
 	TeamChecklistItem,
@@ -990,46 +992,279 @@ function RealMemberSummaryCard({
 }
 
 function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
-	const guideItems = [
-		{
-			body:
-				projectGroup.projectDescription ??
-				"팀 설명을 기준으로 이번 주 논의할 범위를 좁힙니다.",
-			title: "문제 정의 확인",
-		},
-		{
-			body:
-				projectGroup.projectMvp ??
-				"MVP가 등록되면 우선순위 기준으로 사용합니다.",
-			title: "MVP 우선순위",
-		},
-		{
-			body: "체크리스트와 GitHub 연동 상태를 보고 오늘 바로 실행할 작업을 정합니다.",
-			title: "실행 흐름 정리",
-		},
-	];
+	const devGuideQuery = useDevGuideQuery(projectGroup.projectGroupId);
+	const guide = devGuideQuery.data;
 
+	if (devGuideQuery.isLoading) {
+		return (
+			<AppPanel>
+				<AppPanelHeader
+					action={<Badge variant="neutral">조회 중</Badge>}
+					description="팀 방향, MVP 우선순위, 결정 포인트를 불러오고 있습니다."
+					eyebrow="Guide"
+					title="AI 개발 가이드라인"
+				/>
+				<div className="p-5">
+					<RealInlineStatus
+						icon={
+							<LoaderCircle className="size-4 shrink-0 animate-spin text-primary" />
+						}
+						message="가이드라인을 불러오는 중입니다."
+					/>
+				</div>
+			</AppPanel>
+		);
+	}
+
+	if (devGuideQuery.error) {
+		if (isDevGuideNotFoundError(devGuideQuery.error)) {
+			return (
+				<AppPanel>
+					<AppPanelHeader
+						action={<Badge variant="neutral">대기</Badge>}
+						description="아직 이 팀에 생성된 가이드라인이 없습니다."
+						eyebrow="Guide"
+						title="AI 개발 가이드라인"
+					/>
+					<div className="p-5">
+						<div className="grid gap-3">
+							<RealInlineStatus message="팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다. 잠시 후 자동으로 다시 확인합니다." />
+							<div>
+								<Button
+									disabled={devGuideQuery.isFetching}
+									onClick={() => void devGuideQuery.refetch()}
+									type="button"
+									variant="outline"
+								>
+									{devGuideQuery.isFetching ? (
+										<LoaderCircle
+											className="animate-spin"
+											data-icon="inline-start"
+										/>
+									) : (
+										<RefreshCw data-icon="inline-start" />
+									)}
+									다시 확인
+								</Button>
+							</div>
+						</div>
+					</div>
+				</AppPanel>
+			);
+		}
+
+		return (
+			<AppPanel>
+				<AppPanelHeader
+					action={<Badge variant="neutral">오류</Badge>}
+					description="팀 가이드라인을 불러오지 못했습니다."
+					eyebrow="Guide"
+					title="AI 개발 가이드라인"
+				/>
+				<div className="p-5">
+					<RealInlineStatus
+						message={`가이드라인 조회 실패: ${getApiErrorMessage(devGuideQuery.error)}`}
+					/>
+				</div>
+			</AppPanel>
+		);
+	}
+
+	if (!guide) {
+		return (
+			<AppPanel>
+				<AppPanelHeader
+					action={<Badge variant="neutral">대기</Badge>}
+					description="아직 이 팀에 생성된 가이드라인이 없습니다."
+					eyebrow="Guide"
+					title="AI 개발 가이드라인"
+				/>
+				<div className="p-5">
+					<RealInlineStatus message="팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다." />
+				</div>
+			</AppPanel>
+		);
+	}
+
+	return (
+		<div className="grid gap-5">
+			<AppPanel>
+				<AppPanelHeader
+					action={<Badge variant="brand">생성됨</Badge>}
+					description="팀 방향, MVP 우선순위, 결정 포인트를 한곳에 모았습니다."
+					eyebrow="Guide"
+					title="AI 개발 가이드라인"
+				/>
+				<div className="grid gap-4 p-5">
+					<div className="rounded-lg border border-primary/15 bg-primary/5 p-5">
+						<p className="text-sm font-semibold text-primary">프로젝트 개요</p>
+						<p className="mt-3 text-sm leading-7 text-brand-ink">
+							{guide.overview}
+						</p>
+					</div>
+					<div className="grid gap-4 md:grid-cols-3">
+						{guide.mvpPriorities.map((priority) => (
+							<div
+								className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp"
+								key={priority.priority}
+							>
+								<div className="flex items-start justify-between gap-3">
+									<h3 className="text-base font-semibold text-brand-ink">
+										{priority.feature}
+									</h3>
+									<Badge variant="brand">P{priority.priority}</Badge>
+								</div>
+								<p className="mt-3 text-sm leading-6 text-muted-foreground">
+									{priority.rationale}
+								</p>
+								<ul className="mt-4 grid gap-2 text-sm text-brand-ink">
+									{priority.subFeatures.map((subFeature) => (
+										<li className="flex gap-2" key={subFeature}>
+											<CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+											<span>{subFeature}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						))}
+					</div>
+				</div>
+			</AppPanel>
+
+			<div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+				<RealDevGuideTechStackPanel guide={guide} />
+				<RealDevGuideDecisionPanel guide={guide} />
+			</div>
+
+			<RealDevGuideMilestonePanel guide={guide} />
+		</div>
+	);
+}
+
+function isDevGuideNotFoundError(error: unknown) {
+	if (typeof error !== "object" || error === null || !("code" in error)) {
+		return false;
+	}
+
+	return error.code === "DEV_GUIDE_NOT_FOUND";
+}
+
+function RealDevGuideTechStackPanel({ guide }: { guide: DevGuideContent }) {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀 정보와 체크리스트를 바탕으로 먼저 맞출 대화를 정리합니다."
-				eyebrow="Guide"
-				title="팀 운영 가이드"
+				description="역할별로 우선 검토할 기술 선택지를 정리했습니다."
+				eyebrow="Stack"
+				title="기술 스택"
 			/>
-			<div className="grid gap-4 p-5 md:grid-cols-3">
-				{guideItems.map((item) => (
+			<div className="grid gap-3 p-5">
+				{guide.techStack.map((item) => (
 					<div
-						className="rounded-lg border border-border/70 bg-brand-warm p-5"
-						key={item.title}
+						className="rounded-lg border border-border/70 bg-brand-warm p-4"
+						key={`${item.category}-${item.recommendation}`}
 					>
-						<h3 className="text-lg font-semibold">{item.title}</h3>
-						<p className="mt-2 text-sm leading-7 text-muted-foreground">
-							{item.body}
+						<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+							<p className="font-semibold text-brand-ink">{item.category}</p>
+							<Badge variant="neutral">{item.recommendation}</Badge>
+						</div>
+						<p className="mt-2 text-sm leading-6 text-muted-foreground">
+							{item.reason}
 						</p>
 					</div>
 				))}
 			</div>
 		</AppPanel>
+	);
+}
+
+function RealDevGuideDecisionPanel({ guide }: { guide: DevGuideContent }) {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="팀이 초기에 합의해야 할 선택지를 모았습니다."
+				eyebrow="Decision"
+				title="결정 포인트"
+			/>
+			<div className="grid gap-3 p-5">
+				{guide.decisionPoints.map((decision) => (
+					<div
+						className="rounded-lg border border-border/70 bg-white p-4 shadow-crisp"
+						key={decision.topic}
+					>
+						<h3 className="font-semibold text-brand-ink">{decision.topic}</h3>
+						<div className="mt-3 flex flex-wrap gap-2">
+							{decision.options.map((option) => (
+								<Badge key={option} variant="warm">
+									{option}
+								</Badge>
+							))}
+						</div>
+						<p className="mt-3 text-sm leading-6 text-muted-foreground">
+							{decision.consideration}
+						</p>
+					</div>
+				))}
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealDevGuideMilestonePanel({ guide }: { guide: DevGuideContent }) {
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				description="12주 흐름을 주차별 목표와 역할 작업으로 나눴습니다."
+				eyebrow="Roadmap"
+				title="마일스톤"
+			/>
+			<div className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-3">
+				{guide.milestones.map((milestone) => (
+					<div
+						className="rounded-lg border border-border/70 bg-white p-4 shadow-crisp"
+						key={milestone.week}
+					>
+						<div className="flex items-start justify-between gap-3">
+							<h3 className="font-semibold text-brand-ink">
+								{milestone.week}주차
+							</h3>
+							<Badge variant="neutral">W{milestone.week}</Badge>
+						</div>
+						<p className="mt-2 text-sm leading-6 text-muted-foreground">
+							{milestone.goal}
+						</p>
+						<dl className="mt-4 grid gap-2 text-xs leading-5">
+							<RealDevGuideRoleTask
+								label="BE"
+								value={milestone.roleTasks.backend}
+							/>
+							<RealDevGuideRoleTask
+								label="FE"
+								value={milestone.roleTasks.frontend}
+							/>
+							<RealDevGuideRoleTask
+								label="Design"
+								value={milestone.roleTasks.design}
+							/>
+						</dl>
+					</div>
+				))}
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealDevGuideRoleTask({
+	label,
+	value,
+}: {
+	label: string;
+	value: string;
+}) {
+	return (
+		<div className="grid grid-cols-[4rem_1fr] gap-2">
+			<dt className="font-semibold text-primary">{label}</dt>
+			<dd className="min-w-0 text-muted-foreground">{value}</dd>
+		</div>
 	);
 }
 
