@@ -2106,9 +2106,6 @@ function RealProjectChecklistsPanel({
 												<span>마감 {checklist.dueDate ?? "미정"}</span>
 												<span>생성 {checklist.createdByNickname}</span>
 											</div>
-											{checklist.aiAdvice ? (
-												<RealChecklistAdvice checklist={checklist} />
-											) : null}
 										</div>
 										<div className="flex flex-wrap items-start gap-2 xl:justify-end">
 											<Button
@@ -2182,6 +2179,12 @@ function RealProjectChecklistsPanel({
 												)}
 											</Button>
 										</div>
+										{checklist.aiAdvice ? (
+											<RealChecklistAdvice
+												checklist={checklist}
+												className="xl:col-span-2"
+											/>
+										) : null}
 									</>
 								)}
 							</div>
@@ -2193,13 +2196,24 @@ function RealProjectChecklistsPanel({
 	);
 }
 
-function RealChecklistAdvice({ checklist }: { checklist: ProjectChecklist }) {
+function RealChecklistAdvice({
+	checklist,
+	className,
+}: {
+	checklist: ProjectChecklist;
+	className?: string;
+}) {
 	if (!checklist.aiAdvice) {
 		return null;
 	}
 
 	return (
-		<div className="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-4">
+		<div
+			className={cn(
+				"rounded-lg border border-primary/15 bg-primary/5 p-4",
+				className,
+			)}
+		>
 			<p className="text-sm font-semibold text-primary">
 				{checklist.aiAdvice.summary}
 			</p>
