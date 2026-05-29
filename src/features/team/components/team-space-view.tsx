@@ -52,9 +52,12 @@ import {
 	useUpdateProjectChecklistMutation,
 } from "@/features/team/hooks/use-project-checklist-queries";
 import {
+	useAvailableGithubRepositoriesQuery,
 	useCompleteGithubAppInstallationMutation,
 	useCreateGithubAppInstallationUrlMutation,
 	useGithubInstallationStatusQuery,
+	useGithubRepositoriesQuery,
+	useSetGithubRepositoriesMutation,
 } from "@/features/team/hooks/use-team-space-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
@@ -68,6 +71,7 @@ import type {
 	MyProjectGroup,
 	ProjectGroupMember,
 } from "@/lib/types/project-group";
+import type { GithubRepository } from "@/lib/types/team-space";
 import type {
 	GithubRepositorySummary,
 	ProjectLifecycleStatus,
@@ -132,6 +136,23 @@ const projectChecklistStatusTone: Record<ProjectChecklistStatus, string> = {
 	DONE: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
 	TODO: "border-border bg-secondary/45 text-muted-foreground",
 };
+
+function areNumberSelectionsEqual(left: number[], right: number[]) {
+	if (left.length !== right.length) {
+		return false;
+	}
+
+	const normalizedLeft = [...left].sort(
+		(leftValue, rightValue) => leftValue - rightValue,
+	);
+	const normalizedRight = [...right].sort(
+		(leftValue, rightValue) => leftValue - rightValue,
+	);
+
+	return normalizedLeft.every(
+		(value, index) => value === normalizedRight[index],
+	);
+}
 
 const contributionLevelClass = [
 	"bg-secondary",
@@ -1263,13 +1284,59 @@ function RealGithubInstallationPanel({
 		projectGroup.projectGroupId,
 	);
 	const createInstallUrlMutation = useCreateGithubAppInstallationUrlMutation();
+	const setGithubRepositoriesMutation = useSetGithubRepositoriesMutation();
 	const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
 	const githubStatus = githubStatusQuery.data;
+	const isGithubConnected = githubStatus?.connected === true;
+	const githubRepositoriesQuery = useGithubRepositoriesQuery(
+		projectGroup.projectGroupId,
+		isGithubConnected,
+	);
+	const availableGithubRepositoriesQuery = useAvailableGithubRepositoriesQuery(
+		projectGroup.projectGroupId,
+		isGithubConnected && canManageGithubInstallation,
+	);
+	const connectedRepositories =
+		githubRepositoriesQuery.data?.repositories ?? [];
+	const availableRepositories =
+		availableGithubRepositoriesQuery.data?.repositories ?? [];
+	const connectedRepositoryIds = useMemo(
+		() =>
+			connectedRepositories.map((repository) => repository.githubRepositoryId),
+		[connectedRepositories],
+	);
+	const [selectedGithubRepositoryIds, setSelectedGithubRepositoryIds] =
+		useState<number[]>([]);
+	const selectedGithubRepositoryIdSet = useMemo(
+		() => new Set(selectedGithubRepositoryIds),
+		[selectedGithubRepositoryIds],
+	);
+	const hasRepositorySelectionChanged = !areNumberSelectionsEqual(
+		selectedGithubRepositoryIds,
+		connectedRepositoryIds,
+	);
 	const canCreateInstallUrl =
 		githubStatusQuery.isSuccess &&
 		canManageGithubInstallation &&
 		!githubStatus?.connected &&
 		!createInstallUrlMutation.isPending;
+	const canChangeGithubRepositories =
+		canManageGithubInstallation &&
+		githubRepositoriesQuery.isSuccess &&
+		availableGithubRepositoriesQuery.isSuccess &&
+		!setGithubRepositoriesMutation.isPending;
+	const canSaveGithubRepositories =
+		isGithubConnected &&
+		canChangeGithubRepositories &&
+		hasRepositorySelectionChanged;
+
+	useEffect(() => {
+		if (!githubRepositoriesQuery.data) {
+			return;
+		}
+
+		setSelectedGithubRepositoryIds(connectedRepositoryIds);
+	}, [connectedRepositoryIds, githubRepositoriesQuery.data]);
 
 	function handleCreateInstallUrl() {
 		setFeedback(null);
@@ -1284,6 +1351,39 @@ function RealGithubInstallationPanel({
 				window.location.assign(installUrl);
 			},
 		});
+	}
+
+	function handleGithubRepositoryToggle(githubRepositoryId: number) {
+		setFeedback(null);
+		setSelectedGithubRepositoryIds((current) =>
+			current.includes(githubRepositoryId)
+				? current.filter((repositoryId) => repositoryId !== githubRepositoryId)
+				: [...current, githubRepositoryId],
+		);
+	}
+
+	function handleSaveGithubRepositories() {
+		setFeedback(null);
+		setGithubRepositoriesMutation.mutate(
+			{
+				githubRepositoryIds: selectedGithubRepositoryIds,
+				projectGroupId: projectGroup.projectGroupId,
+			},
+			{
+				onError: (error: unknown) => {
+					setFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					setFeedback({
+						message: "GitHub 저장소 연결을 저장했습니다.",
+						tone: "success",
+					});
+				},
+			},
+		);
 	}
 
 	return (
@@ -1360,6 +1460,146 @@ function RealGithubInstallationPanel({
 						설치 URL 발급
 					</Button>
 				</div>
+
+				{isGithubConnected ? (
+					<div className="grid gap-4 2xl:grid-cols-[0.95fr_1.05fr]">
+						<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+								<div>
+									<p className="text-sm font-semibold text-brand-ink">
+										연결된 저장소
+									</p>
+									<p className="mt-1 text-sm leading-6 text-muted-foreground">
+										팀 스페이스에 등록된 GitHub 저장소입니다.
+									</p>
+								</div>
+								<Badge
+									variant={
+										connectedRepositories.length > 0 ? "brand" : "neutral"
+									}
+								>
+									{connectedRepositories.length}개
+								</Badge>
+							</div>
+
+							<div className="mt-4 grid gap-3">
+								{githubRepositoriesQuery.isLoading ? (
+									<RealInlineStatus
+										icon={<LoaderCircle className="size-4 animate-spin" />}
+										message="등록된 저장소를 불러오고 있습니다."
+									/>
+								) : null}
+
+								{githubRepositoriesQuery.error ? (
+									<RealInlineStatus
+										message={getApiErrorMessage(githubRepositoriesQuery.error)}
+									/>
+								) : null}
+
+								{githubRepositoriesQuery.isSuccess &&
+								connectedRepositories.length === 0 ? (
+									<div className="rounded-lg border border-dashed border-border bg-white/65 p-4">
+										<p className="text-sm leading-6 text-muted-foreground">
+											아직 팀 스페이스에 등록된 GitHub 저장소가 없습니다.
+										</p>
+									</div>
+								) : null}
+
+								{connectedRepositories.map((repository) => (
+									<RealGithubRepositoryItem
+										key={repository.githubRepositoryId}
+										repository={repository}
+									/>
+								))}
+							</div>
+						</div>
+
+						<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+								<div>
+									<p className="text-sm font-semibold text-brand-ink">
+										저장소 설정
+									</p>
+									<p className="mt-1 text-sm leading-6 text-muted-foreground">
+										GitHub App이 접근 가능한 저장소 중 집계할 대상을 선택합니다.
+									</p>
+								</div>
+								<Badge
+									variant={canManageGithubInstallation ? "brand" : "neutral"}
+								>
+									{canManageGithubInstallation ? "editable" : "read only"}
+								</Badge>
+							</div>
+
+							{canManageGithubInstallation ? (
+								<div className="mt-4 grid gap-3">
+									{availableGithubRepositoriesQuery.isLoading ? (
+										<RealInlineStatus
+											icon={<LoaderCircle className="size-4 animate-spin" />}
+											message="선택 가능한 저장소를 불러오고 있습니다."
+										/>
+									) : null}
+
+									{availableGithubRepositoriesQuery.error ? (
+										<RealInlineStatus
+											message={getApiErrorMessage(
+												availableGithubRepositoriesQuery.error,
+											)}
+										/>
+									) : null}
+
+									{availableGithubRepositoriesQuery.isSuccess &&
+									availableRepositories.length === 0 ? (
+										<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4">
+											<p className="text-sm leading-6 text-muted-foreground">
+												GitHub App이 접근 가능한 저장소가 없습니다.
+											</p>
+										</div>
+									) : null}
+
+									{availableRepositories.map((repository) => (
+										<RealGithubRepositoryOption
+											disabled={!canChangeGithubRepositories}
+											key={repository.githubRepositoryId}
+											onToggle={handleGithubRepositoryToggle}
+											repository={repository}
+											selected={selectedGithubRepositoryIdSet.has(
+												repository.githubRepositoryId,
+											)}
+										/>
+									))}
+
+									<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+										<p className="text-xs leading-5 text-muted-foreground">
+											{selectedGithubRepositoryIds.length}개 저장소 선택됨
+										</p>
+										<Button
+											disabled={!canSaveGithubRepositories}
+											onClick={handleSaveGithubRepositories}
+											type="button"
+										>
+											{setGithubRepositoriesMutation.isPending ? (
+												<LoaderCircle
+													className="animate-spin"
+													data-icon="inline-start"
+												/>
+											) : (
+												<Save data-icon="inline-start" />
+											)}
+											저장소 설정 저장
+										</Button>
+									</div>
+								</div>
+							) : (
+								<div className="mt-4 rounded-lg border border-dashed border-border bg-secondary/30 p-4">
+									<p className="text-sm leading-6 text-muted-foreground">
+										호스트만 GitHub 저장소 설정을 변경할 수 있습니다.
+									</p>
+								</div>
+							)}
+						</div>
+					</div>
+				) : null}
 			</div>
 		</AppPanel>
 	);
@@ -1393,6 +1633,71 @@ function RealGithubStatusCard({
 				{value}
 			</p>
 		</div>
+	);
+}
+
+function RealGithubRepositoryItem({
+	repository,
+}: {
+	repository: GithubRepository;
+}) {
+	return (
+		<a
+			className="flex flex-col gap-2 rounded-lg border border-primary/15 bg-white p-4 transition-colors hover:border-primary/30 sm:flex-row sm:items-center sm:justify-between"
+			href={`https://github.com/${repository.fullName}`}
+			rel="noreferrer"
+			target="_blank"
+		>
+			<div className="min-w-0">
+				<p className="truncate font-mono text-sm font-semibold text-primary">
+					{repository.fullName}
+				</p>
+				<p className="mt-1 text-xs text-muted-foreground">
+					{repository.repoName}
+				</p>
+			</div>
+			<ExternalLink className="size-4 shrink-0 text-primary" />
+		</a>
+	);
+}
+
+function RealGithubRepositoryOption({
+	disabled,
+	onToggle,
+	repository,
+	selected,
+}: {
+	disabled: boolean;
+	onToggle: (githubRepositoryId: number) => void;
+	repository: GithubRepository;
+	selected: boolean;
+}) {
+	return (
+		<label
+			className={cn(
+				"flex cursor-pointer items-start gap-3 rounded-lg border p-4 shadow-crisp transition-colors",
+				selected
+					? "border-primary/30 bg-primary/5"
+					: "border-border/70 bg-white",
+				disabled ? "cursor-not-allowed opacity-70" : "hover:border-primary/30",
+			)}
+		>
+			<input
+				checked={selected}
+				className="mt-1 size-4 rounded border-border text-primary"
+				disabled={disabled}
+				onChange={() => onToggle(repository.githubRepositoryId)}
+				type="checkbox"
+			/>
+			<span className="min-w-0">
+				<span className="block truncate font-mono text-sm font-semibold text-brand-ink">
+					{repository.fullName}
+				</span>
+				<span className="mt-1 block text-xs text-muted-foreground">
+					{repository.repoName}
+				</span>
+			</span>
+		</label>
 	);
 }
 

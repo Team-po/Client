@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Team-po Server API
-  version: 0.3.0
+  version: 0.4.0
   summary: Client-facing contract mirrored from the current Spring controllers.
 servers:
   - url: /api
@@ -691,6 +691,74 @@ paths:
           $ref: '#/components/responses/Conflict'
         '502':
           $ref: '#/components/responses/BadGateway'
+  /team-space/{projectGroupId}/github/available-repositories:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get repositories accessible to the installed GitHub App
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      responses:
+        '200':
+          description: Accessible GitHub repositories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubRepositoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+  /team-space/{projectGroupId}/github/repositories:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get repositories registered to a team space
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      responses:
+        '200':
+          description: Registered GitHub repositories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubRepositoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Replace repositories registered to a team space
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetGithubRepositoryListRequest'
+      responses:
+        '200':
+          description: GitHub repositories updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
 components:
   securitySchemes:
     bearerAuth:
@@ -1278,6 +1346,37 @@ components:
         state:
           type: string
           minLength: 1
+    GithubRepository:
+      type: object
+      additionalProperties: false
+      required: [githubRepositoryId, repoName, fullName]
+      properties:
+        githubRepositoryId:
+          type: integer
+          format: int64
+        repoName:
+          type: string
+        fullName:
+          type: string
+    GithubRepositoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [repositories]
+      properties:
+        repositories:
+          type: array
+          items:
+            $ref: '#/components/schemas/GithubRepository'
+    SetGithubRepositoryListRequest:
+      type: object
+      additionalProperties: false
+      required: [githubRepositoryIds]
+      properties:
+        githubRepositoryIds:
+          type: array
+          items:
+            type: integer
+            format: int64
   responses:
     BadRequest:
       description: Validation failed or business rule rejected the request
