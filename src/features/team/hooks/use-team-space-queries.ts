@@ -4,6 +4,7 @@ import {
 	completeGithubAppInstallation,
 	createGithubAppInstallationUrl,
 	getAvailableGithubRepositories,
+	getDevGuide,
 	getGithubInstallationStatus,
 	getGithubRepositories,
 	setGithubRepositories,
@@ -15,6 +16,8 @@ import type {
 
 export const teamSpaceQueryKeys = {
 	all: ["team-space"] as const,
+	devGuide: (projectGroupId: number) =>
+		["team-space", projectGroupId, "dev-guide"] as const,
 	githubAvailableRepositories: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "available-repositories"] as const,
 	githubRepositories: (projectGroupId: number) =>
@@ -25,6 +28,7 @@ export const teamSpaceQueryKeys = {
 
 const githubStatusStaleTimeMs = 15_000;
 const githubRepositoryStaleTimeMs = 15_000;
+const devGuideStaleTimeMs = 60_000;
 
 function requireProjectGroupId(projectGroupId: number | undefined) {
 	if (typeof projectGroupId !== "number") {
@@ -49,6 +53,23 @@ export function useGithubInstallationStatusQuery(
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: githubStatusStaleTimeMs,
+	});
+}
+
+export function useDevGuideQuery(
+	projectGroupId: number | undefined,
+	enabled = true,
+) {
+	return useQuery({
+		enabled: enabled && typeof projectGroupId === "number",
+		queryFn: () => getDevGuide(requireProjectGroupId(projectGroupId)),
+		queryKey:
+			typeof projectGroupId === "number"
+				? teamSpaceQueryKeys.devGuide(projectGroupId)
+				: teamSpaceQueryKeys.all,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: devGuideStaleTimeMs,
 	});
 }
 

@@ -29,3 +29,42 @@ export interface SetGithubRepositoriesRequest {
 	githubRepositoryIds: number[];
 	projectGroupId: number;
 }
+
+export interface DevGuideTechStackItem {
+	category: string;
+	reason: string;
+	recommendation: string;
+}
+
+export interface DevGuideMvpPriority {
+	feature: string;
+	priority: number;
+	rationale: string;
+	subFeatures: string[];
+}
+
+export interface DevGuideDecisionPoint {
+	consideration: string;
+	options: string[];
+	topic: string;
+}
+
+export interface DevGuideRoleTasks {
+	backend: string;
+	design: string;
+	frontend: string;
+}
+
+export interface DevGuideMilestone {
+	goal: string;
+	roleTasks: DevGuideRoleTasks;
+	week: number;
+}
+
+export interface DevGuideContent {
+	decisionPoints: DevGuideDecisionPoint[];
+	milestones: DevGuideMilestone[];
+	mvpPriorities: DevGuideMvpPriority[];
+	overview: string;
+	techStack: DevGuideTechStackItem[];
+}
