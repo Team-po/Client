@@ -359,14 +359,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-  /match/{matchId}/members:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /match/members:
     get:
       tags: [Match]
       security:
         - bearerAuth: []
-      summary: Get members in a match session
-      parameters:
-        - $ref: '#/components/parameters/MatchId'
+      summary: Get members in the current user's active match session
       responses:
         '200':
           description: Match members
@@ -374,20 +374,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MatchMemberResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-  /match/{matchId}/project:
+  /match/project:
     get:
       tags: [Match]
       security:
         - bearerAuth: []
-      summary: Get the host project details for a match session
-      parameters:
-        - $ref: '#/components/parameters/MatchId'
+      summary: Get the host project details for the current user's active match session
       responses:
         '200':
           description: Match project
@@ -395,22 +391,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MatchProjectResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /match/{matchId}/accept:
+  /match/accept:
     post:
       tags: [Match]
       security:
         - bearerAuth: []
-      summary: Accept a match session
-      parameters:
-        - $ref: '#/components/parameters/MatchId'
+      summary: Accept the current user's active match session
       responses:
         '200':
           description: Match accepted
@@ -420,14 +412,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-  /match/{matchId}/reject:
+  /match/reject:
     post:
       tags: [Match]
       security:
         - bearerAuth: []
-      summary: Reject a match session
-      parameters:
-        - $ref: '#/components/parameters/MatchId'
+      summary: Reject the current user's active match session
       responses:
         '200':
           description: Match rejected
@@ -789,13 +779,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
-    MatchId:
-      in: path
-      name: matchId
-      required: true
-      schema:
-        type: integer
-        format: int64
     ProjectGroupId:
       in: path
       name: projectGroupId
@@ -1064,23 +1047,17 @@ components:
     ProjectRequestStatus:
       type: object
       additionalProperties: false
-      required: [status, matchId]
+      required: [status, role]
       properties:
         status:
           $ref: '#/components/schemas/MatchStatus'
-        matchId:
-          type:
-            - integer
-            - 'null'
-          format: int64
+        role:
+          $ref: '#/components/schemas/MatchRole'
     MatchMemberResponse:
       type: object
       additionalProperties: false
-      required: [matchId, members]
+      required: [members]
       properties:
-        matchId:
-          type: integer
-          format: int64
         members:
           type: array
           items:
@@ -1114,11 +1091,8 @@ components:
     MatchProjectResponse:
       type: object
       additionalProperties: false
-      required: [matchId, projectTitle, projectDescription, projectMvp]
+      required: [projectTitle, projectDescription, projectMvp]
       properties:
-        matchId:
-          type: integer
-          format: int64
         projectTitle:
           type: string
         projectDescription:

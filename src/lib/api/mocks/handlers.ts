@@ -43,7 +43,7 @@ let currentUser: UserProfile | null = createPreviewUser();
 let currentUserId = 1;
 let currentPassword = previewAuthSeed.password;
 let matchStatus: MatchStatus | null = null;
-let activeMatchId: number | null = null;
+let activeProjectRequestRole: MatchRole | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
@@ -226,7 +226,7 @@ function resetDeleteEmailState() {
 
 function resetMatchState() {
 	matchStatus = null;
-	activeMatchId = null;
+	activeProjectRequestRole = null;
 	activeMatchMembers = [];
 	activeMatchProject = null;
 }
@@ -506,9 +506,7 @@ function assertProjectGroupHost(projectGroupId: number) {
 function createMockMatchSession(body: ProjectRequestPayload) {
 	const isCurrentUserLastResponder = currentUser?.isGithubLogin === true;
 
-	activeMatchId = 42;
 	activeMatchProject = {
-		matchId: activeMatchId,
 		projectDescription:
 			body.projectDescription ??
 			"개발자 사이드 프로젝트 팀을 빠르게 구성하는 서비스를 만듭니다.",
@@ -1308,7 +1306,7 @@ export const handlers = [
 		currentUser = null;
 		resetDeleteEmailState();
 		matchStatus = null;
-		activeMatchId = null;
+		activeProjectRequestRole = null;
 		activeMatchMembers = [];
 		activeMatchProject = null;
 		activeProjectGroup = null;
@@ -1337,8 +1335,16 @@ export const handlers = [
 			);
 		}
 
+		if (!activeProjectRequestRole) {
+			return buildErrorResponse(
+				500,
+				"매칭 데이터가 정합하지 않습니다.",
+				"MATCH_DATA_ERROR",
+			);
+		}
+
 		return HttpResponse.json({
-			matchId: matchStatus === "MATCHING" ? activeMatchId : null,
+			role: activeProjectRequestRole,
 			status: matchStatus,
 		});
 	}),
@@ -1375,10 +1381,11 @@ export const handlers = [
 
 		if (hasCompleteProjectInfo(body)) {
 			matchStatus = "MATCHING";
+			activeProjectRequestRole = body.role;
 			createMockMatchSession(body);
 		} else {
 			matchStatus = "WAITING";
-			activeMatchId = null;
+			activeProjectRequestRole = body.role;
 			activeMatchMembers = [];
 			activeMatchProject = null;
 		}
@@ -1406,16 +1413,14 @@ export const handlers = [
 		}
 
 		matchStatus = null;
-		activeMatchId = null;
+		activeProjectRequestRole = null;
 		activeMatchMembers = [];
 		activeMatchProject = null;
 
 		return new HttpResponse(null, { status: 200 });
 	}),
 
-	http.get(getPath("/match/:matchId/members"), ({ params }) => {
-		const matchId = Number(params.matchId);
-
+	http.get(getPath("/match/members"), () => {
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
@@ -1424,7 +1429,7 @@ export const handlers = [
 			);
 		}
 
-		if (!activeMatchId || matchId !== activeMatchId) {
+		if (matchStatus !== "MATCHING" || activeMatchMembers.length === 0) {
 			return buildErrorResponse(
 				404,
 				"이미 완료되었거나 존재하지 않는 매칭 세션입니다.",
@@ -1433,14 +1438,11 @@ export const handlers = [
 		}
 
 		return HttpResponse.json({
-			matchId: activeMatchId,
 			members: activeMatchMembers,
 		} satisfies MatchMemberResponse);
 	}),
 
-	http.get(getPath("/match/:matchId/project"), ({ params }) => {
-		const matchId = Number(params.matchId);
-
+	http.get(getPath("/match/project"), () => {
 		if (!currentUser) {
 			return buildErrorResponse(
 				401,
@@ -1449,7 +1451,7 @@ export const handlers = [
 			);
 		}
 
-		if (!activeMatchId || matchId !== activeMatchId || !activeMatchProject) {
+		if (matchStatus !== "MATCHING" || !activeMatchProject) {
 			return buildErrorResponse(
 				404,
 				"이미 완료되었거나 존재하지 않는 매칭 세션입니다.",
@@ -1460,13 +1462,12 @@ export const handlers = [
 		return HttpResponse.json(activeMatchProject);
 	}),
 
-	http.post(getPath("/match/:matchId/accept"), ({ params }) => {
-		const matchId = Number(params.matchId);
+	http.post(getPath("/match/accept"), () => {
 		const member = activeMatchMembers.find(
 			(candidate) => candidate.userId === currentUserId,
 		);
 
-		if (!activeMatchId || matchId !== activeMatchId || !member) {
+		if (matchStatus !== "MATCHING" || !member) {
 			return buildErrorResponse(
 				404,
 				"이미 완료되었거나 존재하지 않는 매칭 세션입니다.",
@@ -1487,13 +1488,12 @@ export const handlers = [
 		return new HttpResponse(null, { status: 200 });
 	}),
 
-	http.post(getPath("/match/:matchId/reject"), ({ params }) => {
-		const matchId = Number(params.matchId);
+	http.post(getPath("/match/reject"), () => {
 		const member = activeMatchMembers.find(
 			(candidate) => candidate.userId === currentUserId,
 		);
 
-		if (!activeMatchId || matchId !== activeMatchId || !member) {
+		if (matchStatus !== "MATCHING" || !member) {
 			return buildErrorResponse(
 				404,
 				"이미 완료되었거나 존재하지 않는 매칭 세션입니다.",
@@ -1511,7 +1511,7 @@ export const handlers = [
 
 		member.isAccepted = false;
 		matchStatus = "WAITING";
-		activeMatchId = null;
+		activeProjectRequestRole = member.role;
 		activeMatchMembers = [];
 		activeMatchProject = null;
 

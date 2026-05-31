@@ -23,22 +23,22 @@ export function getProjectRequestStatus() {
 	return apiRequest<ProjectRequestStatusResponse>("/match/status");
 }
 
-export function getMatchMembers(matchId: number) {
-	return apiRequest<MatchMemberResponse>(`/match/${matchId}/members`);
+export function getMatchMembers() {
+	return apiRequest<MatchMemberResponse>("/match/members");
 }
 
-export function getMatchProject(matchId: number) {
-	return apiRequest<MatchProjectResponse>(`/match/${matchId}/project`);
+export function getMatchProject() {
+	return apiRequest<MatchProjectResponse>("/match/project");
 }
 
-export function acceptMatch(matchId: number) {
-	return apiRequest<void>(`/match/${matchId}/accept`, {
+export function acceptMatch() {
+	return apiRequest<void>("/match/accept", {
 		method: "POST",
 	});
 }
 
-export function rejectMatch(matchId: number) {
-	return apiRequest<void>(`/match/${matchId}/reject`, {
+export function rejectMatch() {
+	return apiRequest<void>("/match/reject", {
 		method: "POST",
 	});
 }

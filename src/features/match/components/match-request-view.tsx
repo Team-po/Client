@@ -140,14 +140,12 @@ export function MatchRequestView() {
 	const projectRequestStatus = isSignedIn ? statusQuery.data : null;
 	const noActiveRequest = projectRequestStatus === null;
 	const status = projectRequestStatus?.status;
-	const activeMatchId =
-		projectRequestStatus?.status === "MATCHING"
-			? projectRequestStatus.matchId
-			: null;
-	const matchMembersQuery = useMatchMembersQuery(activeMatchId);
-	const matchProjectQuery = useMatchProjectQuery(activeMatchId);
-	const acceptMutation = useAcceptMatchMutation(activeMatchId);
-	const rejectMutation = useRejectMatchMutation(activeMatchId);
+	const selectedRole = projectRequestStatus?.role ?? form.role;
+	const hasActiveMatch = projectRequestStatus?.status === "MATCHING";
+	const matchMembersQuery = useMatchMembersQuery(hasActiveMatch);
+	const matchProjectQuery = useMatchProjectQuery(hasActiveMatch);
+	const acceptMutation = useAcceptMatchMutation();
+	const rejectMutation = useRejectMatchMutation();
 	const currentProjectGroup = isSignedIn
 		? (projectGroupQuery.data ?? undefined)
 		: undefined;
@@ -167,11 +165,11 @@ export function MatchRequestView() {
 		(status === "WAITING" || status === "MATCHING");
 	const canRespondToMatch = Boolean(
 		!isMatchingAccessBlocked &&
-			activeMatchId &&
+			hasActiveMatch &&
 			(!currentMatchMember ||
 				(!currentMatchMember.isHost && currentMatchMember.isAccepted !== true)),
 	);
-	const hasLiveMatch = Boolean(activeMatchId && !isMatchingAccessBlocked);
+	const hasLiveMatch = hasActiveMatch && !isMatchingAccessBlocked;
 	const isSubmitDisabled =
 		!isSignedIn ||
 		isMatchingAccessBlocked ||
@@ -197,7 +195,7 @@ export function MatchRequestView() {
 	}
 
 	async function handleAcceptMatch() {
-		if (!activeMatchId) {
+		if (!hasActiveMatch) {
 			return;
 		}
 
@@ -287,7 +285,7 @@ export function MatchRequestView() {
 											: "없음"
 						}
 					/>
-					<MetricCard label="선택 역할" value={roleLabels[form.role]} />
+					<MetricCard label="선택 역할" value={roleLabels[selectedRole]} />
 					<MetricCard
 						label="제안 상태"
 						tone={
@@ -375,12 +373,11 @@ export function MatchRequestView() {
 					</AppPanel>
 				) : null}
 
-				{activeMatchId && !isMatchingAccessBlocked ? (
+				{hasActiveMatch && !isMatchingAccessBlocked ? (
 					<div id="match-session">
 						<MatchSessionCard
 							canRespond={canRespondToMatch}
 							currentMember={currentMatchMember}
-							matchId={activeMatchId}
 							members={matchMembersQuery.data?.members}
 							membersError={matchMembersQuery.error}
 							membersLoading={matchMembersQuery.isLoading}
@@ -1103,7 +1100,6 @@ function DecisionBadge({ decision }: { decision: MatchDecisionStatus }) {
 interface MatchSessionCardProps {
 	canRespond: boolean;
 	currentMember?: MatchMember;
-	matchId: number;
 	members?: MatchMember[];
 	membersError: unknown;
 	membersLoading: boolean;
@@ -1119,7 +1115,6 @@ interface MatchSessionCardProps {
 function MatchSessionCard({
 	canRespond,
 	currentMember,
-	matchId,
 	members,
 	membersError,
 	membersLoading,
@@ -1139,7 +1134,6 @@ function MatchSessionCard({
 						<Badge variant={canRespond ? "warm" : "brand"}>
 							{canRespond ? "응답 필요" : "응답 완료"}
 						</Badge>
-						<Badge variant="brand">#{matchId}</Badge>
 					</div>
 				}
 				description="팀원과 프로젝트 정보를 확인한 뒤 이 카드에서 바로 수락 또는 거절할 수 있습니다."

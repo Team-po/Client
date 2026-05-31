@@ -10,7 +10,7 @@ export interface ProjectRequestPayload {
 }
 
 export interface ProjectRequestStatusResponse {
-	matchId: number | null;
+	role: MatchRole;
 	status: MatchStatus;
 }
 
@@ -26,12 +26,10 @@ export interface MatchMember {
 }
 
 export interface MatchMemberResponse {
-	matchId: number;
 	members: MatchMember[];
 }
 
 export interface MatchProjectResponse {
-	matchId: number;
 	projectDescription: string;
 	projectMvp: string;
 	projectTitle: string;

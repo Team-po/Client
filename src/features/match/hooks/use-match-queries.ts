@@ -20,8 +20,8 @@ import type {
 
 export const matchQueryKeys = {
 	all: ["match"] as const,
-	members: (matchId: number) => ["match", matchId, "members"] as const,
-	project: (matchId: number) => ["match", matchId, "project"] as const,
+	members: ["match", "members"] as const,
+	project: ["match", "project"] as const,
 	status: ["match", "status"] as const,
 };
 
@@ -44,24 +44,20 @@ export function useProjectRequestStatusQuery() {
 	});
 }
 
-export function useMatchMembersQuery(matchId: number | null | undefined) {
+export function useMatchMembersQuery(enabled: boolean) {
 	return useQuery<MatchMemberResponse>({
-		enabled: Boolean(getAuthSession() && matchId),
-		queryFn: () => getMatchMembers(matchId as number),
-		queryKey: matchId
-			? matchQueryKeys.members(matchId)
-			: ["match", "members", "idle"],
+		enabled: Boolean(getAuthSession() && enabled),
+		queryFn: () => getMatchMembers(),
+		queryKey: matchQueryKeys.members,
 		retry: false,
 	});
 }
 
-export function useMatchProjectQuery(matchId: number | null | undefined) {
+export function useMatchProjectQuery(enabled: boolean) {
 	return useQuery<MatchProjectResponse>({
-		enabled: Boolean(getAuthSession() && matchId),
-		queryFn: () => getMatchProject(matchId as number),
-		queryKey: matchId
-			? matchQueryKeys.project(matchId)
-			: ["match", "project", "idle"],
+		enabled: Boolean(getAuthSession() && enabled),
+		queryFn: () => getMatchProject(),
+		queryKey: matchQueryKeys.project,
 		retry: false,
 	});
 }
@@ -73,6 +69,8 @@ export function useCreateProjectRequestMutation() {
 		mutationFn: (payload: ProjectRequestPayload) =>
 			createProjectRequest(payload),
 		onSuccess: () => {
+			queryClient.removeQueries({ queryKey: matchQueryKeys.members });
+			queryClient.removeQueries({ queryKey: matchQueryKeys.project });
 			queryClient.invalidateQueries({ queryKey: matchQueryKeys.status });
 		},
 	});
@@ -88,39 +86,35 @@ export function useCancelProjectRequestMutation() {
 				matchQueryKeys.status,
 				null,
 			);
+			queryClient.removeQueries({ queryKey: matchQueryKeys.members });
+			queryClient.removeQueries({ queryKey: matchQueryKeys.project });
 			queryClient.invalidateQueries({ queryKey: matchQueryKeys.status });
 		},
 	});
 }
 
-export function useAcceptMatchMutation(matchId: number | null | undefined) {
+export function useAcceptMatchMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: () => acceptMatch(matchId as number),
+		mutationFn: () => acceptMatch(),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: matchQueryKeys.status });
-			if (matchId) {
-				queryClient.invalidateQueries({
-					queryKey: matchQueryKeys.members(matchId),
-				});
-			}
+			queryClient.invalidateQueries({ queryKey: matchQueryKeys.members });
+			queryClient.invalidateQueries({ queryKey: matchQueryKeys.project });
 		},
 	});
 }
 
-export function useRejectMatchMutation(matchId: number | null | undefined) {
+export function useRejectMatchMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: () => rejectMatch(matchId as number),
+		mutationFn: () => rejectMatch(),
 		onSuccess: () => {
+			queryClient.removeQueries({ queryKey: matchQueryKeys.members });
+			queryClient.removeQueries({ queryKey: matchQueryKeys.project });
 			queryClient.invalidateQueries({ queryKey: matchQueryKeys.status });
-			if (matchId) {
-				queryClient.invalidateQueries({
-					queryKey: matchQueryKeys.members(matchId),
-				});
-			}
 		},
 	});
 }
