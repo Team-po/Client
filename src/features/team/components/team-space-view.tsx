@@ -140,6 +140,13 @@ const projectChecklistStatusTone: Record<ProjectChecklistStatus, string> = {
 const checklistControlClass =
 	"h-11 w-full min-w-0 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring";
 
+const githubOAuthPolicySteps = [
+	"GitHub Organization",
+	"Settings",
+	"OAuth app policy",
+	"Remove restrictions",
+] as const;
+
 function areNumberSelectionsEqual(left: number[], right: number[]) {
 	if (left.length !== right.length) {
 		return false;
@@ -2338,6 +2345,7 @@ function RealGithubInstallationPanel({
 		selectedGithubRepositoryIds,
 		connectedRepositoryIds,
 	);
+	const hasGithubRepositorySelection = (githubStatus?.repositoryCount ?? 0) > 0;
 	const canCreateInstallUrl =
 		githubStatusQuery.isSuccess &&
 		canManageGithubInstallation &&
@@ -2352,6 +2360,10 @@ function RealGithubInstallationPanel({
 		isGithubConnected &&
 		canChangeGithubRepositories &&
 		hasRepositorySelectionChanged;
+	const showGithubPolicyNotice =
+		githubStatusQuery.isSuccess &&
+		canManageGithubInstallation &&
+		!hasGithubRepositorySelection;
 
 	useEffect(() => {
 		if (!githubRepositoriesQuery.data) {
@@ -2449,7 +2461,7 @@ function RealGithubInstallationPanel({
 					/>
 					<RealGithubStatusCard
 						label="Repositories"
-						ready={(githubStatus?.repositoryCount ?? 0) > 0}
+						ready={hasGithubRepositorySelection}
 						value={`${githubStatus?.repositoryCount ?? 0}개`}
 					/>
 					<RealGithubStatusCard
@@ -2458,6 +2470,8 @@ function RealGithubInstallationPanel({
 						value={canManageGithubInstallation ? "HOST" : "READ ONLY"}
 					/>
 				</div>
+
+				{showGithubPolicyNotice ? <GithubOrganizationPolicyNotice /> : null}
 
 				<div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-center sm:justify-between">
 					<div className="min-w-0">
@@ -2638,6 +2652,53 @@ function RealGithubInstallationPanel({
 				) : null}
 			</div>
 		</AppPanel>
+	);
+}
+
+function GithubOrganizationPolicyNotice() {
+	return (
+		<div className="rounded-lg border border-amber-500/20 bg-amber-50/80 p-4 shadow-crisp">
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+				<div className="flex min-w-0 gap-3">
+					<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-white text-amber-700">
+						<GitPullRequest className="size-4" aria-hidden="true" />
+					</div>
+					<div className="min-w-0">
+						<div className="flex flex-wrap items-center gap-2">
+							<p className="text-sm font-semibold text-brand-ink">
+								저장소 연결 전 Organization 정책을 확인하세요
+							</p>
+							<Badge variant="warm">required before sync</Badge>
+						</div>
+						<p className="mt-2 text-sm leading-6 text-amber-900/80">
+							Third-party application access policy가 제한되어 있으면 TeamPo가
+							저장소와 PR 정보를 가져오지 못할 수 있습니다. GitHub에서 아래
+							경로로 이동해{" "}
+							<span className="font-mono font-semibold text-amber-800">
+								Remove restrictions
+							</span>
+							를 적용한 뒤 GitHub App 설치 또는 저장소 선택을 이어가세요.
+						</p>
+					</div>
+				</div>
+
+				<ol
+					aria-label="GitHub OAuth policy 설정 경로"
+					className="grid shrink-0 gap-2 rounded-lg border border-amber-500/20 bg-white/75 p-2 sm:min-w-72"
+				>
+					{githubOAuthPolicySteps.map((step, index) => (
+						<li className="flex items-center gap-2" key={step}>
+							<span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-amber-500/20 bg-amber-50 font-mono text-[11px] font-semibold text-amber-700">
+								{index + 1}
+							</span>
+							<span className="min-w-0 flex-1 rounded-md border border-border/70 bg-white px-2 py-1 font-mono text-[11px] text-muted-foreground">
+								{step}
+							</span>
+						</li>
+					))}
+				</ol>
+			</div>
+		</div>
 	);
 }
 
@@ -3856,6 +3917,8 @@ function GithubPanel({
 	const canSelectRepositories = Boolean(organization && isGitHubAppInstalled);
 	const canSaveRepositoryConnection =
 		canSelectRepositories && selectedRepoIds.length > 0;
+	const hasConnectedRepositories = connectedRepos.length > 0;
+	const showGithubPolicyNotice = !hasConnectedRepositories;
 	const setupStatusItems = [
 		{
 			description: organization?.login ?? "Organization 필요",
@@ -3870,13 +3933,12 @@ function GithubPanel({
 			ready: isGitHubAppInstalled,
 		},
 		{
-			description:
-				connectedRepos.length > 0
-					? `${connectedRepos.length}개 저장소`
-					: "저장소 선택 전",
+			description: hasConnectedRepositories
+				? `${connectedRepos.length}개 저장소`
+				: "저장소 선택 전",
 			icon: GitBranch,
 			label: "Repository",
-			ready: connectedRepos.length > 0,
+			ready: hasConnectedRepositories,
 		},
 		{
 			description: isProjectGroupGithubLinked ? "기여도 집계 가능" : "연동 전",
@@ -3965,6 +4027,8 @@ function GithubPanel({
 						);
 					})}
 				</div>
+
+				{showGithubPolicyNotice ? <GithubOrganizationPolicyNotice /> : null}
 
 				<div className="grid gap-4 2xl:grid-cols-[0.85fr_1.15fr]">
 					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
