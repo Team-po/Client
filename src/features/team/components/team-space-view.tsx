@@ -144,7 +144,7 @@ const githubOAuthPolicySteps = [
 	"GitHub Organization",
 	"Settings",
 	"OAuth app policy",
-	"Remove restrictions",
+	"TeamPo 접근 승인 확인",
 ] as const;
 
 function areNumberSelectionsEqual(left: number[], right: number[]) {
@@ -2666,18 +2666,15 @@ function GithubOrganizationPolicyNotice() {
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
 							<p className="text-sm font-semibold text-brand-ink">
-								저장소 연결 전 Organization 정책을 확인하세요
+								저장소 연결 전 TeamPo 접근 권한을 확인하세요
 							</p>
-							<Badge variant="warm">required before sync</Badge>
+							<Badge variant="warm">permission check</Badge>
 						</div>
 						<p className="mt-2 text-sm leading-6 text-amber-900/80">
 							Third-party application access policy가 제한되어 있으면 TeamPo가
-							저장소와 PR 정보를 가져오지 못할 수 있습니다. GitHub에서 아래
-							경로로 이동해{" "}
-							<span className="font-mono font-semibold text-amber-800">
-								Remove restrictions
-							</span>
-							를 적용한 뒤 GitHub App 설치 또는 저장소 선택을 이어가세요.
+							저장소와 PR 정보를 가져오지 못할 수 있습니다. Organization owner가
+							TeamPo 앱 접근을 승인했는지, GitHub App 설치에서 선택한 저장소와
+							Pull requests 읽기 권한이 열려 있는지 확인하세요.
 						</p>
 					</div>
 				</div>
