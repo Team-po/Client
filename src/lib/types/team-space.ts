@@ -30,6 +30,30 @@ export interface SetGithubRepositoriesRequest {
 	projectGroupId: number;
 }
 
+export interface GithubRepositoryContributionRequest {
+	githubRepositoryId: number;
+	projectGroupId: number;
+}
+
+export interface GithubRepositoryContributor {
+	additions: number;
+	changedFiles: number;
+	contributionScore: number;
+	deletions: number;
+	githubUserId: number;
+	githubUsername: string;
+	linkedIssueCount: number;
+	mergedPrCount: number;
+	userId: number;
+}
+
+export interface GithubRepositoryContributionResponse {
+	contributors: GithubRepositoryContributor[];
+	fullName: string;
+	githubRepositoryId: number;
+	repoName: string;
+}
+
 export interface DevGuideTechStackItem {
 	category: string;
 	reason: string;

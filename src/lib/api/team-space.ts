@@ -4,6 +4,8 @@ import type {
 	GithubAppInstallationCompleteRequest,
 	GithubAppInstallationUrl,
 	GithubInstallationStatus,
+	GithubRepositoryContributionRequest,
+	GithubRepositoryContributionResponse,
 	GithubRepositoryListResponse,
 	SetGithubRepositoriesRequest,
 } from "@/lib/types/team-space";
@@ -68,4 +70,25 @@ export function setGithubRepositories({
 		},
 		method: "PUT",
 	});
+}
+
+export function getGithubRepositoryContributions({
+	githubRepositoryId,
+	projectGroupId,
+}: GithubRepositoryContributionRequest) {
+	return apiRequest<GithubRepositoryContributionResponse>(
+		`/team-space/${projectGroupId}/github/repositories/${githubRepositoryId}/contributions`,
+	);
+}
+
+export function syncGithubPullRequestContributions({
+	githubRepositoryId,
+	projectGroupId,
+}: GithubRepositoryContributionRequest) {
+	return apiRequest<void>(
+		`/team-space/${projectGroupId}/github/repositories/${githubRepositoryId}/pull-request-contributions/sync`,
+		{
+			method: "POST",
+		},
+	);
 }

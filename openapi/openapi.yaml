@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Team-po Server API
-  version: 0.4.0
+  version: 0.5.0
   summary: Client-facing contract mirrored from the current Spring controllers.
 servers:
   - url: /api
@@ -772,6 +772,50 @@ paths:
           $ref: '#/components/responses/NotFound'
         '502':
           $ref: '#/components/responses/BadGateway'
+  /team-space/{projectGroupId}/github/repositories/{githubRepositoryId}/contributions:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get GitHub repository contribution totals for a team space
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/GithubRepositoryId'
+      responses:
+        '200':
+          description: GitHub repository contribution totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubRepositoryContributionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /team-space/{projectGroupId}/github/repositories/{githubRepositoryId}/pull-request-contributions/sync:
+    post:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Sync merged GitHub pull request contributions for a repository
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/GithubRepositoryId'
+      responses:
+        '200':
+          description: GitHub pull request contributions synced
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
 components:
   securitySchemes:
     bearerAuth:
@@ -796,6 +840,13 @@ components:
     ChecklistId:
       in: path
       name: checklistId
+      required: true
+      schema:
+        type: integer
+        format: int64
+    GithubRepositoryId:
+      in: path
+      name: githubRepositoryId
       required: true
       schema:
         type: integer
@@ -1374,6 +1425,62 @@ components:
           items:
             type: integer
             format: int64
+    GithubRepositoryContributionResponse:
+      type: object
+      additionalProperties: false
+      required: [githubRepositoryId, repoName, fullName, contributors]
+      properties:
+        githubRepositoryId:
+          type: integer
+          format: int64
+        repoName:
+          type: string
+        fullName:
+          type: string
+        contributors:
+          type: array
+          items:
+            $ref: '#/components/schemas/GithubRepositoryContributor'
+    GithubRepositoryContributor:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - githubUserId
+        - githubUsername
+        - mergedPrCount
+        - linkedIssueCount
+        - additions
+        - deletions
+        - changedFiles
+        - contributionScore
+      properties:
+        userId:
+          type: integer
+          format: int64
+        githubUserId:
+          type: integer
+          format: int64
+        githubUsername:
+          type: string
+        mergedPrCount:
+          type: integer
+          format: int64
+        linkedIssueCount:
+          type: integer
+          format: int64
+        additions:
+          type: integer
+          format: int64
+        deletions:
+          type: integer
+          format: int64
+        changedFiles:
+          type: integer
+          format: int64
+        contributionScore:
+          type: integer
+          format: int64
     DevGuideContent:
       type: object
       additionalProperties: false

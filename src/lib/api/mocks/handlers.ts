@@ -32,6 +32,7 @@ import type {
 	GithubAppInstallationCompleteRequest,
 	GithubInstallationStatus,
 	GithubRepository,
+	GithubRepositoryContributionResponse,
 } from "@/lib/types/team-space";
 import type {
 	EditPasswordRequest,
@@ -55,9 +56,15 @@ let githubInstallationStatus: GithubInstallationStatus =
 	createDisconnectedGithubStatus();
 let pendingGithubInstallationState: string | null = null;
 let selectedGithubRepositories: GithubRepository[] = [];
+let githubRepositoryContributions = new Map<
+	number,
+	GithubRepositoryContributionResponse
+>();
 let deleteEmailAuthSentUserId: number | null = null;
 let deleteEmailVerifiedUserId: number | null = null;
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
+const pendingGithubInstallationStateStorageKey =
+	"team-po.mock.github-installation-state";
 
 function createGithubLoginUser() {
 	return createPreviewUser({
@@ -238,8 +245,9 @@ function resetTeamSpaceApiState() {
 	activeDevGuide = createMockDevGuide(activeProjectGroup);
 	nextProjectChecklistId = 103;
 	githubInstallationStatus = createDisconnectedGithubStatus();
-	pendingGithubInstallationState = null;
+	clearPendingGithubInstallationState();
 	selectedGithubRepositories = [];
+	githubRepositoryContributions = new Map();
 }
 
 function createDisconnectedGithubStatus(): GithubInstallationStatus {
@@ -402,6 +410,120 @@ function syncGithubRepositoryCount() {
 		...githubInstallationStatus,
 		repositoryCount: selectedGithubRepositories.length,
 	};
+}
+
+function setPendingGithubInstallationState(state: string) {
+	pendingGithubInstallationState = state;
+	getSessionStorage()?.setItem(pendingGithubInstallationStateStorageKey, state);
+}
+
+function getPendingGithubInstallationState() {
+	if (pendingGithubInstallationState) {
+		return pendingGithubInstallationState;
+	}
+
+	pendingGithubInstallationState =
+		getSessionStorage()?.getItem(pendingGithubInstallationStateStorageKey) ??
+		null;
+
+	return pendingGithubInstallationState;
+}
+
+function clearPendingGithubInstallationState() {
+	pendingGithubInstallationState = null;
+	getSessionStorage()?.removeItem(pendingGithubInstallationStateStorageKey);
+}
+
+function getSessionStorage() {
+	return typeof window === "undefined" ? null : window.sessionStorage;
+}
+
+function syncGithubRepositoryContributionState() {
+	const nextContributions = new Map<
+		number,
+		GithubRepositoryContributionResponse
+	>();
+
+	for (const repository of selectedGithubRepositories) {
+		nextContributions.set(
+			repository.githubRepositoryId,
+			githubRepositoryContributions.get(repository.githubRepositoryId) ??
+				createEmptyGithubRepositoryContribution(repository),
+		);
+	}
+
+	githubRepositoryContributions = nextContributions;
+}
+
+function createEmptyGithubRepositoryContribution(
+	repository: GithubRepository,
+): GithubRepositoryContributionResponse {
+	return {
+		contributors: [],
+		fullName: repository.fullName,
+		githubRepositoryId: repository.githubRepositoryId,
+		repoName: repository.repoName,
+	};
+}
+
+function createSyncedGithubRepositoryContribution(
+	repository: GithubRepository,
+): GithubRepositoryContributionResponse {
+	const baseContributors = [
+		{
+			additions: 860,
+			changedFiles: 34,
+			contributionScore: 40,
+			deletions: 190,
+			githubUserId: 501,
+			githubUsername: "dev-a",
+			linkedIssueCount: 2,
+			mergedPrCount: 3,
+			userId: 1,
+		},
+		{
+			additions: 420,
+			changedFiles: 18,
+			contributionScore: 25,
+			deletions: 80,
+			githubUserId: 502,
+			githubUsername: "dev-b",
+			linkedIssueCount: 1,
+			mergedPrCount: 2,
+			userId: 2,
+		},
+	];
+
+	if (repository.githubRepositoryId === 200) {
+		return {
+			...createEmptyGithubRepositoryContribution(repository),
+			contributors: [
+				{
+					additions: 1240,
+					changedFiles: 42,
+					contributionScore: 55,
+					deletions: 310,
+					githubUserId: 503,
+					githubUsername: "server-runner",
+					linkedIssueCount: 3,
+					mergedPrCount: 4,
+					userId: 1,
+				},
+				...baseContributors.slice(1),
+			],
+		};
+	}
+
+	return {
+		...createEmptyGithubRepositoryContribution(repository),
+		contributors: baseContributors,
+	};
+}
+
+function findSelectedGithubRepository(githubRepositoryId: number) {
+	return selectedGithubRepositories.find(
+		(repository) => repository.githubRepositoryId === githubRepositoryId,
+	);
 }
 
 function isValidMatchRole(value: string): value is MatchRole {
@@ -1938,10 +2060,11 @@ export const handlers = [
 				);
 			}
 
-			pendingGithubInstallationState = crypto.randomUUID();
+			const installationState = crypto.randomUUID();
+			setPendingGithubInstallationState(installationState);
 
 			return HttpResponse.json({
-				installUrl: `https://github.com/apps/team-po/installations/new?state=${pendingGithubInstallationState}`,
+				installUrl: `https://github.com/apps/team-po/installations/new?state=${installationState}`,
 			});
 		},
 	),
@@ -1962,10 +2085,12 @@ export const handlers = [
 				return hostError;
 			}
 
+			const expectedInstallationState = getPendingGithubInstallationState();
+
 			if (
 				body.setupAction !== "install" ||
-				!pendingGithubInstallationState ||
-				body.state !== pendingGithubInstallationState
+				!expectedInstallationState ||
+				body.state !== expectedInstallationState
 			) {
 				return buildErrorResponse(
 					400,
@@ -1990,8 +2115,9 @@ export const handlers = [
 				);
 			}
 
-			pendingGithubInstallationState = null;
+			clearPendingGithubInstallationState();
 			selectedGithubRepositories = [];
+			githubRepositoryContributions = new Map();
 			githubInstallationStatus = {
 				connected: true,
 				organizationLogin: "team-po-labs",
@@ -2110,6 +2236,83 @@ export const handlers = [
 					Boolean(repository),
 				);
 			syncGithubRepositoryCount();
+			syncGithubRepositoryContributionState();
+
+			return new HttpResponse(null, { status: 200 });
+		},
+	),
+
+	http.get(
+		getPath(
+			"/team-space/:projectGroupId/github/repositories/:githubRepositoryId/contributions",
+		),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const githubRepositoryId = Number(params.githubRepositoryId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const repository = findSelectedGithubRepository(githubRepositoryId);
+
+			if (!repository) {
+				return buildErrorResponse(
+					400,
+					"팀 스페이스에 등록된 Github Repository가 아닙니다.",
+					"GITHUB_REPOSITORY_NOT_ACCESSIBLE",
+				);
+			}
+
+			return HttpResponse.json(
+				githubRepositoryContributions.get(githubRepositoryId) ??
+					createEmptyGithubRepositoryContribution(repository),
+			);
+		},
+	),
+
+	http.post(
+		getPath(
+			"/team-space/:projectGroupId/github/repositories/:githubRepositoryId/pull-request-contributions/sync",
+		),
+		async ({ params, request }) => {
+			await delay(450);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const githubRepositoryId = Number(params.githubRepositoryId);
+			const hostError = assertProjectGroupHost(projectGroupId);
+
+			if (hostError) {
+				return hostError;
+			}
+
+			const repository = findSelectedGithubRepository(githubRepositoryId);
+
+			if (!repository) {
+				return buildErrorResponse(
+					400,
+					"팀 스페이스에 등록된 Github Repository가 아닙니다.",
+					"GITHUB_REPOSITORY_NOT_ACCESSIBLE",
+				);
+			}
+
+			if (githubRepositoryId === 300) {
+				return buildErrorResponse(
+					502,
+					"GitHub API 요청에 실패했습니다.",
+					"GITHUB_API_REQUEST_FAILED",
+				);
+			}
+
+			githubRepositoryContributions.set(
+				githubRepositoryId,
+				createSyncedGithubRepositoryContribution(repository),
+			);
 
 			return new HttpResponse(null, { status: 200 });
 		},
