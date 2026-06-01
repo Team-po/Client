@@ -59,7 +59,9 @@ import {
 	useDevGuideQuery,
 	useGithubInstallationStatusQuery,
 	useGithubRepositoriesQuery,
+	useGithubRepositoryContributionsQuery,
 	useSetGithubRepositoriesMutation,
+	useSyncGithubPullRequestContributionsMutation,
 } from "@/features/team/hooks/use-team-space-queries";
 import { demoTeamSpace } from "@/features/team/lib/demo-team-space";
 import { getAuthSession } from "@/lib/api/auth-session";
@@ -73,7 +75,11 @@ import type {
 	MyProjectGroup,
 	ProjectGroupMember,
 } from "@/lib/types/project-group";
-import type { DevGuideContent, GithubRepository } from "@/lib/types/team-space";
+import type {
+	DevGuideContent,
+	GithubRepository,
+	GithubRepositoryContributor,
+} from "@/lib/types/team-space";
 import type {
 	GithubRepositorySummary,
 	TeamChecklistItem,
@@ -158,6 +164,7 @@ const contributionLevelClass = [
 	"bg-emerald-500",
 	"bg-emerald-700",
 ] as const;
+const contributionNumberFormatter = new Intl.NumberFormat("ko-KR");
 
 export function TeamSpaceView() {
 	const [isSignedIn] = useState(() => Boolean(getAuthSession()));
@@ -2522,8 +2529,10 @@ function RealGithubInstallationPanel({
 								) : null}
 
 								{connectedRepositories.map((repository) => (
-									<RealGithubRepositoryItem
+									<RealGithubRepositoryContributionCard
+										canManageGithubInstallation={canManageGithubInstallation}
 										key={repository.githubRepositoryId}
+										projectGroupId={projectGroup.projectGroupId}
 										repository={repository}
 									/>
 								))}
@@ -2663,28 +2672,218 @@ function RealGithubStatusCard({
 	);
 }
 
-function RealGithubRepositoryItem({
+function RealGithubRepositoryContributionCard({
+	canManageGithubInstallation,
+	projectGroupId,
 	repository,
 }: {
+	canManageGithubInstallation: boolean;
+	projectGroupId: number;
 	repository: GithubRepository;
 }) {
+	const contributionsQuery = useGithubRepositoryContributionsQuery(
+		projectGroupId,
+		repository.githubRepositoryId,
+	);
+	const syncContributionsMutation =
+		useSyncGithubPullRequestContributionsMutation();
+	const contributors = contributionsQuery.data?.contributors ?? [];
+	const sortedContributors = useMemo(
+		() =>
+			[...contributors].sort(
+				(left, right) => right.contributionScore - left.contributionScore,
+			),
+		[contributors],
+	);
+	const totals = useMemo(
+		() => calculateGithubContributionTotals(contributors),
+		[contributors],
+	);
+	const isSyncingCurrentRepository =
+		syncContributionsMutation.isPending &&
+		syncContributionsMutation.variables?.githubRepositoryId ===
+			repository.githubRepositoryId;
+
+	function handleSyncContributions() {
+		syncContributionsMutation.mutate({
+			githubRepositoryId: repository.githubRepositoryId,
+			projectGroupId,
+		});
+	}
+
 	return (
-		<a
-			className="flex flex-col gap-2 rounded-lg border border-primary/15 bg-white p-4 transition-colors hover:border-primary/30 sm:flex-row sm:items-center sm:justify-between"
-			href={`https://github.com/${repository.fullName}`}
-			rel="noreferrer"
-			target="_blank"
-		>
+		<div className="rounded-lg border border-primary/15 bg-white p-4 shadow-crisp">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<a
+					className="min-w-0"
+					href={`https://github.com/${repository.fullName}`}
+					rel="noreferrer"
+					target="_blank"
+				>
+					<span className="flex min-w-0 items-center gap-2">
+						<span className="truncate font-mono text-sm font-semibold text-primary">
+							{repository.fullName}
+						</span>
+						<ExternalLink className="size-4 shrink-0 text-primary" />
+					</span>
+					<span className="mt-1 block text-xs text-muted-foreground">
+						{repository.repoName}
+					</span>
+				</a>
+				<Button
+					disabled={!canManageGithubInstallation || isSyncingCurrentRepository}
+					onClick={handleSyncContributions}
+					size="sm"
+					type="button"
+					variant="outline"
+				>
+					{isSyncingCurrentRepository ? (
+						<LoaderCircle className="animate-spin" data-icon="inline-start" />
+					) : (
+						<RefreshCw data-icon="inline-start" />
+					)}
+					PR 동기화
+				</Button>
+			</div>
+
+			{contributionsQuery.isLoading ? (
+				<RealInlineStatus
+					className="mt-4"
+					icon={<LoaderCircle className="size-4 animate-spin" />}
+					message="저장소 기여도를 불러오고 있습니다."
+				/>
+			) : null}
+
+			{contributionsQuery.error ? (
+				<RealInlineStatus
+					className="mt-4"
+					message={getApiErrorMessage(contributionsQuery.error)}
+				/>
+			) : null}
+
+			{syncContributionsMutation.error &&
+			syncContributionsMutation.variables?.githubRepositoryId ===
+				repository.githubRepositoryId ? (
+				<RealInlineStatus
+					className="mt-4"
+					message={getApiErrorMessage(syncContributionsMutation.error)}
+				/>
+			) : null}
+
+			{contributionsQuery.isSuccess ? (
+				<div className="mt-4 grid gap-4">
+					<div className="grid gap-2 sm:grid-cols-4">
+						<RealGithubContributionStat
+							label="Merged PR"
+							value={totals.mergedPrCount}
+						/>
+						<RealGithubContributionStat
+							label="Linked issues"
+							value={totals.linkedIssueCount}
+						/>
+						<RealGithubContributionStat
+							label="Changed files"
+							value={totals.changedFiles}
+						/>
+						<RealGithubContributionStat
+							label="Score"
+							value={totals.contributionScore}
+						/>
+					</div>
+
+					{sortedContributors.length > 0 ? (
+						<div className="grid gap-2">
+							{sortedContributors.map((contributor) => (
+								<RealGithubContributorRow
+									contributor={contributor}
+									key={`${contributor.userId}-${contributor.githubUserId}`}
+								/>
+							))}
+						</div>
+					) : (
+						<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4">
+							<p className="text-sm leading-6 text-muted-foreground">
+								아직 동기화된 PR 기여도가 없습니다.
+							</p>
+						</div>
+					)}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+function calculateGithubContributionTotals(
+	contributors: GithubRepositoryContributor[],
+) {
+	return contributors.reduce(
+		(totals, contributor) => ({
+			changedFiles: totals.changedFiles + contributor.changedFiles,
+			contributionScore:
+				totals.contributionScore + contributor.contributionScore,
+			linkedIssueCount: totals.linkedIssueCount + contributor.linkedIssueCount,
+			mergedPrCount: totals.mergedPrCount + contributor.mergedPrCount,
+		}),
+		{
+			changedFiles: 0,
+			contributionScore: 0,
+			linkedIssueCount: 0,
+			mergedPrCount: 0,
+		},
+	);
+}
+
+function RealGithubContributionStat({
+	label,
+	value,
+}: {
+	label: string;
+	value: number;
+}) {
+	return (
+		<div className="rounded-lg border border-border/70 bg-secondary/25 p-3">
+			<p className="text-[11px] font-semibold uppercase text-muted-foreground">
+				{label}
+			</p>
+			<p className="mt-2 text-sm font-semibold text-brand-ink">
+				{contributionNumberFormatter.format(value)}
+			</p>
+		</div>
+	);
+}
+
+function RealGithubContributorRow({
+	contributor,
+}: {
+	contributor: GithubRepositoryContributor;
+}) {
+	return (
+		<div className="grid gap-3 rounded-lg border border-border/70 bg-secondary/20 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
 			<div className="min-w-0">
-				<p className="truncate font-mono text-sm font-semibold text-primary">
-					{repository.fullName}
+				<p className="truncate text-sm font-semibold text-brand-ink">
+					@{contributor.githubUsername}
 				</p>
 				<p className="mt-1 text-xs text-muted-foreground">
-					{repository.repoName}
+					PR {contributionNumberFormatter.format(contributor.mergedPrCount)} ·
+					이슈{" "}
+					{contributionNumberFormatter.format(contributor.linkedIssueCount)}
 				</p>
 			</div>
-			<ExternalLink className="size-4 shrink-0 text-primary" />
-		</a>
+			<div className="flex flex-wrap gap-2 text-xs text-muted-foreground sm:justify-end">
+				<span>
+					+{contributionNumberFormatter.format(contributor.additions)}
+				</span>
+				<span>
+					-{contributionNumberFormatter.format(contributor.deletions)}
+				</span>
+				<span>
+					{contributionNumberFormatter.format(contributor.changedFiles)} files
+				</span>
+				<Badge variant="brand">
+					{contributionNumberFormatter.format(contributor.contributionScore)}
+				</Badge>
+			</div>
+		</div>
 	);
 }
 
@@ -2750,14 +2949,21 @@ function RealActionFeedback({ feedback }: { feedback: ActionFeedback | null }) {
 }
 
 function RealInlineStatus({
+	className,
 	icon,
 	message,
 }: {
+	className?: string;
 	icon?: ReactNode;
 	message: string;
 }) {
 	return (
-		<div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+		<div
+			className={cn(
+				"flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground",
+				className,
+			)}
+		>
 			{icon}
 			<span>{message}</span>
 		</div>
