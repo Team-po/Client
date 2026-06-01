@@ -143,8 +143,8 @@ const checklistControlClass =
 const githubOAuthPolicySteps = [
 	"GitHub Organization",
 	"Settings",
-	"OAuth app policy",
-	"TeamPo 접근 승인 확인",
+	"GitHub Apps",
+	"TeamPo 설치 권한 확인",
 ] as const;
 
 function areNumberSelectionsEqual(left: number[], right: number[]) {
@@ -2671,10 +2671,10 @@ function GithubOrganizationPolicyNotice() {
 							<Badge variant="warm">permission check</Badge>
 						</div>
 						<p className="mt-2 text-sm leading-6 text-amber-900/80">
-							Third-party application access policy가 제한되어 있으면 TeamPo가
+							GitHub App 설치나 선택 저장소 권한이 제한되어 있으면 TeamPo가
 							저장소와 PR 정보를 가져오지 못할 수 있습니다. Organization owner가
-							TeamPo 앱 접근을 승인했는지, GitHub App 설치에서 선택한 저장소와
-							Pull requests 읽기 권한이 열려 있는지 확인하세요.
+							TeamPo GitHub App이 설치되어 있는지, 선택한 저장소와 Pull requests
+							읽기 권한이 열려 있는지 확인하세요.
 						</p>
 					</div>
 				</div>
