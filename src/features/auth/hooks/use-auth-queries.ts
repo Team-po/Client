@@ -165,8 +165,14 @@ export function useRequestPasswordResetMutation() {
 }
 
 export function useResetPasswordMutation() {
+	const queryClient = useQueryClient();
+
 	return useMutation({
 		mutationFn: (payload: ResetPasswordRequest) => resetPassword(payload),
+		onSuccess: () => {
+			clearAuthSession();
+			clearAuthScopedQueryData(queryClient);
+		},
 	});
 }
 

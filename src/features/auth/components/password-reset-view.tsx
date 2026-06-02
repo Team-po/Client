@@ -36,6 +36,11 @@ import {
 	validatePasswordResetForm,
 	validatePasswordResetRequestForm,
 } from "@/features/auth/lib/validation";
+import {
+	clearStoredPasswordResetToken,
+	getStoredPasswordResetToken,
+	storePasswordResetToken,
+} from "@/features/auth/lib/password-reset-token";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { apiConfig } from "@/lib/api/config";
 
@@ -46,7 +51,9 @@ export function PasswordResetView() {
 	const location = useLocation();
 	const [searchParams] = useSearchParams();
 	const locationToken = getPasswordResetToken(location);
-	const [token, setToken] = useState(locationToken);
+	const [token, setToken] = useState(
+		() => locationToken || getStoredPasswordResetToken(),
+	);
 	const isCompleted = searchParams.get("completed") === "true";
 	const [requestForm, setRequestForm] = useState({
 		email: searchParams.get("email") ?? "",
@@ -70,22 +77,27 @@ export function PasswordResetView() {
 		? `/login?email=${encodeURIComponent(requestForm.email.trim())}`
 		: "/login";
 	const isRequestSubmitDisabled =
-		requestPasswordResetMutation.isPending || hasValidationErrors(requestErrors);
+		requestPasswordResetMutation.isPending ||
+		hasValidationErrors(requestErrors);
 	const isResetSubmitDisabled =
-		resetPasswordMutation.isPending || !token || hasValidationErrors(resetErrors);
+		resetPasswordMutation.isPending ||
+		!token ||
+		hasValidationErrors(resetErrors);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (locationToken) {
+			storePasswordResetToken(locationToken);
 			setToken(locationToken);
 		}
 	}, [locationToken]);
 
-	useRemovePasswordResetTokenFromUrl(Boolean(locationToken), location, navigate);
+	useRemovePasswordResetTokenFromUrl(
+		Boolean(locationToken),
+		location,
+		navigate,
+	);
 
-
-	async function handleRequestSubmit(
-		event: React.FormEvent<HTMLFormElement>,
-	) {
+	async function handleRequestSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setRequestTouched({ email: true });
 
@@ -113,10 +125,12 @@ export function PasswordResetView() {
 			newPassword: resetForm.password,
 			token,
 		});
+		clearStoredPasswordResetToken();
 		navigate("/password-reset?completed=true", { replace: true });
 	}
 
 	function handleRequestNewLink() {
+		clearStoredPasswordResetToken();
 		setToken("");
 		setResetForm({
 			password: "",
@@ -234,8 +248,7 @@ export function PasswordResetView() {
 
 						<Field
 							data-invalid={Boolean(
-								resetTouched.passwordConfirm &&
-									resetErrors.passwordConfirm,
+								resetTouched.passwordConfirm && resetErrors.passwordConfirm,
 							)}
 						>
 							<FieldLabel htmlFor="password-reset-password-confirm">
@@ -245,8 +258,7 @@ export function PasswordResetView() {
 								<KeyRound className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
 								<Input
 									aria-invalid={Boolean(
-										resetTouched.passwordConfirm &&
-											resetErrors.passwordConfirm,
+										resetTouched.passwordConfirm && resetErrors.passwordConfirm,
 									)}
 									autoComplete="new-password"
 									className="h-11 bg-white pl-10"
@@ -274,8 +286,7 @@ export function PasswordResetView() {
 									value={resetForm.passwordConfirm}
 								/>
 							</div>
-							{resetTouched.passwordConfirm &&
-							resetErrors.passwordConfirm ? (
+							{resetTouched.passwordConfirm && resetErrors.passwordConfirm ? (
 								<FieldError>{resetErrors.passwordConfirm}</FieldError>
 							) : null}
 						</Field>
@@ -321,8 +332,8 @@ export function PasswordResetView() {
 					메일함을 확인해 주세요
 				</p>
 				<p className="mt-1 text-sm leading-6 text-muted-foreground">
-					가입된 이메일이라면 재설정 링크가 발송됩니다. GitHub로 가입한
-					계정은 아래 GitHub 로그인을 이용해 주세요.
+					가입된 이메일이라면 재설정 링크가 발송됩니다. GitHub로 가입한 계정은
+					아래 GitHub 로그인을 이용해 주세요.
 				</p>
 			</div>
 
@@ -332,9 +343,7 @@ export function PasswordResetView() {
 			>
 				<FieldGroup>
 					<Field
-						data-invalid={Boolean(
-							requestTouched.email && requestErrors.email,
-						)}
+						data-invalid={Boolean(requestTouched.email && requestErrors.email)}
 					>
 						<FieldLabel htmlFor="password-reset-email">이메일</FieldLabel>
 						<div className="relative">
@@ -462,7 +471,9 @@ function useRemovePasswordResetTokenFromUrl(
 
 		const cleanPath = createPasswordResetCleanPath(location);
 
-		if (cleanPath !== `${location.pathname}${location.search}${location.hash}`) {
+		if (
+			cleanPath !== `${location.pathname}${location.search}${location.hash}`
+		) {
 			navigate(cleanPath, { replace: true });
 		}
 	}, [hasToken, location, navigate]);
@@ -482,7 +493,9 @@ function getPasswordResetToken(location: ReturnType<typeof useLocation>) {
 	return searchParams.get("token")?.trim() ?? "";
 }
 
-function createPasswordResetCleanPath(location: ReturnType<typeof useLocation>) {
+function createPasswordResetCleanPath(
+	location: ReturnType<typeof useLocation>,
+) {
 	const searchParams = new URLSearchParams(location.search);
 	searchParams.delete("token");
 	const search = searchParams.toString();
