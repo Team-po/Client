@@ -9,7 +9,7 @@
 	:root {
 		--font-display: "Pretendard Variable", "Pretendard", sans-serif;
 		--font-body: "Pretendard Variable", "Pretendard", sans-serif;
-		--font-mono: "JetBrains Mono", monospace;
+		--font-mono: "JetBrains Mono", "Pretendard Variable", "Pretendard", sans-serif;
 
 		--background: 0 0% 100%;
 		--foreground: 222.2 84% 4.9%;
