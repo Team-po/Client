@@ -29,10 +29,13 @@ import type {
 import type { MyProjectGroup } from "@/lib/types/project-group";
 import type {
 	DevGuideContent,
+	DevGuideGenerationStatus,
+	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubInstallationStatus,
 	GithubRepository,
 	GithubRepositoryContributionResponse,
+	RegenerateDevGuideResponse,
 } from "@/lib/types/team-space";
 import type {
 	EditPasswordRequest,
@@ -51,6 +54,11 @@ let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
 let activeProjectChecklists: ProjectChecklist[] = createMockProjectChecklists();
 let activeDevGuide: DevGuideContent | null =
 	createMockDevGuide(activeProjectGroup);
+let activeDevGuideGenerationStatus: DevGuideGenerationStatus | null =
+	activeDevGuide ? "COMPLETED" : null;
+let remainingDevGuideRegenerationCount: number | null = activeDevGuide
+	? 3
+	: null;
 let nextProjectChecklistId = 103;
 let githubInstallationStatus: GithubInstallationStatus =
 	createDisconnectedGithubStatus();
@@ -243,6 +251,8 @@ function resetTeamSpaceApiState() {
 		? createMockProjectChecklists()
 		: [];
 	activeDevGuide = createMockDevGuide(activeProjectGroup);
+	activeDevGuideGenerationStatus = activeDevGuide ? "COMPLETED" : null;
+	remainingDevGuideRegenerationCount = activeDevGuide ? 3 : null;
 	nextProjectChecklistId = 103;
 	githubInstallationStatus = createDisconnectedGithubStatus();
 	clearPendingGithubInstallationState();
@@ -376,6 +386,43 @@ function createMockDevGuide(
 			},
 		],
 	};
+}
+
+function createMockDevGuideQueryResponse(): DevGuideQueryResponse | null {
+	if (!activeDevGuide && !activeDevGuideGenerationStatus) {
+		return null;
+	}
+
+	return {
+		...(activeDevGuide ?? {}),
+		generationStatus: activeDevGuideGenerationStatus ?? "COMPLETED",
+		...(remainingDevGuideRegenerationCount !== null
+			? { remainingRegenerationCount: remainingDevGuideRegenerationCount }
+			: {}),
+	};
+}
+
+function createRegeneratedMockDevGuide(feedback: string | undefined) {
+	const guide = createMockDevGuide(activeProjectGroup);
+
+	if (!guide) {
+		return null;
+	}
+
+	return {
+		...guide,
+		overview: feedback
+			? `${guide.overview} 최근 재생성 요청에서 전달한 피드백도 함께 반영했습니다: ${feedback}`
+			: `${guide.overview} 최근 팀 정보를 기준으로 가이드라인을 다시 생성했습니다.`,
+	} satisfies DevGuideContent;
+}
+
+async function readOptionalJsonBody<T>(request: Request) {
+	try {
+		return (await request.json()) as T;
+	} catch {
+		return null;
+	}
 }
 
 function parseGithubRepositoryIds(value: unknown): number[] | null {
@@ -2010,7 +2057,9 @@ export const handlers = [
 				);
 			}
 
-			if (!activeDevGuide) {
+			const response = createMockDevGuideQueryResponse();
+
+			if (!response) {
 				return buildErrorResponse(
 					404,
 					"개발 가이드라인이 존재하지 않습니다.",
@@ -2018,7 +2067,84 @@ export const handlers = [
 				);
 			}
 
-			return HttpResponse.json(activeDevGuide);
+			return HttpResponse.json(response);
+		},
+	),
+
+	http.post(
+		getPath("/team-space/:projectGroupId/dev-guide/regenerate"),
+		async ({ params, request }) => {
+			const body = await readOptionalJsonBody<{ feedback?: string }>(request);
+
+			await delay(650);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			if (activeDevGuideGenerationStatus === "GENERATING") {
+				return buildErrorResponse(
+					409,
+					"개발 가이드라인이 생성 중입니다.",
+					"DEV_GUIDE_GENERATING",
+				);
+			}
+
+			if (
+				activeDevGuide &&
+				activeDevGuideGenerationStatus === "COMPLETED" &&
+				remainingDevGuideRegenerationCount === 0
+			) {
+				return buildErrorResponse(
+					429,
+					"재생성 횟수를 초과했습니다.",
+					"DEV_GUIDE_REGENERATION_LIMIT_EXCEEDED",
+				);
+			}
+
+			if (activeProjectGroup?.projectTitle.includes("서버 오류")) {
+				activeDevGuideGenerationStatus = "FAILED";
+				return buildErrorResponse(
+					500,
+					"Gemini API 응답 형식이 올바르지 않습니다.",
+					"GEMINI_INVALID_RESPONSE",
+				);
+			}
+
+			const generationType = activeDevGuide ? "MANUAL" : "RECOVERY";
+			const regeneratedGuide = createRegeneratedMockDevGuide(
+				body?.feedback?.trim() || undefined,
+			);
+
+			if (!regeneratedGuide) {
+				return buildErrorResponse(
+					404,
+					"개발 가이드라인이 존재하지 않습니다.",
+					"DEV_GUIDE_NOT_FOUND",
+				);
+			}
+
+			activeDevGuide = regeneratedGuide;
+			activeDevGuideGenerationStatus = "COMPLETED";
+			if (generationType === "MANUAL") {
+				remainingDevGuideRegenerationCount = Math.max(
+					(remainingDevGuideRegenerationCount ?? 3) - 1,
+					0,
+				);
+			} else {
+				remainingDevGuideRegenerationCount =
+					remainingDevGuideRegenerationCount ?? 3;
+			}
+
+			return HttpResponse.json({
+				content: activeDevGuide,
+				generationType,
+				remainingRegenerationCount: remainingDevGuideRegenerationCount,
+			} satisfies RegenerateDevGuideResponse);
 		},
 	),
 

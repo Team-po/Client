@@ -54,6 +54,10 @@ export interface GithubRepositoryContributionResponse {
 	repoName: string;
 }
 
+export type DevGuideGenerationStatus = "GENERATING" | "COMPLETED" | "FAILED";
+
+export type DevGuideGenerationType = "INITIAL" | "RECOVERY" | "MANUAL";
+
 export interface DevGuideTechStackItem {
 	category: string;
 	reason: string;
@@ -91,4 +95,20 @@ export interface DevGuideContent {
 	mvpPriorities: DevGuideMvpPriority[];
 	overview: string;
 	techStack: DevGuideTechStackItem[];
+}
+
+export type DevGuideQueryResponse = Partial<DevGuideContent> & {
+	generationStatus: DevGuideGenerationStatus;
+	remainingRegenerationCount?: number | null;
+};
+
+export interface RegenerateDevGuideRequest {
+	feedback?: string | null;
+	projectGroupId: number;
+}
+
+export interface RegenerateDevGuideResponse {
+	content: DevGuideContent;
+	generationType: DevGuideGenerationType;
+	remainingRegenerationCount?: number | null;
 }

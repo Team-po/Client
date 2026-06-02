@@ -9,12 +9,15 @@ import {
 	getGithubInstallationStatus,
 	getGithubRepositories,
 	getGithubRepositoryContributions,
+	regenerateDevGuide,
 	setGithubRepositories,
 	syncGithubPullRequestContributions,
 } from "@/lib/api/team-space";
 import type {
+	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubRepositoryContributionRequest,
+	RegenerateDevGuideRequest,
 	SetGithubRepositoriesRequest,
 } from "@/lib/types/team-space";
 
@@ -86,6 +89,7 @@ export function useDevGuideQuery(
 				? teamSpaceQueryKeys.devGuide(projectGroupId)
 				: teamSpaceQueryKeys.all,
 		refetchInterval: (query) =>
+			isDevGuideGenerating(query.state.data) ||
 			isDevGuidePendingError(query.state.error)
 				? pendingDevGuideRefetchIntervalMs
 				: false,
@@ -95,8 +99,32 @@ export function useDevGuideQuery(
 	});
 }
 
+function isDevGuideGenerating(response: DevGuideQueryResponse | undefined) {
+	return response?.generationStatus === "GENERATING";
+}
+
 function isDevGuidePendingError(error: unknown) {
 	return error instanceof ApiError && error.code === "DEV_GUIDE_NOT_FOUND";
+}
+
+export function useRegenerateDevGuideMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: RegenerateDevGuideRequest) =>
+			regenerateDevGuide(payload),
+		onSuccess: (response, variables) => {
+			queryClient.setQueryData<DevGuideQueryResponse>(
+				teamSpaceQueryKeys.devGuide(variables.projectGroupId),
+				{
+					...response.content,
+					generationStatus: "COMPLETED",
+					remainingRegenerationCount:
+						response.remainingRegenerationCount ?? null,
+				},
+			);
+		},
+	});
 }
 
 export function useCreateGithubAppInstallationUrlMutation() {
