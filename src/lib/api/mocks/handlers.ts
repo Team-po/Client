@@ -10,6 +10,8 @@ import type {
 	CreateUserRequest,
 	GithubOAuthTokenRequest,
 	LoginRequest,
+	RequestPasswordResetRequest,
+	ResetPasswordRequest,
 	SendSignupEmailRequest,
 	ValidateSignupAuthNumberRequest,
 } from "@/lib/types/auth";
@@ -46,6 +48,9 @@ import type {
 let currentUser: UserProfile | null = createPreviewUser();
 let currentUserId = 1;
 let currentPassword = previewAuthSeed.password;
+const mockUserPasswords = new Map<string, string>([
+	[previewAuthSeed.email, previewAuthSeed.password],
+]);
 let matchStatus: MatchStatus | null = null;
 let activeProjectRequestRole: MatchRole | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
@@ -70,6 +75,10 @@ let githubRepositoryContributions = new Map<
 >();
 let deleteEmailAuthSentUserId: number | null = null;
 let deleteEmailVerifiedUserId: number | null = null;
+const mockPasswordResetToken = "mock-password-reset-token";
+const passwordResetTokens = new Map<string, string>([
+	[mockPasswordResetToken, previewAuthSeed.email],
+]);
 const verifiedSignupEmails = new Set<string>([previewAuthSeed.email]);
 const pendingGithubInstallationStateStorageKey =
 	"team-po.mock.github-installation-state";
@@ -108,7 +117,8 @@ function syncSessionFromRequest(request: Request) {
 	if (requestUserId === 1) {
 		currentUser = createPreviewUser();
 		currentUserId = 1;
-		currentPassword = previewAuthSeed.password;
+		currentPassword =
+			mockUserPasswords.get(previewAuthSeed.email) ?? previewAuthSeed.password;
 		resetDeleteEmailState();
 		resetMatchState();
 		activeProjectGroup = createMockProjectGroup();
@@ -935,6 +945,7 @@ function completeMatchIfEveryoneAccepted() {
 export const handlers = [
 	http.post(getPath("/users/sign-in"), async ({ request }) => {
 		const body = (await request.json()) as LoginRequest;
+		const email = normalizeEmail(body.email);
 
 		await delay(400);
 
@@ -954,13 +965,10 @@ export const handlers = [
 			);
 		}
 
-		if (
-			normalizeEmail(body.email) === previewAuthSeed.email &&
-			body.password === previewAuthSeed.password
-		) {
+		if (email === previewAuthSeed.email && body.password === mockUserPasswords.get(email)) {
 			currentUserId = 1;
 			currentUser = createPreviewUser();
-			currentPassword = previewAuthSeed.password;
+			currentPassword = mockUserPasswords.get(email) ?? previewAuthSeed.password;
 			resetDeleteEmailState();
 			resetMatchState();
 			activeProjectGroup = createMockProjectGroup();
@@ -978,7 +986,7 @@ export const handlers = [
 		}
 
 		if (
-			normalizeEmail(body.email) !== currentUser.email ||
+			email !== currentUser.email ||
 			body.password !== currentPassword
 		) {
 			return buildErrorResponse(
@@ -1125,6 +1133,68 @@ export const handlers = [
 			accessToken: createMockJwt(currentUserId, currentUser?.email ?? ""),
 			expiresAt: "2026-04-20T13:00:00.000Z",
 		});
+	}),
+
+	http.post(getPath("/users/password-reset"), async ({ request }) => {
+		const body = (await request.json()) as RequestPasswordResetRequest;
+		const email = normalizeEmail(body.email);
+
+		await delay(350);
+
+		if (!isValidEmail(email)) {
+			return buildErrorResponse(
+				400,
+				"입력한 정보를 다시 확인해 주세요.",
+				"INVALID_INPUT_FIELD",
+				{
+					email: "올바른 이메일 형식이 아니에요.",
+				},
+			);
+		}
+
+		if (
+			email === previewAuthSeed.email ||
+			(currentUser &&
+				email === currentUser.email &&
+				currentUser.isGithubLogin === false)
+		) {
+			passwordResetTokens.set(mockPasswordResetToken, email);
+		}
+
+		return new HttpResponse(null, { status: 200 });
+	}),
+
+	http.post(getPath("/users/password-reset/confirm"), async ({ request }) => {
+		const body = (await request.json()) as ResetPasswordRequest;
+		const email = passwordResetTokens.get(body.token);
+
+		await delay(350);
+
+		if (body.newPassword.length < 8) {
+			return buildErrorResponse(
+				400,
+				"입력한 정보를 다시 확인해 주세요.",
+				"INVALID_INPUT_FIELD",
+				{
+					newPassword: "비밀번호는 8자 이상이어야 해요.",
+				},
+			);
+		}
+
+		if (!email) {
+			return buildErrorResponse(
+				400,
+				"비밀번호 재설정 링크가 만료되었거나 올바르지 않습니다.",
+				"INVALID_PASSWORD_RESET_TOKEN",
+			);
+		}
+
+		passwordResetTokens.delete(body.token);
+		mockUserPasswords.set(email, body.newPassword);
+		if (currentUser?.email === email) {
+			currentPassword = body.newPassword;
+		}
+		return new HttpResponse(null, { status: 200 });
 	}),
 
 	http.get(getPath("/users/check-email"), ({ request }) => {
@@ -1292,6 +1362,7 @@ export const handlers = [
 			temperature: 50,
 		});
 		currentPassword = body.password;
+		mockUserPasswords.set(currentUser.email, body.password);
 		resetDeleteEmailState();
 		resetMatchState();
 		activeProjectGroup = null;
@@ -1402,6 +1473,9 @@ export const handlers = [
 		}
 
 		currentPassword = body.afterPassword;
+		if (currentUser) {
+			mockUserPasswords.set(currentUser.email, body.afterPassword);
+		}
 		return new HttpResponse(null, { status: 200 });
 	}),
 

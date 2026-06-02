@@ -6,6 +6,8 @@ import type {
 	GithubOAuthTokenResponse,
 	LoginRequest,
 	LoginResponse,
+	RequestPasswordResetRequest,
+	ResetPasswordRequest,
 	SendSignupEmailRequest,
 	ValidateSignupAuthNumberRequest,
 } from "@/lib/types/auth";
@@ -60,6 +62,25 @@ export function validateSignupAuthNumber(
 		json: {
 			authNumber: payload.authNumber,
 			email: payload.email.trim(),
+		},
+		method: "POST",
+		skipAuth: true,
+	});
+}
+
+export function requestPasswordReset(payload: RequestPasswordResetRequest) {
+	return apiRequest<void>("/users/password-reset", {
+		json: { email: payload.email.trim() },
+		method: "POST",
+		skipAuth: true,
+	});
+}
+
+export function resetPassword(payload: ResetPasswordRequest) {
+	return apiRequest<void>("/users/password-reset/confirm", {
+		json: {
+			newPassword: payload.newPassword,
+			token: payload.token.trim(),
 		},
 		method: "POST",
 		skipAuth: true,

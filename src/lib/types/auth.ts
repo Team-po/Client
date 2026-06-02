@@ -21,6 +21,15 @@ export interface ValidateSignupAuthNumberRequest {
 	email: string;
 }
 
+export interface RequestPasswordResetRequest {
+	email: string;
+}
+
+export interface ResetPasswordRequest {
+	newPassword: string;
+	token: string;
+}
+
 export interface SessionPayload {
 	accessToken: string;
 	expiresAt: string;

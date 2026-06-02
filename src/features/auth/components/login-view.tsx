@@ -46,6 +46,9 @@ export function LoginView() {
 	const signupPath = redirectPath
 		? `/signup?redirect=${encodeURIComponent(redirectPath)}`
 		: "/signup";
+	const passwordResetPath = form.email.trim()
+		? `/password-reset?email=${encodeURIComponent(form.email.trim())}`
+		: "/password-reset";
 
 	function markTouched(field: keyof typeof touched) {
 		setTouched((current) => ({
@@ -119,7 +122,16 @@ export function LoginView() {
 					</Field>
 
 					<Field data-invalid={Boolean(touched.password && errors.password)}>
-						<FieldLabel htmlFor="login-password">비밀번호</FieldLabel>
+						<div className="flex items-center justify-between gap-3">
+							<FieldLabel htmlFor="login-password">비밀번호</FieldLabel>
+							<Button
+								asChild
+								className="h-auto px-0 text-xs text-muted-foreground"
+								variant="link"
+							>
+								<Link to={passwordResetPath}>비밀번호 찾기</Link>
+							</Button>
+						</div>
 						<div className="relative">
 							<KeyRound className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
 							<Input
