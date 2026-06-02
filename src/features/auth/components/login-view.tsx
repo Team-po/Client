@@ -15,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { useLoginMutation } from "@/features/auth/hooks/use-auth-queries";
 import {
+	getSafeAuthRedirectPath,
+	storeAuthRedirectPath,
+} from "@/features/auth/lib/redirect";
+import {
 	hasValidationErrors,
 	validateLoginForm,
 } from "@/features/auth/lib/validation";
@@ -24,6 +28,7 @@ import { apiConfig } from "@/lib/api/config";
 export function LoginView() {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const redirectPath = getSafeAuthRedirectPath(searchParams.get("redirect"));
 	const [form, setForm] = useState({
 		email: searchParams.get("email") ?? "",
 		password: "",
@@ -36,6 +41,11 @@ export function LoginView() {
 	const errors = validateLoginForm(form);
 	const isSubmitDisabled =
 		loginMutation.isPending || hasValidationErrors(errors);
+	const loginActionLabel =
+		redirectPath === "/match" ? "매칭 화면으로 이동" : "내 정보로 이동";
+	const signupPath = redirectPath
+		? `/signup?redirect=${encodeURIComponent(redirectPath)}`
+		: "/signup";
 
 	function markTouched(field: keyof typeof touched) {
 		setTouched((current) => ({
@@ -57,7 +67,7 @@ export function LoginView() {
 		}
 
 		await loginMutation.mutateAsync(form);
-		navigate("/me");
+		navigate(redirectPath ?? "/me");
 	}
 
 	return (
@@ -69,7 +79,9 @@ export function LoginView() {
 			<div className="mb-6 rounded-lg border border-primary/15 bg-primary/5 p-4">
 				<p className="text-sm font-semibold text-primary">로그인 후 할 일</p>
 				<p className="mt-1 text-sm leading-6 text-muted-foreground">
-					내 정보에서 프로필과 현재 팀을 확인해요.
+					{redirectPath === "/match"
+						? "로그인하면 바로 매칭 요청 화면으로 이동해요."
+						: "내 정보에서 프로필과 현재 팀을 확인해요."}
 				</p>
 			</div>
 
@@ -149,7 +161,7 @@ export function LoginView() {
 					) : (
 						<ArrowRight data-icon="inline-start" />
 					)}
-					내 정보로 이동
+					{loginActionLabel}
 				</Button>
 			</form>
 
@@ -161,7 +173,10 @@ export function LoginView() {
 					size="lg"
 					variant="outline"
 				>
-					<a href={apiConfig.githubOAuthAuthorizationUrl}>
+					<a
+						href={apiConfig.githubOAuthAuthorizationUrl}
+						onClick={() => storeAuthRedirectPath(redirectPath)}
+					>
 						<Github data-icon="inline-start" />
 						GitHub로 계속하기
 					</a>
@@ -174,7 +189,7 @@ export function LoginView() {
 				</p>
 				<div className="flex flex-wrap items-center gap-4">
 					<Button asChild className="h-auto px-0" variant="link">
-						<Link to="/signup">회원가입으로 이동</Link>
+						<Link to={signupPath}>회원가입으로 이동</Link>
 					</Button>
 					<Button
 						asChild
