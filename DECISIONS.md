@@ -41,4 +41,5 @@
 - GitHub OAuth onboarding: request only the required development level for first-time GitHub users because the backend derives email and nickname from GitHub
 
 ## 2026-06-02
-- UX writing approach: use concise Korean 해요체 for customer-facing guidance, lead with the user's next action, avoid internal planning terms in UI copy, and keep feature-critical labels such as `AI 개발 가이드` when they communicate product behavior.
+- UX writing approach: use concise Korean 해요체 for customer-facing guidance, lead with the user's next action, avoid internal planning terms in UI copy, and keep feature-critical product terms when they communicate real behavior.
+- Repository UX writing guide: keep AI-facing workflow instructions in `.agents/skills/ux-writing/SKILL.md` and human-readable product copy standards in `docs/UX_WRITING.md`.

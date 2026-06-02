@@ -1,0 +1,4 @@
+interface:
+  display_name: "UX writing"
+  short_description: "Reviews and rewrites Korean product copy for Team-po."
+  default_prompt: "Use $ux-writing to review and rewrite this screen's Korean UX copy."
