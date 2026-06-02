@@ -60,6 +60,7 @@ import {
 	useGithubInstallationStatusQuery,
 	useGithubRepositoriesQuery,
 	useGithubRepositoryContributionsQuery,
+	useRegenerateDevGuideMutation,
 	useSetGithubRepositoriesMutation,
 	useSyncGithubPullRequestContributionsMutation,
 } from "@/features/team/hooks/use-team-space-queries";
@@ -77,6 +78,8 @@ import type {
 } from "@/lib/types/project-group";
 import type {
 	DevGuideContent,
+	DevGuideGenerationStatus,
+	DevGuideQueryResponse,
 	GithubRepository,
 	GithubRepositoryContributor,
 } from "@/lib/types/team-space";
@@ -1007,7 +1010,18 @@ function RealMemberSummaryCard({
 
 function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 	const devGuideQuery = useDevGuideQuery(projectGroup.projectGroupId);
-	const guide = devGuideQuery.data;
+	const regenerateDevGuideMutation = useRegenerateDevGuideMutation();
+	const guideResponse = devGuideQuery.data;
+	const guide = getDevGuideContent(guideResponse);
+	const generationStatus = guideResponse?.generationStatus;
+	const remainingRegenerationCount =
+		guideResponse?.remainingRegenerationCount ?? null;
+
+	const handleRegenerateDevGuide = () => {
+		regenerateDevGuideMutation.mutate({
+			projectGroupId: projectGroup.projectGroupId,
+		});
+	};
 
 	if (devGuideQuery.isLoading) {
 		return (
@@ -1085,16 +1099,53 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 	}
 
 	if (!guide) {
+		const isGenerating = generationStatus === "GENERATING";
+		const isFailed = generationStatus === "FAILED";
+
 		return (
 			<AppPanel>
 				<AppPanelHeader
-					action={<Badge variant="neutral">대기</Badge>}
-					description="아직 이 팀에 생성된 가이드라인이 없습니다."
+					action={
+						<DevGuideHeaderAction
+							generationStatus={generationStatus ?? "GENERATING"}
+							isFetching={devGuideQuery.isFetching}
+							isRegenerating={regenerateDevGuideMutation.isPending}
+							onRefresh={() => void devGuideQuery.refetch()}
+							onRegenerate={handleRegenerateDevGuide}
+							remainingRegenerationCount={remainingRegenerationCount}
+							showRegenerate={isFailed}
+						/>
+					}
+					description={
+						isFailed
+							? "가이드라인 생성에 실패했습니다."
+							: "아직 이 팀에 생성된 가이드라인이 없습니다."
+					}
 					eyebrow="Guide"
 					title="AI 개발 가이드라인"
 				/>
 				<div className="p-5">
-					<RealInlineStatus message="팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다." />
+					<div className="grid gap-3">
+						<RealInlineStatus
+							icon={
+								isGenerating ? (
+									<LoaderCircle className="size-4 shrink-0 animate-spin text-primary" />
+								) : undefined
+							}
+							message={
+								isFailed
+									? "재생성을 실행하면 서버가 팀 정보를 바탕으로 가이드라인을 다시 생성합니다."
+									: "팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다."
+							}
+						/>
+						{regenerateDevGuideMutation.error ? (
+							<RealInlineStatus
+								message={`가이드라인 재생성 실패: ${getApiErrorMessage(
+									regenerateDevGuideMutation.error,
+								)}`}
+							/>
+						) : null}
+					</div>
 				</div>
 			</AppPanel>
 		);
@@ -1104,12 +1155,29 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 		<div className="grid gap-5">
 			<AppPanel>
 				<AppPanelHeader
-					action={<Badge variant="brand">생성됨</Badge>}
-					description="팀 방향, MVP 우선순위, 결정 포인트를 한곳에 모았습니다."
+					action={
+						<DevGuideHeaderAction
+							generationStatus={generationStatus ?? "COMPLETED"}
+							isFetching={devGuideQuery.isFetching}
+							isRegenerating={regenerateDevGuideMutation.isPending}
+							onRefresh={() => void devGuideQuery.refetch()}
+							onRegenerate={handleRegenerateDevGuide}
+							remainingRegenerationCount={remainingRegenerationCount}
+							showRegenerate={generationStatus !== "GENERATING"}
+						/>
+					}
+					description={getDevGuidePanelDescription(generationStatus)}
 					eyebrow="Guide"
 					title="AI 개발 가이드라인"
 				/>
 				<div className="grid gap-4 p-5">
+					{regenerateDevGuideMutation.error ? (
+						<RealInlineStatus
+							message={`가이드라인 재생성 실패: ${getApiErrorMessage(
+								regenerateDevGuideMutation.error,
+							)}`}
+						/>
+					) : null}
 					<div className="rounded-lg border border-primary/15 bg-primary/5 p-5">
 						<p className="text-sm font-semibold text-primary">프로젝트 개요</p>
 						<p className="mt-3 text-sm leading-7 text-brand-ink">
@@ -1153,6 +1221,129 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 			<RealDevGuideMilestonePanel guide={guide} />
 		</div>
 	);
+}
+
+function getDevGuideContent(
+	response: DevGuideQueryResponse | undefined,
+): DevGuideContent | null {
+	if (
+		!response ||
+		typeof response.overview !== "string" ||
+		!Array.isArray(response.techStack) ||
+		!Array.isArray(response.mvpPriorities) ||
+		!Array.isArray(response.decisionPoints) ||
+		!Array.isArray(response.milestones)
+	) {
+		return null;
+	}
+
+	return {
+		decisionPoints: response.decisionPoints,
+		milestones: response.milestones,
+		mvpPriorities: response.mvpPriorities,
+		overview: response.overview,
+		techStack: response.techStack,
+	};
+}
+
+function getDevGuidePanelDescription(
+	generationStatus: DevGuideGenerationStatus | undefined,
+) {
+	if (generationStatus === "GENERATING") {
+		return "기존 가이드라인을 표시하는 동안 새 가이드라인을 생성 중입니다.";
+	}
+
+	if (generationStatus === "FAILED") {
+		return "최근 생성이 실패해 기존 가이드라인을 표시하고 있습니다.";
+	}
+
+	return "팀 방향, MVP 우선순위, 결정 포인트를 한곳에 모았습니다.";
+}
+
+function DevGuideHeaderAction({
+	generationStatus,
+	isFetching,
+	isRegenerating,
+	onRefresh,
+	onRegenerate,
+	remainingRegenerationCount,
+	showRegenerate,
+}: {
+	generationStatus: DevGuideGenerationStatus;
+	isFetching: boolean;
+	isRegenerating: boolean;
+	onRefresh: () => void;
+	onRegenerate: () => void;
+	remainingRegenerationCount: number | null;
+	showRegenerate: boolean;
+}) {
+	const hasNoManualRegenerationCount =
+		generationStatus === "COMPLETED" && remainingRegenerationCount === 0;
+	const isGenerating = generationStatus === "GENERATING";
+
+	return (
+		<div className="flex flex-wrap items-center justify-end gap-2">
+			<Badge variant={getDevGuideStatusBadgeVariant(generationStatus)}>
+				{getDevGuideStatusLabel(generationStatus)}
+			</Badge>
+			{remainingRegenerationCount !== null ? (
+				<Badge variant="neutral">남은 {remainingRegenerationCount}</Badge>
+			) : null}
+			{showRegenerate ? (
+				<Button
+					disabled={isRegenerating || hasNoManualRegenerationCount}
+					onClick={onRegenerate}
+					type="button"
+					variant="outline"
+				>
+					{isRegenerating ? (
+						<LoaderCircle className="animate-spin" data-icon="inline-start" />
+					) : (
+						<RefreshCw data-icon="inline-start" />
+					)}
+					재생성
+				</Button>
+			) : (
+				<Button
+					disabled={isFetching || isGenerating}
+					onClick={onRefresh}
+					type="button"
+					variant="outline"
+				>
+					{isFetching || isGenerating ? (
+						<LoaderCircle className="animate-spin" data-icon="inline-start" />
+					) : (
+						<RefreshCw data-icon="inline-start" />
+					)}
+					다시 확인
+				</Button>
+			)}
+		</div>
+	);
+}
+
+function getDevGuideStatusLabel(status: DevGuideGenerationStatus) {
+	if (status === "GENERATING") {
+		return "생성 중";
+	}
+
+	if (status === "FAILED") {
+		return "실패";
+	}
+
+	return "생성됨";
+}
+
+function getDevGuideStatusBadgeVariant(status: DevGuideGenerationStatus) {
+	if (status === "COMPLETED") {
+		return "brand";
+	}
+
+	if (status === "FAILED") {
+		return "warm";
+	}
+
+	return "neutral";
 }
 
 function isDevGuideNotFoundError(error: unknown) {

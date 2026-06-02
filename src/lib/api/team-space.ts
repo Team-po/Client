@@ -1,17 +1,36 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
-	DevGuideContent,
+	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubAppInstallationUrl,
 	GithubInstallationStatus,
 	GithubRepositoryContributionRequest,
 	GithubRepositoryContributionResponse,
 	GithubRepositoryListResponse,
+	RegenerateDevGuideRequest,
+	RegenerateDevGuideResponse,
 	SetGithubRepositoriesRequest,
 } from "@/lib/types/team-space";
 
 export function getDevGuide(projectGroupId: number) {
-	return apiRequest<DevGuideContent>(`/team-space/${projectGroupId}/dev-guide`);
+	return apiRequest<DevGuideQueryResponse>(
+		`/team-space/${projectGroupId}/dev-guide`,
+	);
+}
+
+export function regenerateDevGuide({
+	feedback,
+	projectGroupId,
+}: RegenerateDevGuideRequest) {
+	const trimmedFeedback = feedback?.trim();
+
+	return apiRequest<RegenerateDevGuideResponse>(
+		`/team-space/${projectGroupId}/dev-guide/regenerate`,
+		{
+			json: trimmedFeedback ? { feedback: trimmedFeedback } : undefined,
+			method: "POST",
+		},
+	);
 }
 
 export function getGithubInstallationStatus(projectGroupId: number) {

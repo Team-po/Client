@@ -626,13 +626,48 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DevGuideContent'
+                $ref: '#/components/schemas/DevGuideQueryResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /team-space/{projectGroupId}/dev-guide/regenerate:
+    post:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Regenerate AI development guide for a team space
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DevGuideRegenerateRequest'
+      responses:
+        '200':
+          description: AI development guide regenerated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevGuideRegenerateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /team-space/{projectGroupId}/github/status:
@@ -1481,6 +1516,71 @@ components:
         contributionScore:
           type: integer
           format: int64
+    DevGuideGenerationStatus:
+      type: string
+      enum: [GENERATING, COMPLETED, FAILED]
+    DevGuideGenerationType:
+      type: string
+      enum: [INITIAL, RECOVERY, MANUAL]
+    DevGuideQueryResponse:
+      type: object
+      additionalProperties: false
+      required: [generationStatus]
+      properties:
+        generationStatus:
+          $ref: '#/components/schemas/DevGuideGenerationStatus'
+        remainingRegenerationCount:
+          type:
+            - integer
+            - 'null'
+        overview:
+          type: string
+        techStack:
+          type: array
+          minItems: 5
+          maxItems: 7
+          items:
+            $ref: '#/components/schemas/DevGuideTechStackItem'
+        mvpPriorities:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/DevGuideMvpPriority'
+        decisionPoints:
+          type: array
+          minItems: 3
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/DevGuideDecisionPoint'
+        milestones:
+          type: array
+          minItems: 12
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/DevGuideMilestone'
+    DevGuideRegenerateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        feedback:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+    DevGuideRegenerateResponse:
+      type: object
+      additionalProperties: false
+      required: [content, generationType]
+      properties:
+        content:
+          $ref: '#/components/schemas/DevGuideContent'
+        generationType:
+          $ref: '#/components/schemas/DevGuideGenerationType'
+        remainingRegenerationCount:
+          type:
+            - integer
+            - 'null'
     DevGuideContent:
       type: object
       additionalProperties: false
@@ -1608,6 +1708,12 @@ components:
             $ref: '#/components/schemas/ApiError'
     NotFound:
       description: Requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    TooManyRequests:
+      description: The request exceeded a server-side usage limit
       content:
         application/json:
           schema:
