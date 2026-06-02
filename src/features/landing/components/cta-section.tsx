@@ -4,8 +4,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Surface } from "@/components/ui/surface";
+import { getLandingActionLinks } from "@/features/landing/lib/landing-navigation";
 
 export function CtaSection() {
+	const landingActionLinks = getLandingActionLinks();
+
 	return (
 		<section className="pb-20 pt-10 md:pb-24">
 			<Container>
@@ -23,13 +26,15 @@ export function CtaSection() {
 						</p>
 						<div className="relative flex flex-wrap gap-3">
 							<Button asChild size="lg" className="gap-2">
-								<Link to="/match">
-									매칭 요청하기
+								<Link to={landingActionLinks.match.to}>
+									{landingActionLinks.match.label}
 									<ArrowRight className="size-4" />
 								</Link>
 							</Button>
 							<Button asChild variant="outline" size="lg">
-								<Link to="/team">팀 스페이스 둘러보기</Link>
+								<Link to={landingActionLinks.teamSpace.to}>
+									{landingActionLinks.teamSpace.label}
+								</Link>
 							</Button>
 						</div>
 					</div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Surface } from "@/components/ui/surface";
 import { heroStats } from "@/features/landing/constants";
+import { getLandingActionLinks } from "@/features/landing/lib/landing-navigation";
 
 const heroFlowSteps = [
 	{
@@ -44,6 +45,8 @@ function renderHeroStatValue(value: string) {
 }
 
 export function HeroSection() {
+	const landingActionLinks = getLandingActionLinks();
+
 	return (
 		<section className="relative overflow-hidden pb-12 pt-10 md:pb-14 md:pt-12">
 			<div className="ds-grid-overlay absolute inset-0 -z-10 opacity-70" />
@@ -79,10 +82,10 @@ export function HeroSection() {
 							size="lg"
 							className="group relative gap-2 overflow-hidden shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 active:translate-y-0"
 						>
-							<Link to="/match">
+							<Link to={landingActionLinks.match.to}>
 								<span className="absolute inset-0 z-0 -translate-x-[150%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent motion-safe:group-hover:animate-[shine_1.5s_ease-in-out_infinite]" />
 								<span className="relative z-10 flex items-center gap-2">
-									매칭 요청하기
+									{landingActionLinks.match.label}
 									<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
 								</span>
 							</Link>
@@ -93,7 +96,9 @@ export function HeroSection() {
 							size="lg"
 							className="transition-all hover:-translate-y-0.5 hover:bg-white/80"
 						>
-							<Link to="/team">팀 스페이스 둘러보기</Link>
+							<Link to={landingActionLinks.teamSpace.to}>
+								{landingActionLinks.teamSpace.label}
+							</Link>
 						</Button>
 					</div>
 

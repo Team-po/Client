@@ -8,7 +8,7 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,7 @@ import {
 	useSignupMutation,
 	useValidateSignupAuthNumberMutation,
 } from "@/features/auth/hooks/use-auth-queries";
+import { getSafeAuthRedirectPath } from "@/features/auth/lib/redirect";
 import {
 	hasValidationErrors,
 	validateSignupForm,
@@ -41,6 +42,11 @@ const emailVerificationCooldownSeconds = 60;
 
 export function SignupView() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const redirectPath = getSafeAuthRedirectPath(searchParams.get("redirect"));
+	const loginPath = redirectPath
+		? `/login?redirect=${encodeURIComponent(redirectPath)}`
+		: "/login";
 	const [form, setForm] = useState({
 		authNumber: "",
 		email: "",
@@ -146,7 +152,15 @@ export function SignupView() {
 
 		await signupMutation.mutateAsync(form);
 
-		navigate(`/login?email=${encodeURIComponent(form.email.trim())}`);
+		const loginSearchParams = new URLSearchParams({
+			email: form.email.trim(),
+		});
+
+		if (redirectPath) {
+			loginSearchParams.set("redirect", redirectPath);
+		}
+
+		navigate(`/login?${loginSearchParams.toString()}`);
 	}
 
 	async function handleCheckEmail() {
@@ -575,7 +589,7 @@ export function SignupView() {
 					className="mt-2 h-auto justify-start px-0"
 					variant="link"
 				>
-					<Link to="/login">로그인으로 이동</Link>
+					<Link to={loginPath}>로그인으로 이동</Link>
 				</Button>
 			</div>
 		</AuthShell>

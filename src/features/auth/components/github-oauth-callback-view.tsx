@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/field";
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { useGithubOAuthTokenMutation } from "@/features/auth/hooks/use-auth-queries";
+import { consumeStoredAuthRedirectPath } from "@/features/auth/lib/redirect";
 import { getApiErrorMessage } from "@/lib/api/client";
 
 const levelOptions = [1, 2, 3, 4, 5] as const;
@@ -56,7 +57,7 @@ export function GithubOAuthCallbackView() {
 				code,
 				...(selectedLevel ? { level: selectedLevel } : {}),
 			});
-			navigate("/me", { replace: true });
+			navigate(consumeStoredAuthRedirectPath() ?? "/me", { replace: true });
 		},
 		[code, exchangeGithubOAuthCode, navigate],
 	);

@@ -1,25 +1,25 @@
-import { BrainCircuit, Gauge, GitBranch } from "lucide-react";
+import { GitBranch, Shuffle, SquareKanban } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
-import { supportFeatures } from "@/features/landing/constants";
+import { productCapabilities } from "@/features/landing/constants";
 
-const valueIcons = [GitBranch, Gauge, BrainCircuit];
+const valueIcons = [Shuffle, SquareKanban, GitBranch];
 
 export function ValueSection() {
 	return (
 		<section className="py-20 md:py-24">
 			<Container className="space-y-10">
 				<SectionHeading
-					label="팀 운영 루틴"
-					title="매칭 뒤에도 계속 움직이게 해요"
-					description="주간 리포트, 회고 질문, 지연 신호를 모아 다음 할 일을 정하기 쉽게 해요."
+					label="핵심 기능"
+					title="매칭부터 팀 운영까지 이어져요"
+					description="역할을 고르고 제안을 확인한 뒤, 팀 스페이스에서 할 일을 정리해요."
 				/>
 
 				<div className="grid gap-4 md:grid-cols-3">
-					{supportFeatures.map((feature, index) => {
+					{productCapabilities.map((feature, index) => {
 						const Icon = valueIcons[index];
 
 						return (
@@ -28,8 +28,13 @@ export function ValueSection() {
 									<div className="flex size-10 items-center justify-center rounded-xl bg-accent/15 text-accent shadow-sm">
 										<Icon className="size-5" />
 									</div>
-									<Badge variant="brand">추천</Badge>
+									<Badge variant={index < 2 ? "brand" : "warm"}>
+										{feature.status}
+									</Badge>
 								</div>
+								<p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/75">
+									{feature.detail}
+								</p>
 								<h3 className="font-display text-xl leading-tight">
 									{feature.title}
 								</h3>
