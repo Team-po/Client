@@ -12,17 +12,17 @@ const heroFlowSteps = [
 	{
 		label: "01",
 		title: "역할 선택",
-		description: "내가 맡을 파트를 고릅니다.",
+		description: "맡고 싶은 파트를 골라요.",
 	},
 	{
 		label: "02",
 		title: "제안 확인",
-		description: "팀 후보와 프로젝트를 봅니다.",
+		description: "함께할 팀과 주제를 봐요.",
 	},
 	{
 		label: "03",
 		title: "팀 스페이스",
-		description: "수락 후 바로 협업을 시작합니다.",
+		description: "수락하면 바로 시작해요.",
 	},
 ] as const;
 
@@ -55,7 +55,7 @@ export function HeroSection() {
 						className="w-fit gap-2 px-3.5 py-1.5 text-[11px]"
 					>
 						<Sparkles className="size-3.5" />
-						Random Matching for Dev Learners
+						사이드 프로젝트 팀 매칭
 					</Badge>
 
 					<div className="space-y-4">
@@ -64,13 +64,12 @@ export function HeroSection() {
 								팀 프로젝트,
 							</span>
 							<span className="ds-title-gradient mt-1.5 block font-semibold md:mt-2">
-								모집 대신 매칭으로 시작
+								모집 글 없이 시작해요
 							</span>
 						</h1>
 						<p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground md:text-[17px]">
-							역할과 기술 스택을 등록하면 조건이 맞는 팀원을 연결합니다. 팀이
-							만들어진 뒤에는 규칙, 체크리스트, GitHub 활동, 채팅까지 한 팀
-							스페이스에서 관리합니다.
+							역할과 기술 스택만 등록하면 함께할 팀을 찾아요. 팀이 만들어지면
+							규칙, 체크리스트, GitHub 활동을 한곳에서 이어갈 수 있어요.
 						</p>
 					</div>
 
@@ -83,7 +82,7 @@ export function HeroSection() {
 							<Link to="/match">
 								<span className="absolute inset-0 z-0 -translate-x-[150%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/20 to-transparent motion-safe:group-hover:animate-[shine_1.5s_ease-in-out_infinite]" />
 								<span className="relative z-10 flex items-center gap-2">
-									대기열 등록 시작
+									매칭 요청하기
 									<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
 								</span>
 							</Link>
@@ -94,7 +93,7 @@ export function HeroSection() {
 							size="lg"
 							className="transition-all hover:-translate-y-0.5 hover:bg-white/80"
 						>
-							<Link to="/team">팀 스페이스 보기</Link>
+							<Link to="/team">팀 스페이스 둘러보기</Link>
 						</Button>
 					</div>
 
@@ -127,10 +126,10 @@ export function HeroSection() {
 							</p>
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 								<p className="font-display text-2xl leading-tight">
-									내 역할을 입력하면 팀 후보를 찾기 시작합니다
+									내 역할을 고르면 팀을 찾기 시작해요
 								</p>
 								<Badge variant="warm" className="w-fit">
-									응답까지 한 흐름
+									제안 응답까지
 								</Badge>
 							</div>
 						</div>

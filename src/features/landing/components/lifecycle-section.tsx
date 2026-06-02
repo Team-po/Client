@@ -9,9 +9,9 @@ export function LifecycleSection() {
 		<section className="py-20 md:py-24">
 			<Container className="space-y-10">
 				<SectionHeading
-					label="Project lifecycle"
-					title="팀 결성부터 완료까지 진행 상태를 한눈에 관리"
-					description="프로젝트가 어디까지 왔는지 분명해야 다음에 할 일이 흔들리지 않습니다."
+					label="프로젝트 상태"
+					title="어디까지 왔는지 바로 보여줘요"
+					description="현재 상태가 분명해야 다음 할 일도 빨리 정할 수 있어요."
 				/>
 
 				<Surface variant="subtle" spacing="spacious" className="space-y-4">

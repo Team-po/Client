@@ -28,8 +28,8 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 	const isMatchingLinkDisabled =
 		isSignedIn && (hasProjectGroup || projectGroupQuery.isLoading);
 	const matchingDisabledTitle = projectGroupQuery.isLoading
-		? "팀 스페이스 상태를 확인하는 중입니다."
-		: "이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다.";
+		? "팀 상태를 확인하고 있어요."
+		: "참여 중인 팀이 있어 새 매칭을 시작할 수 없어요.";
 
 	useEffect(() => {
 		function syncAuthState() {
@@ -67,7 +67,7 @@ export function SiteHeader({ showMyPageLink = true }: SiteHeaderProps) {
 					<div>
 						<p className="font-display text-lg leading-none">Team-po</p>
 						<p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-							dev team project builder
+							team matching
 						</p>
 					</div>
 				</Link>

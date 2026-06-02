@@ -68,19 +68,19 @@ const roleOptions: Array<{
 	value: MatchRole;
 }> = [
 	{
-		description: "인증, 데이터 저장, 배포 등 서비스 기반을 맡습니다.",
+		description: "인증, 데이터 저장, 배포를 맡아요.",
 		icon: ServerCog,
 		label: "Backend",
 		value: "BACKEND",
 	},
 	{
-		description: "화면, 상태 관리, 사용자 흐름을 구현합니다.",
+		description: "화면과 상태 관리를 맡아요.",
 		icon: Code2,
 		label: "Frontend",
 		value: "FRONTEND",
 	},
 	{
-		description: "문제 정의, UX 흐름, 화면 디자인을 정리합니다.",
+		description: "문제 정의, 사용 경험, 화면 디자인을 맡아요.",
 		icon: Palette,
 		label: "Design",
 		value: "DESIGN",
@@ -92,22 +92,22 @@ const statusMeta: Record<
 	{ description: string; label: string; tone: string }
 > = {
 	CANCELED: {
-		description: "요청이 취소되었습니다. 새 요청을 다시 보낼 수 있습니다.",
+		description: "요청을 취소했어요. 새 요청을 보낼 수 있어요.",
 		label: "취소됨",
 		tone: "border-muted-foreground/20 bg-secondary text-muted-foreground",
 	},
 	MATCHED: {
-		description: "팀 구성이 완료되었습니다. 팀 스페이스에서 협업을 시작하세요.",
+		description: "팀이 만들어졌어요. 팀 스페이스에서 시작해요.",
 		label: "매칭 완료",
 		tone: "border-emerald-500/25 bg-emerald-50 text-emerald-700",
 	},
 	MATCHING: {
-		description: "조건에 맞는 팀원을 찾고 있습니다.",
+		description: "함께할 팀원을 찾고 있어요.",
 		label: "매칭 중",
 		tone: "border-primary/25 bg-primary/10 text-primary",
 	},
 	WAITING: {
-		description: "요청이 접수되어 대기열에 올라갔습니다.",
+		description: "요청을 보냈어요. 매칭을 기다리고 있어요.",
 		label: "대기 중",
 		tone: "border-amber-500/25 bg-amber-50 text-amber-700",
 	},
@@ -242,7 +242,7 @@ export function MatchRequestView() {
 					</Button>
 				</>
 			}
-			description="역할을 고르고 프로젝트 힌트를 더하면 조건에 맞는 팀 후보를 찾습니다."
+			description="역할을 고르면 함께할 팀을 찾아요."
 			eyebrow="Matching"
 			title="매칭 요청"
 		>
@@ -264,7 +264,7 @@ export function MatchRequestView() {
 						}
 						trend={
 							isCheckingCurrentTeam
-								? "팀 소속 여부 확인 중"
+								? "팀 확인 중"
 								: hasCurrentTeam
 									? "팀 스페이스에서 진행"
 									: hasAcceptedTeam
@@ -320,12 +320,12 @@ export function MatchRequestView() {
 						}
 						trend={
 							hasCurrentTeam
-								? "이미 팀 스페이스 보유"
+								? "참여 중인 팀 있음"
 								: hasAcceptedTeam
-									? "팀으로 이동 가능"
+									? "팀 스페이스로 이동 가능"
 									: hasLiveMatch
 										? canRespondToMatch
-											? "내 응답 후 생성"
+											? "내가 수락하면 생성"
 											: "팀원 응답 대기"
 										: "수락 후 생성"
 						}
@@ -357,10 +357,10 @@ export function MatchRequestView() {
 						<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
 							<div>
 								<h2 className="text-xl font-semibold text-brand-ink">
-									로그인이 필요합니다
+									로그인이 필요해요
 								</h2>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									매칭 요청은 로그인한 사용자만 등록할 수 있습니다.
+									로그인한 사용자만 매칭 요청을 보낼 수 있어요.
 								</p>
 							</div>
 							<Button asChild>
@@ -410,21 +410,21 @@ export function MatchRequestView() {
 											새로고침
 										</Button>
 									}
-									description="이미 팀이 있거나 진행 중인 요청이 있으면 새 신청 대신 현재 흐름을 먼저 마무리합니다."
+									description="참여 중인 팀이나 진행 중인 요청이 있으면 먼저 마무리해 주세요."
 									eyebrow="Queue status"
 									title="내 매칭 상태"
 								/>
 								<div className="grid gap-4 p-5">
 									{hasAcceptedTeam ? (
 										<StatusPanel
-											description="전원 수락이 완료되어 팀 스페이스가 열렸습니다."
+											description="모두 수락해서 팀 스페이스가 열렸어요."
 											icon={<CheckCircle2 />}
 											label="팀 소속"
 											tone="border-emerald-500/25 bg-emerald-50 text-emerald-700"
 										/>
 									) : statusQuery.isLoading ? (
 										<StatusPanel
-											description="내 요청이 대기 중인지 확인하고 있습니다."
+											description="내 요청 상태를 확인하고 있어요."
 											icon={<LoaderCircle className="animate-spin" />}
 											label="조회 중"
 										/>
@@ -436,7 +436,7 @@ export function MatchRequestView() {
 										/>
 									) : noActiveRequest || !isSignedIn ? (
 										<StatusPanel
-											description="진행 중인 매칭 요청이 없습니다."
+											description="진행 중인 매칭 요청이 없어요."
 											icon={<Square />}
 											label="요청 없음"
 										/>
@@ -501,7 +501,7 @@ export function MatchRequestView() {
 										<Badge variant="neutral">현재 요청 진행 중</Badge>
 									) : null
 								}
-								description="역할만 선택해도 대기열에 등록됩니다. 프로젝트를 제안하려면 제목, 설명, MVP를 모두 입력해 주세요."
+								description="역할만 골라도 요청할 수 있어요. 프로젝트를 제안하려면 제목, 설명, MVP를 함께 입력해 주세요."
 								eyebrow="Request"
 								title="매칭 요청 작성"
 							/>
@@ -574,7 +574,7 @@ export function MatchRequestView() {
 													projectDescription: event.target.value,
 												}))
 											}
-											placeholder="어떤 문제를 해결하고 싶은지 간단히 적어주세요."
+											placeholder="어떤 문제를 해결하고 싶은지 간단히 적어 주세요."
 											value={form.projectDescription}
 										/>
 									</Field>
@@ -628,7 +628,7 @@ export function MatchRequestView() {
 										<Send data-icon="inline-start" />
 									)}
 									{hasAcceptedTeam
-										? "이미 팀에 참여 중입니다"
+										? "이미 팀에 참여 중이에요"
 										: "매칭 요청 보내기"}
 								</Button>
 							</form>
@@ -662,22 +662,22 @@ function MatchProgressPanel({
 	const steps = [
 		{
 			description: isSignedIn
-				? "역할과 프로젝트 힌트를 보내 대기열에 들어갑니다."
-				: "로그인 후 매칭 요청을 보낼 수 있습니다.",
+				? "역할을 고르고 매칭을 기다려요."
+				: "로그인 후 매칭 요청을 보낼 수 있어요.",
 			label: "요청 작성",
 		},
 		{
 			description: hasLiveMatch
 				? needsResponse
-					? "팀 후보가 도착했습니다. 세션에서 응답을 마무리하세요."
-					: "내 응답은 완료됐고 남은 팀원의 응답을 기다립니다."
-				: "조건이 맞는 팀 후보가 생기면 이 단계로 넘어갑니다.",
-			label: "팀 후보 확인",
+					? "매칭 제안이 도착했어요. 수락할지 선택해 주세요."
+					: "내 응답은 끝났어요. 팀원의 응답을 기다려요."
+				: "함께할 팀을 찾으면 이 단계로 넘어가요.",
+			label: "제안 확인",
 		},
 		{
 			description: isTeamReady
-				? "팀 스페이스가 열렸습니다."
-				: "전원이 수락하면 협업 공간이 생성됩니다.",
+				? "팀 스페이스가 열렸어요."
+				: "모두 수락하면 팀 스페이스가 열려요.",
 			label: "팀 생성",
 		},
 	] as const;
@@ -692,7 +692,7 @@ function MatchProgressPanel({
 								? "응답 필요"
 								: hasLiveMatch
 									? "응답 완료"
-									: "매칭 흐름"}
+									: "매칭 진행"}
 						</Badge>
 						{status ? (
 							<Badge variant="neutral">{statusMeta[status].label}</Badge>
@@ -701,16 +701,16 @@ function MatchProgressPanel({
 					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
 						{hasLiveMatch
 							? needsResponse
-								? "도착한 매칭 세션을 확인하고 팀 생성을 결정하세요"
-								: "내 응답은 완료됐고 팀원의 응답을 기다립니다"
-							: "요청 작성부터 팀 생성까지 한 흐름으로 진행됩니다"}
+								? "도착한 제안을 확인해 주세요"
+								: "팀원의 응답을 기다리고 있어요"
+							: "요청부터 팀 생성까지 현재 위치를 보여줘요"}
 					</h2>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
 						{hasLiveMatch
 							? needsResponse
-								? "아래 매칭 세션에서 현재 제안의 프로젝트와 팀원 정보를 확인하고 바로 응답합니다."
-								: "매칭 세션에서 현재 제안과 팀원 응답 상태를 확인할 수 있습니다."
-							: "역할 선택, 제안 확인, 팀 스페이스 진입이 끊기지 않도록 현재 위치를 표시합니다."}
+								? "프로젝트와 팀원을 보고 수락할지 거절할지 선택해요."
+								: "현재 제안과 팀원 응답 상태를 확인할 수 있어요."
+							: "역할 선택, 제안 확인, 팀 스페이스 진입까지 이어져요."}
 					</p>
 				</div>
 
@@ -766,26 +766,23 @@ function MatchLiveHintPanel({ canRespond }: { canRespond: boolean }) {
 			<AppPanelHeader
 				action={
 					<Badge variant={canRespond ? "warm" : "neutral"}>
-						{canRespond ? "내 응답 대기" : "응답 확인됨"}
+						{canRespond ? "응답 필요" : "응답 완료"}
 					</Badge>
 				}
-				description="현재 도착한 제안은 위 매칭 세션 카드에서만 응답합니다."
+				description="도착한 제안은 위 카드에서 바로 응답할 수 있어요."
 				eyebrow="Next action"
 				title={
-					canRespond
-						? "매칭 세션에서 결정하세요"
-						: "팀원의 응답을 기다리는 중입니다"
+					canRespond ? "제안을 확인해 주세요" : "팀원의 응답을 기다리고 있어요"
 				}
 			/>
 			<div className="grid gap-3 p-5">
 				<p className="rounded-lg border border-amber-500/20 bg-white p-4 text-sm leading-6 text-amber-800">
-					프로젝트와 팀원 구성을 다시 확인한 뒤 한 번의 응답으로 다음 단계로
-					넘어갑니다.
+					프로젝트와 팀원을 확인한 뒤 수락하거나 거절해 주세요.
 				</p>
 				<Button asChild variant="outline">
 					<a href="#match-session">
 						<ArrowRight data-icon="inline-start" />
-						매칭 세션 보기
+						제안 보기
 					</a>
 				</Button>
 			</div>
@@ -808,9 +805,9 @@ function CurrentTeamMatchLockPanel({
 						</Link>
 					</Button>
 				}
-				description="팀 스페이스가 있는 사용자는 새 매칭을 시작하지 않습니다."
+				description="참여 중인 팀이 있으면 새 매칭을 시작할 수 없어요."
 				eyebrow="Matching locked"
-				title="이미 참여 중인 팀이 있습니다"
+				title="참여 중인 팀이 있어요"
 			/>
 			<div className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
 				<div>
@@ -819,7 +816,7 @@ function CurrentTeamMatchLockPanel({
 					</p>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
 						{projectGroup.projectDescription ??
-							"팀 스페이스에서 현재 프로젝트 진행 상황을 확인하세요."}
+							"팀 스페이스에서 현재 프로젝트 진행 상황을 확인해 주세요."}
 					</p>
 				</div>
 				<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
@@ -839,10 +836,10 @@ function CurrentTeamCheckPanel() {
 			<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
 				<div>
 					<h2 className="text-xl font-semibold text-brand-ink">
-						팀 상태를 확인하고 있습니다
+						팀 상태를 확인하고 있어요
 					</h2>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
-						이미 팀 스페이스가 있는지 확인한 뒤 매칭 요청을 열겠습니다.
+						참여 중인 팀이 있는지 확인한 뒤 매칭 요청을 열게요.
 					</p>
 				</div>
 				<LoaderCircle className="size-5 animate-spin text-primary" />
@@ -907,7 +904,7 @@ function getProjectInfoError(values: {
 	const hasCompleteProjectInfo = projectFields.every(Boolean);
 
 	if (hasAnyProjectInfo && !hasCompleteProjectInfo) {
-		return "프로젝트 정보를 입력할 때는 제목, 설명, MVP를 모두 작성해야 합니다.";
+		return "프로젝트 정보를 입력하려면 제목, 설명, MVP를 모두 작성해 주세요.";
 	}
 
 	return null;
@@ -927,14 +924,14 @@ function MatchOfferPlaceholder({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="요청 후 팀 후보가 잡히면 여기에서 팀원과 주제를 확인합니다."
+				description="매칭이 잡히면 여기에서 팀원과 주제를 확인해요."
 				eyebrow="Offer"
 				title="매칭 제안"
 			/>
 			<div className="grid gap-4 p-5">
 				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-					현재 도착한 제안은 없습니다. 요청을 보내면 이 영역에서 팀 후보와 다음
-					단계를 확인하게 됩니다.
+					아직 도착한 제안이 없어요. 요청을 보내면 이곳에서 팀원과 다음 단계를
+					확인할 수 있어요.
 				</div>
 				{showPreviewAction ? (
 					<Button disabled={!canPreview} onClick={onPreview} type="button">
@@ -972,7 +969,7 @@ function MatchOfferPanel({
 								: "응답 대기"}
 					</Badge>
 				}
-				description="모두가 수락해야 팀이 생성되고, 거절하면 다시 매칭 대기열로 돌아갑니다."
+				description="모두 수락하면 팀 스페이스가 열려요. 거절하면 다시 매칭을 기다려요."
 				eyebrow="Offer arrived"
 				title="도착한 매칭 제안"
 			/>
@@ -1021,20 +1018,16 @@ function MatchOfferPanel({
 
 				{status === "accepted" ? (
 					<div className="rounded-lg border border-emerald-500/25 bg-emerald-50 p-4">
-						<p className="font-semibold text-emerald-700">
-							팀이 생성되었습니다.
-						</p>
+						<p className="font-semibold text-emerald-700">팀이 만들어졌어요.</p>
 						<p className="mt-1 text-sm leading-6 text-emerald-700/80">
-							이제 팀 스페이스에서 규칙, 체크리스트, GitHub 요약을 확인하세요.
+							이제 팀 스페이스에서 규칙, 체크리스트, GitHub 요약을 확인해요.
 						</p>
 					</div>
 				) : status === "declined" ? (
 					<div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4">
-						<p className="font-semibold text-destructive">
-							제안을 거절했습니다.
-						</p>
+						<p className="font-semibold text-destructive">제안을 거절했어요.</p>
 						<p className="mt-1 text-sm leading-6 text-destructive/80">
-							재매칭이 필요하면 새 요청을 보내 더 맞는 팀을 찾아볼 수 있습니다.
+							새 요청을 보내 더 맞는 팀을 찾아볼 수 있어요.
 						</p>
 					</div>
 				) : null}
@@ -1136,9 +1129,9 @@ function MatchSessionCard({
 						</Badge>
 					</div>
 				}
-				description="팀원과 프로젝트 정보를 확인한 뒤 이 카드에서 바로 수락 또는 거절할 수 있습니다."
+				description="팀원과 프로젝트를 확인한 뒤 바로 응답할 수 있어요."
 				eyebrow="Live session"
-				title="매칭 세션"
+				title="매칭 제안"
 			/>
 			<div className="grid gap-5 p-5 lg:grid-cols-[0.9fr_1.1fr]">
 				<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
@@ -1149,7 +1142,7 @@ function MatchSessionCard({
 					{projectLoading ? (
 						<p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
 							<LoaderCircle className="size-4 animate-spin" />
-							프로젝트 정보를 불러오는 중입니다.
+							프로젝트 정보를 불러오고 있어요.
 						</p>
 					) : project ? (
 						<div className="mt-4 grid gap-3">
@@ -1181,7 +1174,7 @@ function MatchSessionCard({
 					{membersLoading ? (
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
 							<LoaderCircle className="size-4 animate-spin" />
-							팀원 정보를 불러오는 중입니다.
+							팀원 정보를 불러오고 있어요.
 						</p>
 					) : members ? (
 						<div className="grid gap-3 md:grid-cols-2">
@@ -1203,15 +1196,15 @@ function MatchSessionCard({
 							)}
 						>
 							{canRespond
-								? "지금 할 일은 이 매칭을 수락하거나 거절하는 것입니다. 수락하면 팀 스페이스로 이동합니다."
-								: "내 응답은 완료되었습니다. 남은 팀원의 응답이 끝나면 팀 스페이스가 열립니다."}
+								? "이 매칭을 수락하거나 거절해 주세요. 수락하면 팀 스페이스로 이동해요."
+								: "내 응답은 끝났어요. 남은 팀원이 응답하면 팀 스페이스가 열려요."}
 						</div>
 						{currentMember?.isHost ? (
 							<FieldDescription>
-								프로젝트 제안자는 자동으로 수락 처리됩니다.
+								프로젝트 제안자는 자동으로 수락돼요.
 							</FieldDescription>
 						) : currentMember?.isAccepted === true ? (
-							<FieldDescription>이미 이 매칭을 수락했습니다.</FieldDescription>
+							<FieldDescription>이미 이 매칭을 수락했어요.</FieldDescription>
 						) : null}
 						<div className="flex flex-col gap-3 sm:flex-row">
 							<Button

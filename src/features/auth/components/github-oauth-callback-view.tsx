@@ -102,17 +102,17 @@ export function GithubOAuthCallbackView() {
 			description={
 				githubLinkResult
 					? githubLinkResult.linked
-						? "GitHub 계정 연동이 완료되었습니다."
-						: "GitHub 계정 연동을 완료하지 못했습니다."
+						? "GitHub 계정을 연결했어요."
+						: "GitHub 계정을 연결하지 못했어요."
 					: onboardingRequired
-						? "GitHub 계정으로 팀 매칭에 합류하기 전에 현재 개발 레벨만 선택해 주세요."
-						: "GitHub 인증 결과를 확인하고 Team-po 세션을 준비하고 있습니다."
+						? "매칭에 쓸 개발 레벨만 선택해 주세요."
+						: "GitHub 인증 결과를 확인하고 있어요."
 			}
 			title={
 				githubLinkResult
 					? githubLinkResult.linked
-						? "GitHub 연동 완료"
-						: "GitHub 연동 실패"
+						? "GitHub 연결 완료"
+						: "GitHub 연결 실패"
 					: onboardingRequired
 						? "거의 다 왔어요"
 						: "GitHub 로그인 중"
@@ -134,7 +134,7 @@ export function GithubOAuthCallbackView() {
 						)}
 						<p className="text-sm text-muted-foreground">
 							{githubLinkResult.linked
-								? "프로필에서 연결된 GitHub 계정을 확인할 수 있습니다."
+								? "내 정보에서 연결된 계정을 확인할 수 있어요."
 								: getGithubLinkErrorMessage(githubLinkResult.errorCode)}
 						</p>
 					</div>
@@ -147,7 +147,7 @@ export function GithubOAuthCallbackView() {
 			) : isCallbackInvalid ? (
 				<div className="flex flex-col gap-5">
 					<FieldError>
-						GitHub 인증 정보가 없습니다. 로그인 화면에서 다시 시작해 주세요.
+						GitHub 인증 정보가 없어요. 로그인 화면에서 다시 시작해 주세요.
 					</FieldError>
 					<Button asChild size="lg">
 						<Link to="/login">
@@ -188,7 +188,7 @@ export function GithubOAuthCallbackView() {
 								<FieldError>{levelError}</FieldError>
 							) : (
 								<FieldDescription>
-									GitHub 닉네임과 이메일로 계정이 만들어집니다.
+									GitHub 닉네임과 이메일로 계정을 만들어요.
 								</FieldDescription>
 							)}
 						</Field>
@@ -223,7 +223,7 @@ export function GithubOAuthCallbackView() {
 							<Github className="size-5 text-primary" aria-hidden="true" />
 						)}
 						<p className="text-sm text-muted-foreground">
-							인증 코드를 세션 토큰으로 교환하고 있습니다.
+							인증 정보를 확인하고 있어요.
 						</p>
 					</div>
 
@@ -261,12 +261,12 @@ export function GithubOAuthCallbackView() {
 function getGithubLinkErrorMessage(errorCode: string | null) {
 	switch (errorCode) {
 		case "GITHUB_ACCOUNT_ALREADY_LINKED":
-			return "이미 GitHub 계정이 연동되어 있습니다.";
+			return "이미 GitHub 계정이 연결되어 있어요.";
 		case "GITHUB_ACCOUNT_LINKED_TO_ANOTHER_USER":
-			return "이미 다른 사용자에게 연동된 GitHub 계정입니다.";
+			return "다른 사용자가 연결한 GitHub 계정이에요.";
 		case "INVALID_GITHUB_OAUTH_LINK_STATE":
-			return "GitHub 계정 연동 요청이 만료되었거나 올바르지 않습니다.";
+			return "GitHub 연결 요청이 만료되었거나 올바르지 않아요.";
 		default:
-			return "GitHub 계정 연동 결과를 확인할 수 없습니다.";
+			return "GitHub 연결 결과를 확인할 수 없어요.";
 	}
 }

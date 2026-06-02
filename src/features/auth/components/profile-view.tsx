@@ -327,8 +327,8 @@ export function ProfileView() {
 			}
 			description={
 				showMockTeamPreview
-					? "팀 후보에게 보이는 정보와 현재 팀, 계정 보안을 한 화면에서 관리합니다."
-					: "팀 후보에게 보이는 정보와 계정 보안을 한 화면에서 관리합니다."
+					? "매칭 카드에 보일 정보와 현재 팀을 확인해요."
+					: "매칭 카드에 보일 정보와 계정 보안을 확인해요."
 			}
 			eyebrow="Profile"
 			title={isSignedIn ? "내 정보" : "로그인 후 프로필을 관리하세요"}
@@ -338,10 +338,10 @@ export function ProfileView() {
 					<NoticePanel
 						description={
 							showMockTeamPreview
-								? "내 프로필과 팀 상태를 불러오고 있습니다."
-								: "내 프로필을 불러오고 있습니다."
+								? "내 프로필과 팀 상태를 불러오고 있어요."
+								: "내 프로필을 불러오고 있어요."
 						}
-						title="내 정보를 불러오는 중입니다"
+						title="내 정보를 불러오고 있어요"
 					/>
 				) : null}
 
@@ -350,10 +350,10 @@ export function ProfileView() {
 						<div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
 							<div>
 								<h2 className="text-xl font-semibold text-brand-ink">
-									내 정보 조회에 실패했습니다
+									내 정보를 불러오지 못했어요
 								</h2>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									로그인이 만료되었거나 서버 응답을 받을 수 없습니다.
+									로그인이 만료됐거나 서버 응답을 받지 못했어요.
 								</p>
 							</div>
 							<div className="flex flex-wrap gap-2">
@@ -386,10 +386,10 @@ export function ProfileView() {
 						}
 						description={
 							showMockTeamPreview
-								? "샘플 팀 스페이스는 둘러볼 수 있지만, 프로필 수정과 매칭 요청은 로그인 후 사용할 수 있습니다."
-								: "프로필 수정과 매칭 요청은 로그인 후 사용할 수 있습니다."
+								? "샘플 팀 스페이스는 둘러볼 수 있어요. 프로필 수정과 매칭 요청은 로그인 후 사용할 수 있어요."
+								: "프로필 수정과 매칭 요청은 로그인 후 사용할 수 있어요."
 						}
-						title="로그인이 필요합니다"
+						title="로그인이 필요해요"
 					/>
 				) : null}
 
@@ -447,7 +447,7 @@ export function ProfileView() {
 												소개
 											</p>
 											<p className="mt-2 text-sm leading-6 text-muted-foreground">
-												{currentUser.description || "아직 소개가 없습니다."}
+												{currentUser.description || "아직 소개가 없어요."}
 											</p>
 										</div>
 										<div className="grid gap-3 sm:grid-cols-2">
@@ -585,7 +585,7 @@ function getCurrentTeamMetric({
 	if (isLoading) {
 		return {
 			tone: "primary" as const,
-			trend: "팀 조회 중",
+			trend: "팀 확인 중",
 			value: "...",
 		};
 	}
@@ -600,7 +600,7 @@ function getCurrentTeamMetric({
 
 	return {
 		tone: "amber" as const,
-		trend: "매칭 완료 후 생성",
+		trend: "매칭 후 생성",
 		value: "0",
 	};
 }
@@ -617,7 +617,7 @@ function MockCurrentTeamPanel() {
 						</Link>
 					</Button>
 				}
-				description="참여 중인 팀과 다음 일정을 바로 확인하세요."
+				description="참여 중인 팀과 다음 일정을 확인해요."
 				eyebrow="Current team"
 				title={demoTeamSpace.name}
 			/>
@@ -663,7 +663,7 @@ function RealCurrentTeamPanel({
 						</Button>
 					}
 					description={
-						projectGroup.projectDescription ?? "프로젝트 설명이 아직 없습니다."
+						projectGroup.projectDescription ?? "프로젝트 설명이 아직 없어요."
 					}
 					eyebrow="Current team"
 					title={projectGroup.projectName}
@@ -675,7 +675,7 @@ function RealCurrentTeamPanel({
 						</p>
 						<p className="mt-2 text-sm leading-6 text-muted-foreground">
 							{projectGroup.projectDescription ??
-								"프로젝트 설명이 아직 없습니다."}
+								"프로젝트 설명이 아직 없어요."}
 						</p>
 					</div>
 					<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
@@ -693,14 +693,14 @@ function RealCurrentTeamPanel({
 		return (
 			<AppPanel>
 				<AppPanelHeader
-					description="내 팀 스페이스 정보를 서버에서 불러오고 있습니다."
+					description="내 팀 정보를 불러오고 있어요."
 					eyebrow="Team workspace"
-					title="팀 정보를 확인하는 중입니다"
+					title="팀 정보를 확인하고 있어요"
 				/>
 				<div className="grid gap-4 p-5">
 					<div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
 						<LoaderCircle className="size-4 animate-spin" />
-						<span>내 팀 스페이스를 불러오고 있습니다.</span>
+						<span>내 팀 스페이스를 불러오고 있어요.</span>
 					</div>
 				</div>
 			</AppPanel>
@@ -722,14 +722,14 @@ function RealCurrentTeamPanel({
 				}
 				description={
 					isLookupError
-						? "서버 응답을 확인하지 못했습니다. 잠시 후 다시 시도하세요."
-						: "아직 활성 팀 스페이스가 없으면 매칭 상태를 먼저 확인하세요."
+						? "서버 응답을 받지 못했어요. 잠시 후 다시 시도해 주세요."
+						: "아직 팀 스페이스가 없어요. 매칭 상태를 먼저 확인해 주세요."
 				}
 				eyebrow="Team workspace"
 				title={
 					isLookupError
-						? "팀 정보를 불러오지 못했습니다"
-						: "활성 팀 스페이스가 없습니다"
+						? "팀 정보를 불러오지 못했어요"
+						: "활성 팀 스페이스가 없어요"
 				}
 			/>
 			<div className="grid gap-4 p-5">
@@ -737,8 +737,8 @@ function RealCurrentTeamPanel({
 					{getApiErrorMessage(
 						error,
 						isLookupError
-							? "팀 정보를 불러오지 못했습니다."
-							: "소속된 팀 스페이스를 찾을 수 없습니다.",
+							? "팀 정보를 불러오지 못했어요."
+							: "소속된 팀 스페이스를 찾을 수 없어요.",
 					)}
 				</div>
 				<div className="flex flex-wrap gap-2">
@@ -809,7 +809,7 @@ function EditableProfilePanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀 후보가 확인할 이름, 소개, 레벨을 수정합니다."
+				description="매칭 카드에 보일 이름, 소개, 레벨을 수정해요."
 				eyebrow="Profile editor"
 				title="내 정보 수정"
 			/>
@@ -838,7 +838,7 @@ function EditableProfilePanel({
 							{form.nickname || "닉네임"}
 						</p>
 						<p className="mt-1 text-sm leading-6 text-muted-foreground">
-							프로필 이미지는 매칭 카드와 팀원 목록에 표시됩니다.
+							프로필 이미지는 매칭 카드와 팀원 목록에 보여요.
 						</p>
 						{touched.profileImage && formErrors.profileImage ? (
 							<FieldError>{formErrors.profileImage}</FieldError>
@@ -903,7 +903,7 @@ function EditableProfilePanel({
 									description: event.target.value,
 								}));
 							}}
-							placeholder="함께 일할 팀원에게 보여줄 소개를 입력하세요."
+							placeholder="함께 일할 팀원에게 보여줄 소개 입력"
 							value={form.description}
 						/>
 						{touched.description && formErrors.description ? (
@@ -954,7 +954,7 @@ function EditableProfilePanel({
 
 				{updateCurrentUserMutation.isSuccess ? (
 					<div className="rounded-lg border border-emerald-500/25 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
-						프로필 정보가 저장되었습니다.
+						프로필 정보를 저장했어요.
 					</div>
 				) : null}
 
@@ -989,7 +989,7 @@ function SecurityPanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="변경 후에는 다시 로그인해야 합니다."
+				description="변경한 뒤에는 다시 로그인해 주세요."
 				eyebrow="Security"
 				title="비밀번호 변경"
 			/>
@@ -1077,9 +1077,9 @@ function AccountLinksPanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀 협업에 사용할 GitHub 계정 연결 상태입니다."
+				description="팀 활동에 사용할 GitHub 계정을 확인해요."
 				eyebrow="Connected accounts"
-				title="GitHub 연동"
+				title="GitHub 연결"
 			/>
 			<div className="grid gap-4 p-5">
 				<div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-brand-warm p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1099,7 +1099,7 @@ function AccountLinksPanel({
 							<p className="mt-1 truncate text-sm text-muted-foreground">
 								{currentUser.githubUsername
 									? `@${currentUser.githubUsername}`
-									: "연결된 GitHub 계정이 없습니다."}
+									: "연결된 GitHub 계정이 없어요."}
 							</p>
 						</div>
 					</div>
@@ -1119,7 +1119,7 @@ function AccountLinksPanel({
 							) : (
 								<Unlink data-icon="inline-start" />
 							)}
-							연동 해제
+							연결 해제
 						</Button>
 					) : (
 						<Button
@@ -1135,14 +1135,14 @@ function AccountLinksPanel({
 							) : (
 								<Github data-icon="inline-start" />
 							)}
-							GitHub 연동
+							GitHub 연결
 						</Button>
 					)}
 				</div>
 
 				{currentUser.isGithubLogin ? (
 					<p className="text-sm leading-6 text-muted-foreground">
-						GitHub 로그인 계정은 GitHub 연동을 해제할 수 없습니다.
+						GitHub로 로그인한 계정은 연결을 해제할 수 없어요.
 					</p>
 				) : null}
 
@@ -1152,7 +1152,7 @@ function AccountLinksPanel({
 
 				{unlinkGithubAccountMutation.isSuccess ? (
 					<p className="text-sm font-medium text-emerald-700">
-						GitHub 연동을 해제했습니다.
+						GitHub 연결을 해제했어요.
 					</p>
 				) : null}
 			</div>
@@ -1204,7 +1204,7 @@ function DangerPanel({
 	return (
 		<AppPanel className="border-rose-200">
 			<AppPanelHeader
-				description="이메일 인증번호 확인 후 계정을 삭제합니다."
+				description="이메일 인증번호를 확인한 뒤 계정을 삭제해요."
 				eyebrow="Danger zone"
 				title="회원 탈퇴"
 			/>
@@ -1215,7 +1215,7 @@ function DangerPanel({
 				<div className="flex gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-rose-700">
 					<ShieldAlert className="mt-0.5 size-4 shrink-0" />
 					<p className="text-sm leading-6">
-						삭제 후에는 프로필, 매칭 요청, 팀 연결 정보를 되돌릴 수 없습니다.
+						삭제 후에는 프로필, 매칭 요청, 팀 연결 정보를 되돌릴 수 없어요.
 					</p>
 				</div>
 				<FieldGroup>
@@ -1300,7 +1300,7 @@ function DangerPanel({
 								{getApiErrorMessage(validateDeleteUserEmailMutation.error)}
 							</FieldError>
 						) : isDeleteEmailVerified ? (
-							<FieldDescription>이메일 인증이 완료되었습니다.</FieldDescription>
+							<FieldDescription>이메일 인증을 마쳤어요.</FieldDescription>
 						) : isDeleteEmailSent ? (
 							<FieldDescription>
 								메일로 받은 6자리 숫자를 입력해 주세요.

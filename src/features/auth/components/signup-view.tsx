@@ -194,8 +194,8 @@ export function SignupView() {
 	return (
 		<AuthShell
 			badge="Signup"
-			description="이메일 인증과 프로필 설정을 마치면 바로 매칭 요청을 보낼 수 있습니다."
-			title="매칭에 필요한 정보를 준비하세요"
+			description="이메일을 확인하고 팀원에게 보일 프로필을 만들어요."
+			title="매칭에 쓸 정보를 준비해요"
 		>
 			<div className="mb-6 grid gap-3 sm:grid-cols-3">
 				<SetupStatus
@@ -240,7 +240,7 @@ export function SignupView() {
 							</p>
 						</div>
 						<p className="mt-1 text-sm leading-6 text-muted-foreground">
-							닉네임과 레벨은 팀 후보가 가장 먼저 확인하는 정보입니다.
+							닉네임과 레벨은 매칭 카드에 먼저 보여요.
 						</p>
 						{touched.profileImage && errors.profileImage ? (
 							<FieldError>{errors.profileImage}</FieldError>
@@ -407,14 +407,14 @@ export function SignupView() {
 								{getApiErrorMessage(validateSignupAuthNumberMutation.error)}
 							</FieldError>
 						) : isEmailVerified ? (
-							<FieldDescription>이메일 인증이 완료되었습니다.</FieldDescription>
+							<FieldDescription>이메일 인증을 마쳤어요.</FieldDescription>
 						) : isVerificationSent ? (
 							<FieldDescription>
 								메일로 받은 6자리 숫자를 입력해 주세요.
 							</FieldDescription>
 						) : !isEmailChecked ? (
 							<FieldDescription>
-								중복 확인 후 인증번호를 받을 수 있습니다.
+								중복 확인 후 인증번호를 받을 수 있어요.
 							</FieldDescription>
 						) : (
 							<FieldDescription>
@@ -509,7 +509,7 @@ export function SignupView() {
 							<FieldError>{errors.nickname}</FieldError>
 						) : (
 							<FieldDescription>
-								매칭 카드와 팀 스페이스에 표시되는 이름입니다.
+								매칭 카드와 팀 스페이스에 보여요.
 							</FieldDescription>
 						)}
 					</Field>
@@ -553,9 +553,7 @@ export function SignupView() {
 				{signupMutation.error ? (
 					<FieldError>{getApiErrorMessage(signupMutation.error)}</FieldError>
 				) : touched.authNumber && !isEmailVerified ? (
-					<FieldError>
-						이메일 인증을 완료해야 회원가입할 수 있습니다.
-					</FieldError>
+					<FieldError>이메일 인증을 완료해야 회원가입할 수 있어요.</FieldError>
 				) : null}
 
 				<Button disabled={isSubmitDisabled} size="lg" type="submit">
@@ -570,7 +568,7 @@ export function SignupView() {
 
 			<div className="mt-6 rounded-lg border border-border/70 bg-brand-warm p-4 text-sm">
 				<p className="text-muted-foreground">
-					이미 계정이 있다면 로그인하고 진행 중인 매칭을 이어가세요.
+					이미 계정이 있다면 로그인해서 매칭을 이어가세요.
 				</p>
 				<Button
 					asChild

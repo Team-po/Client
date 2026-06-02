@@ -13,9 +13,9 @@ export function ValueSection() {
 		<section className="py-20 md:py-24">
 			<Container className="space-y-10">
 				<SectionHeading
-					label="Continuous push"
-					title="매칭 이후에도 프로젝트가 멈추지 않도록 돕습니다"
-					description="주간 리포트, 회고 질문, 지연 신호를 한곳에 모아 팀이 다음 행동을 정하기 쉽게 만듭니다."
+					label="팀 운영 루틴"
+					title="매칭 뒤에도 계속 움직이게 해요"
+					description="주간 리포트, 회고 질문, 지연 신호를 모아 다음 할 일을 정하기 쉽게 해요."
 				/>
 
 				<div className="grid gap-4 md:grid-cols-3">
@@ -28,7 +28,7 @@ export function ValueSection() {
 									<div className="flex size-10 items-center justify-center rounded-xl bg-accent/15 text-accent shadow-sm">
 										<Icon className="size-5" />
 									</div>
-									<Badge variant="brand">AI Assist</Badge>
+									<Badge variant="brand">추천</Badge>
 								</div>
 								<h3 className="font-display text-xl leading-tight">
 									{feature.title}
