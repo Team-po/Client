@@ -12,9 +12,9 @@ export function HowItWorksSection() {
 		<section className="py-20 md:py-24">
 			<Container className="space-y-10">
 				<SectionHeading
-					label="How it works"
-					title="모집 글 없이 팀 프로젝트를 시작하는 3단계"
-					description="긴 자기소개와 선발 과정 대신, 필요한 정보만 입력하고 매칭을 기다립니다."
+					label="시작 방법"
+					title="필요한 정보만 입력하고 기다려요"
+					description="긴 자기소개와 선발 과정 없이 매칭 요청을 보낼 수 있어요."
 				/>
 
 				<div className="grid gap-4 md:grid-cols-3">

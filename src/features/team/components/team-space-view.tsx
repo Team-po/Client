@@ -221,7 +221,7 @@ function TeamTabList({
 							key={tab.id}
 							onClick={() => onSelectTab(tab.id)}
 							title={
-								disabled ? `${tab.label} 기능은 준비 중입니다.` : undefined
+								disabled ? `${tab.label} 기능은 준비 중이에요.` : undefined
 							}
 							type="button"
 						>
@@ -318,7 +318,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 
 		if (!Number.isFinite(installationId)) {
 			setGithubCompletionFeedback({
-				message: "GitHub App 설치 정보를 확인할 수 없습니다.",
+				message: "GitHub App 설치 정보를 확인할 수 없어요.",
 				tone: "error",
 			});
 			return;
@@ -347,7 +347,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					nextSearchParams.delete("state");
 					setSearchParams(nextSearchParams, { replace: true });
 					setGithubCompletionFeedback({
-						message: "GitHub App 설치를 팀 스페이스에 연결했습니다.",
+						message: "GitHub App 설치를 팀 스페이스에 연결했어요.",
 						tone: "success",
 					});
 				},
@@ -383,7 +383,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 			onSuccess: () => {
 				setAdminPermissionFeedback({
 					message: `${member.nickname}님의 관리자 권한을 ${
-						isRevoking ? "회수했습니다" : "부여했습니다"
+						isRevoking ? "회수했어요" : "부여했어요"
 					}.`,
 					tone: "success" as const,
 				});
@@ -416,7 +416,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					</Button>
 				</>
 			}
-			description="팀 홈, 체크리스트, GitHub 연동, 관리 기능을 한 흐름에서 확인합니다."
+			description="팀 홈, 체크리스트, GitHub 활동을 한곳에서 봐요."
 			eyebrow="Team workspace"
 			rail={
 				projectGroup ? (
@@ -438,18 +438,18 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 								<Link to="/login">로그인</Link>
 							</Button>
 						}
-						description="로그인 후 내 팀 스페이스를 불러올 수 있습니다."
+						description="로그인하면 내 팀 스페이스를 불러올 수 있어요."
 						status="인증 필요"
-						title="로그인이 필요합니다"
+						title="로그인이 필요해요"
 					/>
 				) : null}
 
 				{isSignedIn && projectGroupQuery.isLoading ? (
 					<RealTeamNotice
-						description="내 팀 스페이스를 불러오고 있습니다."
+						description="내 팀 스페이스를 불러오고 있어요."
 						icon={<LoaderCircle className="size-4 animate-spin" />}
 						status="조회 중"
-						title="팀 정보를 확인하는 중입니다"
+						title="팀 정보를 확인하고 있어요"
 					/>
 				) : null}
 
@@ -465,7 +465,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 						}
 						description={getApiErrorMessage(projectGroupQuery.error)}
 						status="팀 없음"
-						title="활성 팀 스페이스가 없습니다"
+						title="활성 팀 스페이스가 없어요"
 					/>
 				) : null}
 
@@ -485,7 +485,7 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 						/>
 						{checklistLoadErrorMessage ? (
 							<RealInlineStatus
-								message={`체크리스트를 불러오지 못했습니다. ${checklistLoadErrorMessage}`}
+								message={`체크리스트를 불러오지 못했어요. ${checklistLoadErrorMessage}`}
 							/>
 						) : null}
 						<TeamTabList
@@ -638,10 +638,10 @@ function RealTeamRail({
 						</p>
 						<p className="mt-2 text-sm leading-6 text-brand-ink">
 							{checklistErrorMessage
-								? "체크리스트를 불러오지 못했습니다."
+								? "체크리스트를 불러오지 못했어요."
 								: summary.openCount > 0
-									? `${summary.openCount}개 체크리스트가 남아 있습니다.`
-									: "열린 체크리스트가 없습니다."}
+									? `${summary.openCount}개 체크리스트가 남아 있어요.`
+									: "열린 체크리스트가 없어요."}
 						</p>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
@@ -668,7 +668,7 @@ function RealTeamRail({
 						<span className="font-semibold text-brand-ink">
 							{currentMember?.groupRole ?? "MEMBER"}
 						</span>
-						입니다. 팀 설정과 멤버 권한은 관리 탭에서 확인합니다.
+						예요. 팀 설정과 멤버 권한은 관리 탭에서 확인해요.
 					</div>
 					<div className="grid gap-2">
 						<Button onClick={() => onSelectTab("checklist")} type="button">
@@ -777,9 +777,9 @@ function RealTeamFocusPanel({
 					</div>
 					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
 						{isLoading
-							? "체크리스트를 불러오는 중입니다"
+							? "체크리스트를 불러오고 있어요"
 							: checklistErrorMessage
-								? "체크리스트를 불러오지 못했습니다"
+								? "체크리스트를 불러오지 못했어요"
 								: primaryTask?.title || projectGroup.projectTitle}
 					</h2>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -789,7 +789,7 @@ function RealTeamFocusPanel({
 								? `${primaryTask.assigneeNickname ?? "미지정"} 담당 · 마감 ${
 										primaryTask.dueDate ?? "미정"
 									}`
-								: "체크리스트를 만들면 팀 홈 상단에서 바로 이어서 볼 수 있습니다."}
+								: "체크리스트를 만들면 팀 홈 상단에서 바로 볼 수 있어요."}
 					</p>
 				</div>
 
@@ -861,7 +861,7 @@ function RealOverviewPanel({
 			<AppPanel>
 				<AppPanelHeader
 					description={
-						projectGroup.projectDescription ?? "팀 설명이 아직 없습니다."
+						projectGroup.projectDescription ?? "팀 설명이 아직 없어요."
 					}
 					eyebrow="Team"
 					title={projectGroup.projectTitle}
@@ -872,7 +872,7 @@ function RealOverviewPanel({
 							MVP
 						</p>
 						<p className="mt-2 text-sm leading-6 text-brand-ink">
-							{projectGroup.projectMvp ?? "MVP가 아직 등록되지 않았습니다."}
+							{projectGroup.projectMvp ?? "MVP가 아직 등록되지 않았어요."}
 						</p>
 					</div>
 					<div className="grid gap-3">
@@ -896,7 +896,7 @@ function RealOverviewPanel({
 				<div className="grid gap-4 p-5">
 					{checklistErrorMessage ? (
 						<RealInlineStatus
-							message={`체크리스트를 불러오지 못했습니다. ${checklistErrorMessage}`}
+							message={`체크리스트를 불러오지 못했어요. ${checklistErrorMessage}`}
 						/>
 					) : null}
 					{checklistErrorMessage ? null : (
@@ -937,7 +937,7 @@ function RealOverviewPanel({
 							))}
 							{checklists.length === 0 ? (
 								<p className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-									아직 등록된 체크리스트가 없습니다. 체크리스트 탭에서 첫 작업을
+									아직 등록된 체크리스트가 없어요. 체크리스트 탭에서 첫 작업을
 									만들어 주세요.
 								</p>
 							) : null}
@@ -992,8 +992,8 @@ function RealMemberSummaryCard({
 			<div className="min-w-0">
 				<p className="text-sm leading-6 text-muted-foreground">
 					{member.groupRole === "HOST"
-						? "팀 운영과 관리 권한을 담당합니다."
-						: "팀 작업과 체크리스트를 함께 수행합니다."}
+						? "팀 운영과 관리 권한을 맡고 있어요."
+						: "팀 작업과 체크리스트를 함께 진행해요."}
 				</p>
 				<div className="mt-3 flex flex-wrap gap-2">
 					<Badge variant={member.groupRole === "HOST" ? "brand" : "neutral"}>
@@ -1028,16 +1028,16 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 			<AppPanel>
 				<AppPanelHeader
 					action={<Badge variant="neutral">조회 중</Badge>}
-					description="팀 방향, MVP 우선순위, 결정 포인트를 불러오고 있습니다."
+					description="팀 방향, MVP 우선순위, 결정 포인트를 불러오고 있어요."
 					eyebrow="Guide"
-					title="AI 개발 가이드라인"
+					title="AI 개발 가이드"
 				/>
 				<div className="p-5">
 					<RealInlineStatus
 						icon={
 							<LoaderCircle className="size-4 shrink-0 animate-spin text-primary" />
 						}
-						message="가이드라인을 불러오는 중입니다."
+						message="AI 개발 가이드를 불러오고 있어요."
 					/>
 				</div>
 			</AppPanel>
@@ -1050,13 +1050,13 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 				<AppPanel>
 					<AppPanelHeader
 						action={<Badge variant="neutral">대기</Badge>}
-						description="아직 이 팀에 생성된 가이드라인이 없습니다."
+						description="아직 이 팀에 생성된 AI 개발 가이드가 없어요."
 						eyebrow="Guide"
-						title="AI 개발 가이드라인"
+						title="AI 개발 가이드"
 					/>
 					<div className="p-5">
 						<div className="grid gap-3">
-							<RealInlineStatus message="팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다. 잠시 후 자동으로 다시 확인합니다." />
+							<RealInlineStatus message="팀을 만든 직후라면 AI 개발 가이드 생성이 아직 진행 중일 수 있어요. 잠시 후 다시 확인해요." />
 							<div>
 								<Button
 									disabled={devGuideQuery.isFetching}
@@ -1085,9 +1085,9 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 			<AppPanel>
 				<AppPanelHeader
 					action={<Badge variant="neutral">오류</Badge>}
-					description="팀 가이드라인을 불러오지 못했습니다."
+					description="AI 개발 가이드를 불러오지 못했어요."
 					eyebrow="Guide"
-					title="AI 개발 가이드라인"
+					title="AI 개발 가이드"
 				/>
 				<div className="p-5">
 					<RealInlineStatus
@@ -1118,11 +1118,11 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 					}
 					description={
 						isFailed
-							? "가이드라인 생성에 실패했습니다."
-							: "아직 이 팀에 생성된 가이드라인이 없습니다."
+							? "AI 개발 가이드 생성에 실패했어요."
+							: "아직 이 팀에 생성된 AI 개발 가이드가 없어요."
 					}
 					eyebrow="Guide"
-					title="AI 개발 가이드라인"
+					title="AI 개발 가이드"
 				/>
 				<div className="p-5">
 					<div className="grid gap-3">
@@ -1134,8 +1134,8 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 							}
 							message={
 								isFailed
-									? "재생성을 실행하면 서버가 팀 정보를 바탕으로 가이드라인을 다시 생성합니다."
-									: "팀 생성 직후라면 가이드라인 생성이 아직 진행 중일 수 있습니다."
+									? "재생성을 누르면 AI가 팀 정보를 바탕으로 가이드를 다시 만들어요."
+									: "팀을 만든 직후라면 AI 개발 가이드 생성이 아직 진행 중일 수 있어요."
 							}
 						/>
 						{regenerateDevGuideMutation.error ? (
@@ -1168,7 +1168,7 @@ function RealGuidePanel({ projectGroup }: { projectGroup: MyProjectGroup }) {
 					}
 					description={getDevGuidePanelDescription(generationStatus)}
 					eyebrow="Guide"
-					title="AI 개발 가이드라인"
+					title="AI 개발 가이드"
 				/>
 				<div className="grid gap-4 p-5">
 					{regenerateDevGuideMutation.error ? (
@@ -1250,14 +1250,14 @@ function getDevGuidePanelDescription(
 	generationStatus: DevGuideGenerationStatus | undefined,
 ) {
 	if (generationStatus === "GENERATING") {
-		return "기존 가이드라인을 표시하는 동안 새 가이드라인을 생성 중입니다.";
+		return "기존 AI 개발 가이드를 보여주는 동안 새 가이드를 만들고 있어요.";
 	}
 
 	if (generationStatus === "FAILED") {
-		return "최근 생성이 실패해 기존 가이드라인을 표시하고 있습니다.";
+		return "최근 생성이 실패해서 기존 AI 개발 가이드를 보여주고 있어요.";
 	}
 
-	return "팀 방향, MVP 우선순위, 결정 포인트를 한곳에 모았습니다.";
+	return "팀 방향, MVP 우선순위, 결정 포인트를 한곳에 모았어요.";
 }
 
 function DevGuideHeaderAction({
@@ -1358,7 +1358,7 @@ function RealDevGuideTechStackPanel({ guide }: { guide: DevGuideContent }) {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="역할별로 우선 검토할 기술 선택지를 정리했습니다."
+				description="역할별로 먼저 검토할 기술 선택지를 모았어요."
 				eyebrow="Stack"
 				title="기술 스택"
 			/>
@@ -1386,7 +1386,7 @@ function RealDevGuideDecisionPanel({ guide }: { guide: DevGuideContent }) {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀이 초기에 합의해야 할 선택지를 모았습니다."
+				description="팀이 초기에 합의할 선택지를 모았어요."
 				eyebrow="Decision"
 				title="결정 포인트"
 			/>
@@ -1418,7 +1418,7 @@ function RealDevGuideMilestonePanel({ guide }: { guide: DevGuideContent }) {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="12주 흐름을 주차별 목표와 역할 작업으로 나눴습니다."
+				description="12주 계획을 주차별 목표와 역할 작업으로 나눴어요."
 				eyebrow="Roadmap"
 				title="마일스톤"
 			/>
@@ -1478,23 +1478,22 @@ function RealRulesPanelDisabled() {
 		<AppPanel>
 			<AppPanelHeader
 				action={<Badge variant="neutral">준비 중</Badge>}
-				description="팀 규칙 저장 API가 연결되면 이 탭에서 직접 수정할 수 있습니다."
+				description="팀 규칙 저장 API가 연결되면 이 탭에서 수정할 수 있어요."
 				eyebrow="Rulebook"
 				title="팀 규칙"
 			/>
 			<div className="grid gap-4 p-5">
 				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-5">
 					<p className="text-sm font-semibold text-brand-ink">
-						아직 서버 기능이 준비되지 않았습니다.
+						아직 서버 기능이 준비되지 않았어요.
 					</p>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
-						규칙 조회/수정 API가 생기면 mock 프리뷰와 같은 규칙 편집 경험으로
-						연결합니다.
+						규칙 조회/수정 API가 생기면 이곳에서 바로 편집할 수 있게 연결할게요.
 					</p>
 				</div>
 				<textarea
 					className="min-h-56 rounded-lg border border-input bg-secondary/40 px-4 py-3 font-mono text-sm leading-7 text-muted-foreground"
-					defaultValue={"# 팀 규칙\n- 서버 API 연결 후 편집할 수 있습니다."}
+					defaultValue={"# 팀 규칙\n- 서버 API 연결 후 편집할 수 있어요."}
 					disabled
 				/>
 				<div className="flex justify-end">
@@ -1513,7 +1512,7 @@ function RealChatPanelDisabled() {
 		<AppPanel>
 			<AppPanelHeader
 				action={<Badge variant="neutral">준비 중</Badge>}
-				description="팀 채팅 API가 연결되기 전까지는 입력을 비활성화합니다."
+				description="팀 채팅 API가 연결되면 메시지를 보낼 수 있어요."
 				eyebrow="Messages"
 				title="팀 채팅"
 			/>
@@ -1523,7 +1522,7 @@ function RealChatPanelDisabled() {
 						<div className="max-w-[min(34rem,88%)] rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
 							<p className="font-semibold text-brand-ink">Team-po</p>
 							<p className="mt-2 text-sm leading-6 text-muted-foreground">
-								채팅 기능은 API가 연결되면 활성화됩니다.
+								채팅 기능은 API가 연결되면 사용할 수 있어요.
 							</p>
 						</div>
 					</div>
@@ -1538,7 +1537,7 @@ function RealChatPanelDisabled() {
 							className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
 							disabled
 							id="real-team-message"
-							placeholder="채팅 API 연결 후 입력할 수 있습니다"
+							placeholder="채팅 API 연결 후 입력할 수 있어요"
 						/>
 					</label>
 					<div className="flex items-end">
@@ -1575,7 +1574,7 @@ function RealManagePanel({
 			<AppPanel>
 				<AppPanelHeader
 					action={<Badge variant="neutral">일부 준비 중</Badge>}
-					description="서버에 구현된 멤버 관리자 권한은 바로 조정하고, 아직 없는 팀 상태 편집은 비활성화했습니다."
+					description="멤버 관리자 권한은 바로 조정할 수 있어요. 팀 상태 편집은 준비 중이에요."
 					eyebrow="Manage"
 					title="팀 관리"
 				/>
@@ -1602,15 +1601,15 @@ function RealManagePanel({
 						</label>
 					</div>
 					<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-						팀 이름과 상태 편집 API는 아직 연결되지 않았습니다. 기능이 생기면 이
-						관리 탭 안에서 활성화합니다.
+						팀 이름과 상태 편집 API는 아직 연결되지 않았어요. 기능이 생기면 이
+						관리 탭에서 활성화할게요.
 					</div>
 				</div>
 			</AppPanel>
 
 			<AppPanel>
 				<AppPanelHeader
-					description="방장은 팀원 관리자 권한을 부여하거나 회수할 수 있습니다."
+					description="방장은 팀원 관리자 권한을 부여하거나 회수할 수 있어요."
 					eyebrow="Members"
 					title="멤버 관리"
 				/>
@@ -1722,8 +1721,8 @@ function RealAdminPermissionStatus({
 					<p className="font-semibold text-brand-ink">관리자 권한 관리</p>
 					<p className="mt-1 text-xs text-muted-foreground">
 						{canManageAdminPermissions
-							? "팀원 카드에서 권한을 조정할 수 있습니다."
-							: "방장 계정에서만 권한을 변경할 수 있습니다."}
+							? "팀원 카드에서 권한을 조정할 수 있어요."
+							: "방장 계정에서만 권한을 변경할 수 있어요."}
 					</p>
 				</div>
 			</div>
@@ -1897,7 +1896,7 @@ function RealProjectChecklistsPanel({
 				title: "",
 			});
 			setFeedback({
-				message: "체크리스트를 추가했습니다.",
+				message: "체크리스트를 추가했어요.",
 				tone: "success",
 			});
 		} catch (error: unknown) {
@@ -1965,7 +1964,7 @@ function RealProjectChecklistsPanel({
 			});
 			handleCancelEdit(checklist.id);
 			setFeedback({
-				message: "체크리스트를 수정했습니다.",
+				message: "체크리스트를 수정했어요.",
 				tone: "success",
 			});
 		} catch (error: unknown) {
@@ -1992,7 +1991,7 @@ function RealProjectChecklistsPanel({
 				title: checklist.title,
 			});
 			setFeedback({
-				message: "체크리스트 상태를 변경했습니다.",
+				message: "체크리스트 상태를 바꿨어요.",
 				tone: "success",
 			});
 		} catch (error: unknown) {
@@ -2011,7 +2010,7 @@ function RealProjectChecklistsPanel({
 				projectGroupId: projectGroup.projectGroupId,
 			});
 			setFeedback({
-				message: "체크리스트를 삭제했습니다.",
+				message: "체크리스트를 삭제했어요.",
 				tone: "success",
 			});
 		} catch (error: unknown) {
@@ -2030,7 +2029,7 @@ function RealProjectChecklistsPanel({
 				projectGroupId: projectGroup.projectGroupId,
 			});
 			setFeedback({
-				message: "AI 조언을 생성했습니다.",
+				message: "AI 조언을 만들었어요.",
 				tone: "success",
 			});
 		} catch (error: unknown) {
@@ -2045,7 +2044,7 @@ function RealProjectChecklistsPanel({
 		<AppPanel>
 			<AppPanelHeader
 				action={<Badge variant="neutral">{checklists.length} tasks</Badge>}
-				description="팀 작업을 등록하고 담당자, 마감일, AI 조언을 관리합니다."
+				description="팀 작업, 담당자, 마감일, AI 조언을 함께 관리해요."
 				eyebrow="Checklist"
 				title="프로젝트 체크리스트"
 			/>
@@ -2158,7 +2157,7 @@ function RealProjectChecklistsPanel({
 				{checklistQuery.isLoading ? (
 					<RealInlineStatus
 						icon={<LoaderCircle className="size-4 animate-spin" />}
-						message="체크리스트를 불러오고 있습니다."
+						message="체크리스트를 불러오고 있어요."
 					/>
 				) : null}
 
@@ -2302,7 +2301,7 @@ function RealProjectChecklistsPanel({
 												</p>
 											</div>
 											<p className="mt-2 text-sm leading-6 text-muted-foreground">
-												{checklist.description ?? "설명이 없습니다."}
+												{checklist.description ?? "설명이 없어요."}
 											</p>
 											<div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
 												<span>
@@ -2425,7 +2424,7 @@ function RealChecklistAdvice({
 			<div className="mt-3 grid gap-3 md:grid-cols-3">
 				<RealAdviceList
 					items={checklist.aiAdvice.recommendedFlow}
-					title="추천 흐름"
+					title="추천 순서"
 				/>
 				<RealAdviceList
 					items={checklist.aiAdvice.considerations}
@@ -2604,7 +2603,7 @@ function RealGithubInstallationPanel({
 				},
 				onSuccess: () => {
 					setFeedback({
-						message: "GitHub 저장소 연결을 저장했습니다.",
+						message: "GitHub 저장소 연결을 저장했어요.",
 						tone: "success",
 					});
 				},
@@ -2620,9 +2619,9 @@ function RealGithubInstallationPanel({
 						{githubStatus?.connected ? "connected" : "not connected"}
 					</Badge>
 				}
-				description="Organization 연결 상태와 저장소 집계 준비 상태를 확인합니다."
+				description="GitHub 조직과 저장소 연결 상태를 확인해요."
 				eyebrow="GitHub App"
-				title="Organization 연동"
+				title="GitHub 조직 연결"
 			/>
 			<div className="grid gap-5 p-5">
 				<RealActionFeedback feedback={completionFeedback ?? feedback} />
@@ -2632,8 +2631,8 @@ function RealGithubInstallationPanel({
 						icon={<LoaderCircle className="size-4 animate-spin" />}
 						message={
 							isCompletingInstallation
-								? "GitHub App 설치를 완료하고 있습니다."
-								: "GitHub 연동 상태를 불러오고 있습니다."
+								? "GitHub App 설치를 마무리하고 있어요."
+								: "GitHub 연결 상태를 불러오고 있어요."
 						}
 					/>
 				) : null}
@@ -2671,8 +2670,8 @@ function RealGithubInstallationPanel({
 						</p>
 						<p className="mt-1 text-sm leading-6 text-muted-foreground">
 							{githubStatus?.connected
-								? "Organization이 팀 스페이스에 연결되어 있습니다."
-								: "호스트가 GitHub 설치 흐름을 시작할 수 있습니다."}
+								? "GitHub 조직이 팀 스페이스에 연결되어 있어요."
+								: "호스트가 GitHub App 설치를 시작할 수 있어요."}
 						</p>
 					</div>
 					<Button
@@ -2698,7 +2697,7 @@ function RealGithubInstallationPanel({
 										연결된 저장소
 									</p>
 									<p className="mt-1 text-sm leading-6 text-muted-foreground">
-										팀 스페이스에 등록된 GitHub 저장소입니다.
+										팀 스페이스에 등록된 GitHub 저장소예요.
 									</p>
 								</div>
 								<Badge
@@ -2714,7 +2713,7 @@ function RealGithubInstallationPanel({
 								{githubRepositoriesQuery.isLoading ? (
 									<RealInlineStatus
 										icon={<LoaderCircle className="size-4 animate-spin" />}
-										message="등록된 저장소를 불러오고 있습니다."
+										message="등록된 저장소를 불러오고 있어요."
 									/>
 								) : null}
 
@@ -2728,7 +2727,7 @@ function RealGithubInstallationPanel({
 								connectedRepositories.length === 0 ? (
 									<div className="rounded-lg border border-dashed border-border bg-white/65 p-4">
 										<p className="text-sm leading-6 text-muted-foreground">
-											아직 팀 스페이스에 등록된 GitHub 저장소가 없습니다.
+											아직 팀 스페이스에 등록된 GitHub 저장소가 없어요.
 										</p>
 									</div>
 								) : null}
@@ -2751,7 +2750,8 @@ function RealGithubInstallationPanel({
 										저장소 설정
 									</p>
 									<p className="mt-1 text-sm leading-6 text-muted-foreground">
-										GitHub App이 접근 가능한 저장소 중 집계할 대상을 선택합니다.
+										GitHub App이 접근할 수 있는 저장소 중 집계할 대상을
+										선택해요.
 									</p>
 								</div>
 								<Badge
@@ -2766,7 +2766,7 @@ function RealGithubInstallationPanel({
 									{availableGithubRepositoriesQuery.isLoading ? (
 										<RealInlineStatus
 											icon={<LoaderCircle className="size-4 animate-spin" />}
-											message="선택 가능한 저장소를 불러오고 있습니다."
+											message="선택 가능한 저장소를 불러오고 있어요."
 										/>
 									) : null}
 
@@ -2782,7 +2782,7 @@ function RealGithubInstallationPanel({
 									availableRepositories.length === 0 ? (
 										<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4">
 											<p className="text-sm leading-6 text-muted-foreground">
-												GitHub App이 접근 가능한 저장소가 없습니다.
+												GitHub App이 접근할 수 있는 저장소가 없어요.
 											</p>
 										</div>
 									) : null}
@@ -2834,7 +2834,7 @@ function RealGithubInstallationPanel({
 							) : (
 								<div className="mt-4 rounded-lg border border-dashed border-border bg-secondary/30 p-4">
 									<p className="text-sm leading-6 text-muted-foreground">
-										호스트만 GitHub 저장소 설정을 변경할 수 있습니다.
+										호스트만 GitHub 저장소 설정을 변경할 수 있어요.
 									</p>
 								</div>
 							)}
@@ -2857,15 +2857,15 @@ function GithubOrganizationPolicyNotice() {
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
 							<p className="text-sm font-semibold text-brand-ink">
-								저장소 연결 전 TeamPo 접근 권한을 확인하세요
+								저장소 연결 전 TeamPo 접근 권한을 확인해 주세요
 							</p>
 							<Badge variant="warm">permission check</Badge>
 						</div>
 						<p className="mt-2 text-sm leading-6 text-amber-900/80">
 							GitHub App 설치나 선택 저장소 권한이 제한되어 있으면 TeamPo가
-							저장소와 PR 정보를 가져오지 못할 수 있습니다. Organization owner가
+							저장소와 PR 정보를 가져오지 못할 수 있어요. Organization owner가
 							TeamPo GitHub App이 설치되어 있는지, 선택한 저장소와 Pull requests
-							읽기 권한이 열려 있는지 확인하세요.
+							읽기 권한이 열려 있는지 확인해 주세요.
 						</p>
 					</div>
 				</div>
@@ -2999,7 +2999,7 @@ function RealGithubRepositoryContributionCard({
 				<RealInlineStatus
 					className="mt-4"
 					icon={<LoaderCircle className="size-4 animate-spin" />}
-					message="저장소 기여도를 불러오고 있습니다."
+					message="저장소 기여도를 불러오고 있어요."
 				/>
 			) : null}
 
@@ -3052,7 +3052,7 @@ function RealGithubRepositoryContributionCard({
 					) : (
 						<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4">
 							<p className="text-sm leading-6 text-muted-foreground">
-								아직 동기화된 PR 기여도가 없습니다.
+								아직 동기화된 PR 기여도가 없어요.
 							</p>
 						</div>
 					)}
@@ -3321,8 +3321,8 @@ function MockTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 
 				{!isSignedIn ? (
 					<div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-primary">
-						지금은 샘플 팀 스페이스를 둘러보는 프리뷰입니다. 로그인하면 내 팀
-						기준으로 규칙, 체크리스트, 채팅을 이어서 관리할 수 있습니다.
+						지금은 샘플 팀 스페이스를 둘러보고 있어요. 로그인하면 내 팀 기준으로
+						규칙, 체크리스트, 채팅을 이어서 관리할 수 있어요.
 					</div>
 				) : null}
 
@@ -3401,12 +3401,12 @@ function TeamFocusPanel({
 					<h2 className="mt-3 text-xl font-semibold text-brand-ink">
 						{primaryTask
 							? primaryTask.title
-							: "새 작업을 추가해 다음 액션을 정하세요"}
+							: "새 작업을 추가해 다음 할 일을 정해요"}
 					</h2>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
 						{primaryTask
 							? `${primaryTask.assignee} 담당 · ${primaryTask.dueLabel} · ${checklistLabels[primaryTask.status]}`
-							: "체크리스트에서 첫 작업을 만들면 팀 홈 상단에 바로 강조됩니다."}
+							: "체크리스트에서 첫 작업을 만들면 팀 홈 상단에 바로 보여요."}
 					</p>
 				</div>
 
@@ -3543,7 +3543,7 @@ function TeamRail({
 						<span className="font-semibold text-brand-ink">
 							{isGithubLinked ? "완료" : "설정 필요"}
 						</span>
-						상태입니다. 팀 설정과 멤버 관리는 관리 탭으로 이동했습니다.
+						상태예요. 팀 설정과 멤버 관리는 관리 탭에서 확인해요.
 					</div>
 					<div className="grid gap-2">
 						<Button onClick={() => onSelectTab("checklist")} type="button">
@@ -3577,7 +3577,7 @@ function MockManagePanel({
 			<AppPanel>
 				<AppPanelHeader
 					action={<Badge variant="warm">local preview</Badge>}
-					description="팀 설정 화면의 배치를 미리 보는 영역입니다. 서버에 없는 기능은 실서비스에서 비활성화됩니다."
+					description="팀 설정 화면을 미리 확인해요. 아직 연결되지 않은 기능은 준비 중이에요."
 					eyebrow="Manage"
 					title="팀 관리"
 				/>
@@ -3611,14 +3611,14 @@ function MockManagePanel({
 						</label>
 					</div>
 					<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-						팀 운영 상태 변경은 서버 API가 연결되면 활성화됩니다.
+						팀 운영 상태 변경은 서버 API가 연결되면 사용할 수 있어요.
 					</div>
 				</div>
 			</AppPanel>
 
 			<AppPanel>
 				<AppPanelHeader
-					description="현재 데모 멤버 구성을 확인합니다. 초대/내보내기는 아직 비활성화 상태입니다."
+					description="현재 샘플 멤버 구성을 확인해요. 초대와 내보내기는 준비 중이에요."
 					eyebrow="Members"
 					title="멤버 관리"
 				/>
@@ -3661,7 +3661,7 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 		<div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
 			<AppPanel>
 				<AppPanelHeader
-					description="프로젝트 의도, MVP, 팀원 역할을 한 번에 확인합니다."
+					description="프로젝트 의도, MVP, 팀원 역할을 한 번에 확인해요."
 					eyebrow="Project"
 					title={demoTeamSpace.projectTitle}
 				/>
@@ -3715,7 +3715,7 @@ function OverviewPanel({ checklist }: OverviewPanelProps) {
 
 			<AppPanel>
 				<AppPanelHeader
-					description="오늘 바로 결정하면 좋은 항목입니다."
+					description="오늘 바로 결정하면 좋은 항목이에요."
 					eyebrow="Today"
 					title="오늘의 진행"
 				/>
@@ -3762,7 +3762,7 @@ function GuidePanel() {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="주제와 MVP를 바탕으로 팀이 먼저 논의할 방향을 정리합니다."
+				description="주제와 MVP를 바탕으로 팀이 먼저 논의할 방향을 정리해요."
 				eyebrow="Guide"
 				title={demoTeamSpace.guideline.title}
 			/>
@@ -3835,7 +3835,7 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 						</Button>
 					)
 				}
-				description="함께 지킬 협업 규칙을 정리하고 필요할 때 수정합니다."
+				description="함께 지킬 협업 규칙을 정리하고 필요할 때 수정해요."
 				eyebrow="Rulebook"
 				title="팀 규칙"
 			/>
@@ -3855,7 +3855,7 @@ function RulesPanel({ onRulesChange, rulesMarkdown }: RulesPanelProps) {
 							value={draftRules}
 						/>
 						<p className="text-sm text-muted-foreground">
-							저장하면 팀 규칙에 바로 반영됩니다.
+							저장하면 팀 규칙에 바로 반영돼요.
 						</p>
 					</div>
 				) : (
@@ -3930,7 +3930,7 @@ function ChecklistPanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="작업을 추가하고 상태, 담당자, 기한을 함께 관리합니다."
+				description="작업, 상태, 담당자, 기한을 함께 관리해요."
 				eyebrow="Tasks"
 				title="체크리스트"
 			/>
@@ -4131,7 +4131,7 @@ function GithubPanel({
 		{
 			description: isProjectGroupGithubLinked ? "기여도 집계 가능" : "연동 전",
 			icon: ShieldCheck,
-			label: "TeamSpace",
+			label: "팀 스페이스",
 			ready: isProjectGroupGithubLinked,
 		},
 	];
@@ -4174,9 +4174,9 @@ function GithubPanel({
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀 관리자가 Organization에 TeamPo GitHub App을 설치하고 저장소를 선택하면 기여도 집계가 시작됩니다."
+				description="팀 관리자가 GitHub 조직에 TeamPo App을 설치하고 저장소를 선택하면 기여도 집계가 시작돼요."
 				eyebrow="GitHub App"
-				title="Organization 연동"
+				title="GitHub 조직 연결"
 			/>
 			<div className="grid gap-5 p-5">
 				<div className="grid gap-3 md:grid-cols-4">
@@ -4223,10 +4223,10 @@ function GithubPanel({
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
-									Organization 준비
+									GitHub 조직 준비
 								</p>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									TeamSpace에 연결할 GitHub Organization이 필요합니다.
+									팀 스페이스에 연결할 GitHub 조직이 필요해요.
 								</p>
 							</div>
 							<Badge variant={organization ? "brand" : "neutral"}>
@@ -4251,13 +4251,13 @@ function GithubPanel({
 										target="_blank"
 									>
 										<Building2 data-icon="inline-start" />
-										Organization 생성
+										GitHub 조직 만들기
 										<ExternalLink data-icon="inline-end" />
 									</a>
 								</Button>
 								<Button onClick={handleInstallationComplete} type="button">
 									<Github data-icon="inline-start" />
-									GitHub Organization 연결하기
+									GitHub 조직 연결하기
 								</Button>
 							</div>
 						)}
@@ -4270,7 +4270,7 @@ function GithubPanel({
 									TeamPo GitHub App
 								</p>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									읽기 전용 권한으로 설치하고 필요한 저장소만 선택합니다.
+									읽기 전용 권한으로 설치하고 필요한 저장소만 선택해요.
 								</p>
 							</div>
 							<Badge variant={isGitHubAppInstalled ? "brand" : "neutral"}>
@@ -4328,8 +4328,8 @@ function GithubPanel({
 									저장소 선택
 								</p>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									설치된 GitHub App이 접근 가능한 저장소 중 팀 활동을 집계할
-									저장소를 선택합니다.
+									설치된 GitHub App이 접근할 수 있는 저장소 중 팀 활동을 집계할
+									저장소를 선택해요.
 								</p>
 							</div>
 							<Badge variant={canSelectRepositories ? "brand" : "neutral"}>
@@ -4351,7 +4351,7 @@ function GithubPanel({
 							<p className="text-xs leading-5 text-muted-foreground">
 								{selectedRepoIds.length > 0
 									? `${selectedRepoIds.length}개 저장소 선택됨`
-									: "최소 1개 저장소를 선택해야 합니다."}
+									: "최소 1개 저장소를 선택해 주세요."}
 							</p>
 							<Button
 								disabled={!canSaveRepositoryConnection}
@@ -4368,11 +4368,10 @@ function GithubPanel({
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="text-sm font-semibold text-brand-ink">
-									TeamSpace 연동 상태
+									팀 스페이스 연결 상태
 								</p>
 								<p className="mt-1 text-sm leading-6 text-muted-foreground">
-									프로젝트 그룹 기준으로 GitHub Organization 연동 여부를
-									확인합니다.
+									프로젝트 그룹 기준으로 GitHub 조직 연결 여부를 확인해요.
 								</p>
 							</div>
 							<Badge variant={isProjectGroupGithubLinked ? "brand" : "neutral"}>
@@ -4406,7 +4405,7 @@ function GithubPanel({
 							<div className="mt-4 rounded-lg border border-dashed border-border bg-white/65 p-4">
 								<p className="text-sm leading-6 text-muted-foreground">
 									GitHub App 설치와 저장소 선택이 끝나면 이 영역에서 연결된
-									저장소를 확인합니다.
+									저장소를 확인할 수 있어요.
 								</p>
 							</div>
 						)}
@@ -4421,7 +4420,7 @@ function GithubPanel({
 									GitHub 활동 히트맵
 								</p>
 								<p className="mt-1 text-sm text-muted-foreground">
-									기여량이 많을수록 색과 밀도가 진해집니다.
+									기여량이 많을수록 색과 밀도가 진해져요.
 								</p>
 							</div>
 							<Badge variant={isProjectGroupGithubLinked ? "brand" : "neutral"}>
@@ -4450,7 +4449,7 @@ function GithubPanel({
 						<p className="mt-4 text-sm leading-6 text-muted-foreground">
 							{isProjectGroupGithubLinked
 								? demoTeamSpace.githubSummary.weeklySummary
-								: "저장소를 연결하면 커밋, PR, 리뷰, 이슈 기준으로 팀원별 기여 흐름을 집계합니다."}
+								: "저장소를 연결하면 커밋, PR, 리뷰, 이슈 기준으로 팀원별 기여를 집계해요."}
 						</p>
 					</div>
 					<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
@@ -4487,7 +4486,7 @@ function GithubPanel({
 											<p className="mt-2 text-xs leading-5 text-muted-foreground">
 												{isProjectGroupGithubLinked
 													? `커밋 ${contribution.commits} · PR ${contribution.prs} · 리뷰 ${contribution.reviews} · 이슈 ${contribution.issues}`
-													: "저장소 연결 후 기여 수치가 표시됩니다."}
+													: "저장소 연결 후 기여 수치가 표시돼요."}
 											</p>
 										</div>
 									);
@@ -4519,7 +4518,7 @@ function GithubPanel({
 						</div>
 					) : (
 						<p className="mt-4 rounded-lg border border-dashed border-border bg-white/65 p-4 text-sm leading-6 text-muted-foreground">
-							연동된 저장소 활동이 아직 없습니다.
+							연동된 저장소 활동이 아직 없어요.
 						</p>
 					)}
 				</div>
@@ -4611,7 +4610,7 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 	return (
 		<AppPanel>
 			<AppPanelHeader
-				description="팀원이 빠르게 공유할 내용을 남기는 공간입니다."
+				description="팀원이 빠르게 공유할 내용을 남기는 공간이에요."
 				eyebrow="Messages"
 				title="팀 채팅"
 			/>
@@ -4676,7 +4675,7 @@ function ChatPanel({ messages, onSend }: ChatPanelProps) {
 							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
 							id="team-message"
 							onChange={(event) => setDraftMessage(event.target.value)}
-							placeholder="팀에게 공유할 내용을 입력하세요"
+							placeholder="팀에게 공유할 내용 입력"
 							value={draftMessage}
 						/>
 					</label>
@@ -4738,7 +4737,7 @@ function parseRulesMarkdown(markdown: string) {
 		.map((line) => line.replace(/^-\s*/, ""));
 
 	return {
-		items: items.length ? items : ["아직 등록된 규칙이 없습니다."],
+		items: items.length ? items : ["아직 등록된 규칙이 없어요."],
 		title,
 	};
 }

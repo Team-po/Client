@@ -12,17 +12,17 @@ interface AuthShellProps {
 
 const journeySteps = [
 	{
-		description: "이메일 인증과 기본 프로필을 먼저 준비합니다.",
+		description: "이메일을 확인하고 프로필을 만들어요.",
 		icon: ShieldCheck,
 		label: "계정 준비",
 	},
 	{
-		description: "역할과 프로젝트 힌트를 입력하고 팀 후보를 기다립니다.",
+		description: "역할을 고르고 매칭을 기다려요.",
 		icon: Sparkles,
 		label: "매칭 요청",
 	},
 	{
-		description: "수락 후 팀 규칙, 체크리스트, GitHub 활동을 관리합니다.",
+		description: "규칙, 체크리스트, GitHub 활동을 이어가요.",
 		icon: UsersRound,
 		label: "팀 운영",
 	},
@@ -36,7 +36,7 @@ export function AuthShell({
 }: AuthShellProps) {
 	return (
 		<AppShell
-			description="계정 준비부터 매칭 요청까지 한 흐름으로 이어집니다."
+			description="계정을 준비하면 바로 매칭을 요청할 수 있어요."
 			eyebrow="Account"
 			title="Team-po 시작하기"
 		>

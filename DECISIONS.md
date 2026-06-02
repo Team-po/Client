@@ -39,3 +39,6 @@
 ## 2026-05-11
 - GitHub OAuth flow: start authentication through the backend OAuth2 endpoint, receive the short-lived code at `/oauth/github/callback`, and exchange it through `src/lib/api/auth.ts` so email login and GitHub login share the same session storage and API client behavior
 - GitHub OAuth onboarding: request only the required development level for first-time GitHub users because the backend derives email and nickname from GitHub
+
+## 2026-06-02
+- UX writing approach: use concise Korean 해요체 for customer-facing guidance, lead with the user's next action, avoid internal planning terms in UI copy, and keep feature-critical labels such as `AI 개발 가이드` when they communicate product behavior.

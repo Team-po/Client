@@ -214,13 +214,13 @@ function AppSidebar() {
 	const flowHref = hasProjectGroup ? "/team" : "/match";
 	const flowLabel = hasProjectGroup ? "팀 스페이스 열기" : "매칭 요청하기";
 	const flowDescription = isCheckingProjectGroup
-		? "내 팀 스페이스 상태를 확인한 뒤 가능한 다음 흐름을 안내합니다."
+		? "팀 상태를 확인하고 있어요."
 		: hasProjectGroup
-			? "이미 소속된 팀이 있어 팀 스페이스에서 현재 협업 흐름을 이어가세요."
-			: "프로필을 정리하고 매칭 요청을 보낸 뒤 팀 스페이스에서 바로 협업을 시작하세요.";
+			? "참여 중인 팀이 있어요. 팀 스페이스에서 이어가세요."
+			: "프로필을 확인하고 매칭을 요청해요.";
 	const matchingDisabledTitle = isCheckingProjectGroup
-		? "팀 스페이스 상태를 확인하는 중입니다."
-		: "이미 팀 스페이스가 있어 새 매칭을 시작할 수 없습니다.";
+		? "팀 상태를 확인하고 있어요."
+		: "참여 중인 팀이 있어 새 매칭을 시작할 수 없어요.";
 
 	function handleLogout() {
 		clearAuthSession();
@@ -315,7 +315,7 @@ function AppSidebar() {
 									title={matchingDisabledTitle}
 								>
 									<Icon className="size-4" />
-									<span className="sr-only">{item.label} 비활성화</span>
+									<span className="sr-only">{item.label} 사용할 수 없음</span>
 								</span>
 							);
 						}
@@ -338,7 +338,7 @@ function AppSidebar() {
 				<div className="rounded-lg border border-border/70 bg-brand-warm p-4">
 					<div className="flex items-center gap-2 text-sm font-semibold text-brand-ink">
 						<LayoutDashboard className="size-4 text-primary" />
-						오늘의 흐름
+						오늘 할 일
 					</div>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
 						{flowDescription}

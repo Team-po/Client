@@ -6,7 +6,7 @@ const demoMembers = [
 		id: "member-1",
 		level: 4,
 		name: "조하늘",
-		responsibility: "React 화면 흐름과 상태 관리",
+		responsibility: "React 화면과 상태 관리",
 		role: "FE",
 		temperature: 41.8,
 	},
@@ -35,12 +35,12 @@ export const demoMatchOffer: MatchOffer = {
 	expiresAt: "2026-05-03T11:20:00+09:00",
 	id: "offer-team-po-001",
 	projectDescription:
-		"개발자 사이드 프로젝트를 랜덤 팀으로 시작하고, 팀 결성 이후에는 규칙, 체크리스트, GitHub 요약을 한 공간에서 운영하는 서비스입니다.",
+		"개발자 사이드 프로젝트를 랜덤 팀으로 시작하고, 팀이 만들어진 뒤에는 규칙, 체크리스트, GitHub 요약을 한 공간에서 운영해요.",
 	projectMvp:
-		"회원가입, 매칭 요청, 제안 수락/거절, 팀 스페이스, 협업 규칙 템플릿, 체크리스트를 첫 배포 범위로 둡니다.",
+		"회원가입, 매칭 요청, 제안 수락/거절, 팀 스페이스, 협업 규칙 템플릿, 체크리스트를 첫 배포 범위로 잡아요.",
 	projectTitle: "Team-po 협업 온보딩",
 	recommendedNextStep:
-		"전원이 제안을 수락하면 팀 스페이스가 열리고, 첫 단계로 팀 규칙 템플릿을 함께 확정합니다.",
+		"모두 제안을 수락하면 팀 스페이스가 열려요. 첫 단계로 팀 규칙 템플릿을 함께 확정해요.",
 	status: "offered",
 	teamNamePreview: "Blue Sprint",
 	teammates: demoMembers,
@@ -189,22 +189,22 @@ export const demoTeamSpace: TeamSpace = {
 			},
 		],
 		weeklySummary:
-			"이번 주는 FE 화면 구조와 인증 API 연결이 가장 많이 진행됐습니다. 저장소를 연결하면 커밋, PR, 리뷰, 이슈 기준으로 팀원별 기여 흐름을 자동 집계할 예정입니다.",
+			"이번 주는 FE 화면 구조와 인증 API 연결이 가장 많이 진행됐어요. 저장소를 연결하면 커밋, PR, 리뷰, 이슈 기준으로 팀원별 기여를 자동 집계할 예정이에요.",
 	},
 	guideline: {
 		sections: [
 			{
-				body: "초기 스프린트는 매칭 이후 사용자가 가장 먼저 마주치는 흐름을 안정화합니다. 제안 확인, 수락/거절, 팀 스페이스 진입을 하나의 여정으로 검증하세요.",
+				body: "초기 스프린트는 매칭 이후 사용자가 가장 먼저 마주치는 과정을 안정화해요. 제안 확인, 수락/거절, 팀 스페이스 진입을 하나의 여정으로 검증해 주세요.",
 				id: "guide-1",
 				title: "1. 첫 사용자 여정 고정",
 			},
 			{
-				body: "MVP는 인증, 매칭, 팀 생성, 규칙 템플릿, 체크리스트까지로 제한합니다. GitHub 요약과 채팅은 첫 스프린트에서 사용자가 흐름을 이해할 수 있는 수준으로 연결합니다.",
+				body: "MVP는 인증, 매칭, 팀 생성, 규칙 템플릿, 체크리스트까지로 제한해요. GitHub 요약과 채팅은 첫 스프린트에서 사용자가 전체 과정을 이해할 수 있는 수준으로 연결해요.",
 				id: "guide-2",
 				title: "2. MVP 범위",
 			},
 			{
-				body: "팀 규칙은 누구나 수정할 수 있는 Markdown 문서로 시작하고, 동시 편집 충돌은 마지막 저장자 기준으로 단순 처리하는 정책을 우선 검토합니다.",
+				body: "팀 규칙은 누구나 수정할 수 있는 Markdown 문서로 시작해요. 동시 편집 충돌은 마지막 저장자 기준으로 단순 처리하는 정책을 먼저 검토해요.",
 				id: "guide-3",
 				title: "3. 협업 규칙",
 			},
@@ -226,7 +226,7 @@ export const demoTeamSpace: TeamSpace = {
 			author: "박상혁",
 			id: "message-2",
 			message:
-				"GitHub 연동은 방장이 계정을 연결한 뒤 저장소만 선택하는 흐름이면 충분할 것 같습니다.",
+				"GitHub 연동은 방장이 계정을 연결한 뒤 저장소만 선택하면 충분할 것 같아요.",
 			timeLabel: "10:18",
 		},
 	],
@@ -239,7 +239,7 @@ export const demoTeamSpace: TeamSpace = {
 	name: "Blue Sprint",
 	nextMeetingLabel: "오늘 21:00 첫 규칙 정하기",
 	projectDescription:
-		"랜덤 팀 매칭 이후 팀이 바로 움직일 수 있도록 규칙, 체크리스트, GitHub 활동, 채팅을 한 화면에서 운영합니다.",
+		"랜덤 팀 매칭 이후 바로 움직일 수 있도록 규칙, 체크리스트, GitHub 활동, 채팅을 한 화면에서 운영해요.",
 	projectMvp:
 		"매칭 제안 수락/거절, 팀 스페이스 홈, 규칙 템플릿, 개발 가이드라인, 체크리스트, GitHub 운영 요약",
 	projectTitle: "Team-po 팀 운영 MVP",
