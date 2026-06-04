@@ -12,6 +12,7 @@ import { GithubOAuthCallbackPage } from "@/pages/github-oauth-callback-page";
 import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
 import { MatchPage } from "@/pages/match-page";
+import { PasswordResetPage } from "@/pages/password-reset-page";
 import { TeamPoPresentationEleventhPage } from "@/pages/team-po-presentation-eleventh-page";
 import { TeamPoPresentationFourteenthPage } from "@/pages/team-po-presentation-fourteenth-page";
 import { TeamPoPresentationThirteenthPage } from "@/pages/team-po-presentation-thirteenth-page";
@@ -91,6 +92,7 @@ export function App() {
 				/>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
+				<Route path="/password-reset" element={<PasswordResetPage />} />
 				<Route path="/verify-email" element={<EmailVerificationPage />} />
 				<Route
 					path="/oauth/github/callback"

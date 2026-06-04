@@ -11,6 +11,8 @@ import { projectGroupQueryKeys } from "@/features/project-groups/hooks/use-proje
 import {
 	exchangeGithubOAuthCode,
 	login,
+	requestPasswordReset,
+	resetPassword,
 	sendSignupEmail,
 	startGithubAccountLink,
 	unlinkGithubAccount,
@@ -35,6 +37,8 @@ import type {
 	CreateUserRequest,
 	GithubOAuthTokenRequest,
 	LoginRequest,
+	RequestPasswordResetRequest,
+	ResetPasswordRequest,
 	SendSignupEmailRequest,
 	ValidateSignupAuthNumberRequest,
 } from "@/lib/types/auth";
@@ -150,6 +154,25 @@ export function useValidateSignupAuthNumberMutation() {
 	return useMutation({
 		mutationFn: (payload: ValidateSignupAuthNumberRequest) =>
 			validateSignupAuthNumber(payload),
+	});
+}
+
+export function useRequestPasswordResetMutation() {
+	return useMutation({
+		mutationFn: (payload: RequestPasswordResetRequest) =>
+			requestPasswordReset(payload),
+	});
+}
+
+export function useResetPasswordMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: ResetPasswordRequest) => resetPassword(payload),
+		onSuccess: () => {
+			clearAuthSession();
+			clearAuthScopedQueryData(queryClient);
+		},
 	});
 }
 

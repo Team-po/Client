@@ -17,6 +17,15 @@ export interface VerifyEmailFormValues {
 	email: string;
 }
 
+export interface PasswordResetRequestFormValues {
+	email: string;
+}
+
+export interface PasswordResetFormValues {
+	password: string;
+	passwordConfirm: string;
+}
+
 export interface ProfileEditFormValues {
 	description: string;
 	level: number;
@@ -64,6 +73,26 @@ export function validateVerifyEmailForm(
 	return {
 		authNumber: getAuthNumberError(values.authNumber),
 		email: getEmailError(values.email),
+	};
+}
+
+export function validatePasswordResetRequestForm(
+	values: PasswordResetRequestFormValues,
+): FormErrors<PasswordResetRequestFormValues> {
+	return {
+		email: getEmailError(values.email),
+	};
+}
+
+export function validatePasswordResetForm(
+	values: PasswordResetFormValues,
+): FormErrors<PasswordResetFormValues> {
+	return {
+		password: getPasswordError(values.password),
+		passwordConfirm: getPasswordConfirmError(
+			values.password,
+			values.passwordConfirm,
+		),
 	};
 }
 

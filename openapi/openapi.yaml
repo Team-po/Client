@@ -121,6 +121,40 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /users/password-reset:
+    post:
+      tags: [Auth]
+      summary: Request a password reset email
+      description: |
+        Always returns the same success response for valid email-shaped input so
+        callers cannot distinguish missing, GitHub-only, or password-backed
+        accounts from this endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset email accepted when the account can use password login
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /users/password-reset/confirm:
+    post:
+      tags: [Auth]
+      summary: Complete password reset with a single-use token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset completed
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /oauth/github/token:
     post:
       tags: [Auth]
@@ -967,6 +1001,25 @@ components:
         expiresAt:
           type: string
           format: date-time
+    RequestPasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    ResetPasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 8
     GithubOAuthTokenRequest:
       type: object
       additionalProperties: false
