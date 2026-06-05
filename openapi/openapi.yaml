@@ -526,6 +526,26 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /project-groups/{projectGroupId}/finish:
+    patch:
+      tags: [ProjectGroups]
+      security:
+        - bearerAuth: []
+      summary: Agree to finish an active project group
+      description: Records the current member's finish agreement. The project group is finished after all required members agree.
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      responses:
+        '200':
+          description: Finish agreement recorded
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /project-groups/{projectGroupId}/checklists:
     get:
       tags: [ProjectChecklists]

@@ -41,6 +41,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+	hasStoredProjectGroupFinishAgreement,
+	storeProjectGroupFinishAgreement,
+} from "@/features/project-groups/lib/finish-agreement-storage";
+import {
+	useFinishProjectGroupMutation,
 	useGrantProjectGroupAdminPermissionMutation,
 	useMyProjectGroupQuery,
 	useRevokeProjectGroupAdminPermissionMutation,
@@ -103,6 +108,11 @@ type ActionFeedback = {
 	tone: "error" | "success";
 };
 type AdminPermissionFeedback = ActionFeedback;
+type ProjectGroupFinishState = {
+	agreedProjectGroupId: number | null;
+	feedback: ActionFeedback | null;
+	feedbackProjectGroupId: number | null;
+};
 
 const tabs: Array<{
 	icon: ComponentType<{ className?: string }>;
@@ -257,12 +267,18 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		useGrantProjectGroupAdminPermissionMutation();
 	const revokeAdminPermissionMutation =
 		useRevokeProjectGroupAdminPermissionMutation();
+	const finishProjectGroupMutation = useFinishProjectGroupMutation();
 	const {
 		isPending: isCompletingGithubInstallation,
 		mutate: completeGithubAppInstallation,
 	} = useCompleteGithubAppInstallationMutation();
 	const [adminPermissionFeedback, setAdminPermissionFeedback] =
 		useState<AdminPermissionFeedback | null>(null);
+	const [finishState, setFinishState] = useState<ProjectGroupFinishState>({
+		agreedProjectGroupId: null,
+		feedback: null,
+		feedbackProjectGroupId: null,
+	});
 	const [githubCompletionFeedback, setGithubCompletionFeedback] =
 		useState<ActionFeedback | null>(null);
 	const completedGithubInstallationKeyRef = useRef<string | null>(null);
@@ -295,6 +311,22 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		: revokeAdminPermissionMutation.isPending
 			? revokeAdminPermissionMutation.variables.targetUserId
 			: null;
+	const currentProjectGroupId = projectGroup?.projectGroupId ?? null;
+	const currentProjectGroupUserId = projectGroup?.currentUserId ?? null;
+	const finishFeedback =
+		finishState.feedbackProjectGroupId === currentProjectGroupId
+			? finishState.feedback
+			: null;
+	const hasStoredFinishAgreement =
+		currentProjectGroupId !== null && currentProjectGroupUserId !== null
+			? hasStoredProjectGroupFinishAgreement({
+					projectGroupId: currentProjectGroupId,
+					userId: currentProjectGroupUserId,
+				})
+			: false;
+	const hasCurrentUserAgreedFinish =
+		finishState.agreedProjectGroupId === currentProjectGroupId ||
+		hasStoredFinishAgreement;
 
 	useEffect(() => {
 		const installationIdParam = searchParams.get("installation_id");
@@ -398,6 +430,47 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		grantAdminPermissionMutation.mutate(payload, mutationOptions);
 	}
 
+	function handleFinishProjectGroup() {
+		if (!projectGroup) {
+			return;
+		}
+
+		const projectGroupId = projectGroup.projectGroupId;
+		const userId = projectGroup.currentUserId;
+
+		setFinishState((current) => ({
+			...current,
+			feedback: null,
+			feedbackProjectGroupId: projectGroupId,
+		}));
+		finishProjectGroupMutation.mutate(
+			{ projectGroupId },
+			{
+				onError: (error: unknown) => {
+					setFinishState((current) => ({
+						...current,
+						feedback: {
+							message: getApiErrorMessage(error),
+							tone: "error",
+						},
+						feedbackProjectGroupId: projectGroupId,
+					}));
+				},
+				onSuccess: () => {
+					storeProjectGroupFinishAgreement({ projectGroupId, userId });
+					setFinishState({
+						agreedProjectGroupId: projectGroupId,
+						feedback: {
+							message: "팀 종료 동의를 기록했어요.",
+							tone: "success",
+						},
+						feedbackProjectGroupId: projectGroupId,
+					});
+				},
+			},
+		);
+	}
+
 	return (
 		<AppShell
 			actions={
@@ -469,6 +542,24 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 					/>
 				) : null}
 
+				{isSignedIn &&
+				projectGroupQuery.isSuccess &&
+				!projectGroupQuery.data ? (
+					<RealTeamNotice
+						action={
+							<Button asChild className="sm:w-fit">
+								<Link to="/match">
+									<ArrowRight data-icon="inline-start" />
+									매칭 화면으로 이동
+								</Link>
+							</Button>
+						}
+						description="참여 중인 활성 팀 스페이스가 없어요."
+						status="팀 없음"
+						title="새 팀을 매칭할 수 있어요"
+					/>
+				) : null}
+
 				{projectGroup ? (
 					<>
 						<RealTeamMetricsGrid
@@ -532,9 +623,13 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 								<RealManagePanel
 									canManageAdminPermissions={canManageAdminPermissions}
 									currentUserId={projectGroup.currentUserId}
+									finishFeedback={finishFeedback}
 									feedback={adminPermissionFeedback}
+									hasCurrentUserAgreedFinish={hasCurrentUserAgreedFinish}
 									isAdminPermissionPending={isAdminPermissionPending}
+									isFinishPending={finishProjectGroupMutation.isPending}
 									onAdminPermissionChange={handleAdminPermissionChange}
+									onFinishProjectGroup={handleFinishProjectGroup}
 									pendingAdminPermissionTargetId={
 										pendingAdminPermissionTargetId
 									}
@@ -1555,17 +1650,25 @@ function RealChatPanelDisabled() {
 function RealManagePanel({
 	canManageAdminPermissions,
 	currentUserId,
+	finishFeedback,
 	feedback,
+	hasCurrentUserAgreedFinish,
 	isAdminPermissionPending,
+	isFinishPending,
 	onAdminPermissionChange,
+	onFinishProjectGroup,
 	pendingAdminPermissionTargetId,
 	projectGroup,
 }: {
 	canManageAdminPermissions: boolean;
 	currentUserId: number;
+	finishFeedback: ActionFeedback | null;
 	feedback: AdminPermissionFeedback | null;
+	hasCurrentUserAgreedFinish: boolean;
 	isAdminPermissionPending: boolean;
+	isFinishPending: boolean;
 	onAdminPermissionChange: (member: ProjectGroupMember) => void;
+	onFinishProjectGroup: () => void;
 	pendingAdminPermissionTargetId: number | null;
 	projectGroup: MyProjectGroup;
 }) {
@@ -1573,8 +1676,8 @@ function RealManagePanel({
 		<div className="grid gap-5">
 			<AppPanel>
 				<AppPanelHeader
-					action={<Badge variant="neutral">일부 준비 중</Badge>}
-					description="멤버 관리자 권한은 바로 조정할 수 있어요. 팀 상태 편집은 준비 중이에요."
+					action={<Badge variant="brand">active</Badge>}
+					description="멤버 관리자 권한과 팀 종료 동의를 관리해요."
 					eyebrow="Manage"
 					title="팀 관리"
 				/>
@@ -1601,9 +1704,55 @@ function RealManagePanel({
 						</label>
 					</div>
 					<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-						팀 이름과 상태 편집 API는 아직 연결되지 않았어요. 기능이 생기면 이
-						관리 탭에서 활성화할게요.
+						팀 이름 편집은 준비 중이에요. 팀 종료는 모든 팀원의 동의가 모이면
+						완료돼요.
 					</div>
+				</div>
+			</AppPanel>
+
+			<AppPanel>
+				<AppPanelHeader
+					action={
+						<Badge variant={hasCurrentUserAgreedFinish ? "brand" : "neutral"}>
+							{hasCurrentUserAgreedFinish ? "agreed" : "pending"}
+						</Badge>
+					}
+					description="진행 중인 팀 스페이스를 종료하려면 팀원 전원의 동의가 필요해요."
+					eyebrow="Finish"
+					title="팀 종료 동의"
+				/>
+				<div className="grid gap-4 p-5">
+					<div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:flex-row md:items-center md:justify-between">
+						<div className="min-w-0">
+							<p className="text-sm font-semibold text-brand-ink">
+								{projectGroup.projectName} 종료 동의
+							</p>
+							<p className="mt-1 text-sm leading-6 text-muted-foreground">
+								동의가 기록되면 팀 스페이스 종료 조건에 반영돼요.
+							</p>
+						</div>
+						<Button
+							disabled={isFinishPending || hasCurrentUserAgreedFinish}
+							onClick={onFinishProjectGroup}
+							type="button"
+							variant={hasCurrentUserAgreedFinish ? "outline" : "default"}
+						>
+							{isFinishPending ? (
+								<LoaderCircle
+									className="animate-spin"
+									data-icon="inline-start"
+								/>
+							) : (
+								<CheckCircle2 data-icon="inline-start" />
+							)}
+							{isFinishPending
+								? "기록 중"
+								: hasCurrentUserAgreedFinish
+									? "동의 완료"
+									: "종료 동의"}
+						</Button>
+					</div>
+					<RealActionFeedback feedback={finishFeedback} />
 				</div>
 			</AppPanel>
 
