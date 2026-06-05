@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
+	ProjectGroupFinishRequest,
 	MyProjectGroup,
 	ProjectGroupAdminPermissionRequest,
 } from "@/lib/types/project-group";
@@ -30,4 +31,12 @@ export function revokeProjectGroupAdminPermission({
 			method: "DELETE",
 		},
 	);
+}
+
+export function finishProjectGroup({
+	projectGroupId,
+}: ProjectGroupFinishRequest) {
+	return apiRequest<void>(`/project-groups/${projectGroupId}/finish`, {
+		method: "PATCH",
+	});
 }

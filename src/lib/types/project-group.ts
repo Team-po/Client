@@ -8,6 +8,10 @@ export interface ProjectGroupAdminPermissionRequest {
 	targetUserId: number;
 }
 
+export interface ProjectGroupFinishRequest {
+	projectGroupId: number;
+}
+
 export interface ProjectGroupMember {
 	admin: boolean;
 	groupRole: ProjectGroupRole;

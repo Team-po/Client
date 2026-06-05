@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+	finishProjectGroup,
 	getMyProjectGroup,
 	grantProjectGroupAdminPermission,
 	revokeProjectGroupAdminPermission,
 } from "@/lib/api/project-groups";
-import type { ProjectGroupAdminPermissionRequest } from "@/lib/types/project-group";
+import type {
+	ProjectGroupAdminPermissionRequest,
+	ProjectGroupFinishRequest,
+} from "@/lib/types/project-group";
 import { isProjectGroupNotFoundError } from "@/features/project-groups/lib/errors";
 
 export const projectGroupQueryKeys = {
@@ -54,6 +58,18 @@ export function useRevokeProjectGroupAdminPermissionMutation() {
 	return useMutation({
 		mutationFn: (payload: ProjectGroupAdminPermissionRequest) =>
 			revokeProjectGroupAdminPermission(payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: projectGroupQueryKeys.all });
+		},
+	});
+}
+
+export function useFinishProjectGroupMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: ProjectGroupFinishRequest) =>
+			finishProjectGroup(payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: projectGroupQueryKeys.all });
 		},

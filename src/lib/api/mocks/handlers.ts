@@ -56,6 +56,7 @@ let activeProjectRequestRole: MatchRole | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
+let projectGroupFinishAgreementUserIds = new Set<number>();
 let activeProjectChecklists: ProjectChecklist[] = createMockProjectChecklists();
 let activeDevGuide: DevGuideContent | null =
 	createMockDevGuide(activeProjectGroup);
@@ -257,6 +258,7 @@ function resetMatchState() {
 }
 
 function resetTeamSpaceApiState() {
+	projectGroupFinishAgreementUserIds = new Set();
 	activeProjectChecklists = activeProjectGroup
 		? createMockProjectChecklists()
 		: [];
@@ -965,10 +967,14 @@ export const handlers = [
 			);
 		}
 
-		if (email === previewAuthSeed.email && body.password === mockUserPasswords.get(email)) {
+		if (
+			email === previewAuthSeed.email &&
+			body.password === mockUserPasswords.get(email)
+		) {
 			currentUserId = 1;
 			currentUser = createPreviewUser();
-			currentPassword = mockUserPasswords.get(email) ?? previewAuthSeed.password;
+			currentPassword =
+				mockUserPasswords.get(email) ?? previewAuthSeed.password;
 			resetDeleteEmailState();
 			resetMatchState();
 			activeProjectGroup = createMockProjectGroup();
@@ -985,10 +991,7 @@ export const handlers = [
 			);
 		}
 
-		if (
-			email !== currentUser.email ||
-			body.password !== currentPassword
-		) {
+		if (email !== currentUser.email || body.password !== currentPassword) {
 			return buildErrorResponse(
 				401,
 				"이메일 또는 비밀번호가 올바르지 않습니다.",
@@ -1860,6 +1863,44 @@ export const handlers = [
 			}
 
 			targetMember.admin = false;
+			return new HttpResponse(null, { status: 200 });
+		},
+	),
+
+	http.patch(
+		getPath("/project-groups/:projectGroupId/finish"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+
+			if (projectGroupId === 500) {
+				return buildErrorResponse(
+					500,
+					"팀 스페이스 종료 동의 처리 중 서버 오류가 발생했습니다.",
+					"MATCH_DATA_ERROR",
+				);
+			}
+
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			projectGroupFinishAgreementUserIds.add(currentUserId);
+
+			const hasEveryoneAgreed =
+				activeProjectGroup?.members.every((member) =>
+					projectGroupFinishAgreementUserIds.has(member.userId),
+				) ?? false;
+
+			if (hasEveryoneAgreed) {
+				activeProjectGroup = null;
+				resetTeamSpaceApiState();
+			}
+
 			return new HttpResponse(null, { status: 200 });
 		},
 	),
