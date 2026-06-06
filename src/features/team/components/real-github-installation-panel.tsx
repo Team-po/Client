@@ -282,7 +282,7 @@ export function RealGithubInstallationPanel({
 				</div>
 
 				{isGithubConnected ? (
-					<div className="grid gap-4 2xl:grid-cols-[minmax(0,1.18fr)_minmax(22rem,0.82fr)]">
+					<div className="grid gap-4">
 						<div className="min-w-0 rounded-lg border border-border/70 bg-brand-warm p-5">
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 								<div>
