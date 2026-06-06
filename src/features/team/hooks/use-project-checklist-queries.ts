@@ -18,6 +18,7 @@ export const projectChecklistQueryKeys = {
 	all: ["project-checklists"] as const,
 	byProjectGroup: (projectGroupId: number) =>
 		["project-checklists", projectGroupId] as const,
+	disabled: ["project-checklists", "disabled"] as const,
 };
 
 const checklistStaleTimeMs = 15_000;
@@ -40,7 +41,7 @@ export function useProjectChecklistsQuery(
 		queryKey:
 			typeof projectGroupId === "number"
 				? projectChecklistQueryKeys.byProjectGroup(projectGroupId)
-				: projectChecklistQueryKeys.all,
+				: projectChecklistQueryKeys.disabled,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: checklistStaleTimeMs,

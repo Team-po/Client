@@ -43,3 +43,8 @@
 ## 2026-06-02
 - UX writing approach: use concise Korean 해요체 for customer-facing guidance, lead with the user's next action, avoid internal planning terms in UI copy, and keep feature-critical product terms when they communicate real behavior.
 - Repository UX writing guide: keep AI-facing workflow instructions in `.agents/skills/ux-writing/SKILL.md` and human-readable product copy standards in `docs/UX_WRITING.md`.
+
+## 2026-06-06
+- Route performance approach: lazy-load route pages from `src/App.tsx`, especially `/team` and `/deck/*`, to keep the initial app bundle smaller without changing route ownership.
+- Team workspace structure: keep `/team` orchestration in `team-space-view.tsx`, split signed-in server-backed panels into focused `real-team-*` components, and keep the signed-out mock preview separate while sharing tabs, status helpers, and GitHub permission notices.
+- MSW maintainability: keep route handlers in `src/lib/api/mocks/handlers.ts`, but move reusable team-space fixture builders into `src/lib/api/mocks/team-space-fixtures.ts` so handler code focuses on request behavior.

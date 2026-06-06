@@ -25,6 +25,7 @@ export const teamSpaceQueryKeys = {
 	all: ["team-space"] as const,
 	devGuide: (projectGroupId: number) =>
 		["team-space", projectGroupId, "dev-guide"] as const,
+	disabled: ["team-space", "disabled"] as const,
 	githubAvailableRepositories: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "available-repositories"] as const,
 	githubRepositories: (projectGroupId: number) =>
@@ -70,7 +71,7 @@ export function useGithubInstallationStatusQuery(
 		queryKey:
 			typeof projectGroupId === "number"
 				? teamSpaceQueryKeys.githubStatus(projectGroupId)
-				: teamSpaceQueryKeys.all,
+				: teamSpaceQueryKeys.disabled,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: githubStatusStaleTimeMs,
@@ -87,7 +88,7 @@ export function useDevGuideQuery(
 		queryKey:
 			typeof projectGroupId === "number"
 				? teamSpaceQueryKeys.devGuide(projectGroupId)
-				: teamSpaceQueryKeys.all,
+				: teamSpaceQueryKeys.disabled,
 		refetchInterval: (query) =>
 			isDevGuideGenerating(query.state.data) ||
 			isDevGuidePendingError(query.state.error)
@@ -145,7 +146,7 @@ export function useAvailableGithubRepositoriesQuery(
 		queryKey:
 			typeof projectGroupId === "number"
 				? teamSpaceQueryKeys.githubAvailableRepositories(projectGroupId)
-				: teamSpaceQueryKeys.all,
+				: teamSpaceQueryKeys.disabled,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: githubRepositoryStaleTimeMs,
@@ -162,7 +163,7 @@ export function useGithubRepositoriesQuery(
 		queryKey:
 			typeof projectGroupId === "number"
 				? teamSpaceQueryKeys.githubRepositories(projectGroupId)
-				: teamSpaceQueryKeys.all,
+				: teamSpaceQueryKeys.disabled,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: githubRepositoryStaleTimeMs,
@@ -190,7 +191,7 @@ export function useGithubRepositoryContributionsQuery(
 					projectGroupId,
 					githubRepositoryId,
 				)
-			: teamSpaceQueryKeys.all,
+			: teamSpaceQueryKeys.disabled,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: githubContributionStaleTimeMs,
