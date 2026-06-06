@@ -1,9 +1,15 @@
 import {
 	ExternalLink,
+	FileDiff,
+	GitPullRequest,
 	Github,
+	ListChecks,
 	LoaderCircle,
 	RefreshCw,
 	Save,
+	Sparkles,
+	Trophy,
+	type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -276,8 +282,8 @@ export function RealGithubInstallationPanel({
 				</div>
 
 				{isGithubConnected ? (
-					<div className="grid gap-4 2xl:grid-cols-[0.95fr_1.05fr]">
-						<div className="rounded-lg border border-border/70 bg-brand-warm p-5">
+					<div className="grid gap-4 2xl:grid-cols-[minmax(0,1.18fr)_minmax(22rem,0.82fr)]">
+						<div className="min-w-0 rounded-lg border border-border/70 bg-brand-warm p-5">
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 								<div>
 									<p className="text-sm font-semibold text-brand-ink">
@@ -296,7 +302,7 @@ export function RealGithubInstallationPanel({
 								</Badge>
 							</div>
 
-							<div className="mt-4 grid gap-3">
+							<div className="mt-4 grid min-w-0 gap-3">
 								{githubRepositoriesQuery.isLoading ? (
 									<RealInlineStatus
 										icon={<LoaderCircle className="size-4 animate-spin" />}
@@ -342,6 +348,7 @@ export function RealGithubInstallationPanel({
 									</p>
 								</div>
 								<Badge
+									className="whitespace-nowrap"
 									variant={canManageGithubInstallation ? "brand" : "neutral"}
 								>
 									{canManageGithubInstallation ? "editable" : "read only"}
@@ -504,7 +511,7 @@ function RealGithubRepositoryContributionCard({
 	}
 
 	return (
-		<div className="rounded-lg border border-primary/15 bg-white p-4 shadow-crisp">
+		<div className="min-w-0 overflow-hidden rounded-lg border border-primary/15 bg-white p-4 shadow-crisp">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<a
 					className="min-w-0"
@@ -523,6 +530,7 @@ function RealGithubRepositoryContributionCard({
 					</span>
 				</a>
 				<Button
+					className="shrink-0"
 					disabled={!canManageGithubInstallation || isSyncingCurrentRepository}
 					onClick={handleSyncContributions}
 					size="sm"
@@ -564,31 +572,37 @@ function RealGithubRepositoryContributionCard({
 
 			{contributionsQuery.isSuccess ? (
 				<div className="mt-4 grid gap-4">
-					<div className="grid gap-2 sm:grid-cols-4">
+					<RealGithubContributionOverview
+						topContributor={sortedContributors[0] ?? null}
+						totals={totals}
+					/>
+
+					<div className="grid grid-cols-3 gap-2">
 						<RealGithubContributionStat
-							label="Merged PR"
+							icon={GitPullRequest}
+							label="PR"
 							value={totals.mergedPrCount}
 						/>
 						<RealGithubContributionStat
-							label="Linked issues"
+							icon={ListChecks}
+							label="이슈"
 							value={totals.linkedIssueCount}
 						/>
 						<RealGithubContributionStat
-							label="Changed files"
+							icon={FileDiff}
+							label="파일"
 							value={totals.changedFiles}
-						/>
-						<RealGithubContributionStat
-							label="Score"
-							value={totals.contributionScore}
 						/>
 					</div>
 
 					{sortedContributors.length > 0 ? (
 						<div className="grid gap-2">
-							{sortedContributors.map((contributor) => (
+							{sortedContributors.map((contributor, index) => (
 								<RealGithubContributorRow
 									contributor={contributor}
 									key={`${contributor.userId}-${contributor.githubUserId}`}
+									maxContributionScore={totals.highestContributionScore}
+									rank={index + 1}
 								/>
 							))}
 						</div>
@@ -611,6 +625,10 @@ function calculateGithubContributionTotals(
 	return contributors.reduce(
 		(totals, contributor) => ({
 			changedFiles: totals.changedFiles + contributor.changedFiles,
+			highestContributionScore: Math.max(
+				totals.highestContributionScore,
+				contributor.contributionScore,
+			),
 			contributionScore:
 				totals.contributionScore + contributor.contributionScore,
 			linkedIssueCount: totals.linkedIssueCount + contributor.linkedIssueCount,
@@ -618,6 +636,7 @@ function calculateGithubContributionTotals(
 		}),
 		{
 			changedFiles: 0,
+			highestContributionScore: 0,
 			contributionScore: 0,
 			linkedIssueCount: 0,
 			mergedPrCount: 0,
@@ -625,19 +644,157 @@ function calculateGithubContributionTotals(
 	);
 }
 
+function calculateContributionSharePercent({
+	contributionScore,
+	maxContributionScore,
+}: {
+	contributionScore: number;
+	maxContributionScore: number;
+}) {
+	if (maxContributionScore <= 0 || contributionScore <= 0) {
+		return 0;
+	}
+
+	return Math.round((contributionScore / maxContributionScore) * 100);
+}
+
+function getContributionShareClass(sharePercent: number) {
+	if (sharePercent >= 92) {
+		return "w-full";
+	}
+
+	if (sharePercent >= 78) {
+		return "w-5/6";
+	}
+
+	if (sharePercent >= 62) {
+		return "w-2/3";
+	}
+
+	if (sharePercent >= 46) {
+		return "w-1/2";
+	}
+
+	if (sharePercent >= 30) {
+		return "w-1/3";
+	}
+
+	if (sharePercent > 0) {
+		return "w-1/5";
+	}
+
+	return "w-0";
+}
+
+function getRepositoryScoreFillClass(contributionScore: number) {
+	if (contributionScore >= 100) {
+		return "w-full";
+	}
+
+	if (contributionScore >= 80) {
+		return "w-5/6";
+	}
+
+	if (contributionScore >= 60) {
+		return "w-2/3";
+	}
+
+	if (contributionScore >= 35) {
+		return "w-1/2";
+	}
+
+	if (contributionScore > 0) {
+		return "w-1/3";
+	}
+
+	return "w-0";
+}
+
+function RealGithubContributionOverview({
+	topContributor,
+	totals,
+}: {
+	topContributor: GithubRepositoryContributor | null;
+	totals: ReturnType<typeof calculateGithubContributionTotals>;
+}) {
+	const scoreFillClass = getRepositoryScoreFillClass(totals.contributionScore);
+
+	return (
+		<div className="relative overflow-hidden rounded-lg border border-primary/20 bg-[linear-gradient(135deg,hsl(var(--primary)/0.13),hsl(var(--accent)/0.07)_48%,rgb(255_255_255)_100%)] p-4 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.82),0_14px_30px_rgb(37_99_235_/_0.08)]">
+			<div className="relative">
+				<div className="min-w-0">
+					<p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+						<Sparkles
+							aria-hidden="true"
+							className="size-3.5 shrink-0 text-primary/60"
+						/>
+						기여도 점수
+					</p>
+					<div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
+						<p className="font-mono text-3xl font-semibold leading-none text-brand-ink">
+							{contributionNumberFormatter.format(totals.contributionScore)}
+						</p>
+						<p className="text-xs leading-5 text-muted-foreground">
+							PR {contributionNumberFormatter.format(totals.mergedPrCount)} ·
+							이슈 {contributionNumberFormatter.format(totals.linkedIssueCount)}
+						</p>
+					</div>
+				</div>
+
+				<div
+					aria-hidden="true"
+					className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/85 ring-1 ring-primary/10"
+				>
+					<div
+						className={cn(
+							"h-full rounded-full bg-gradient-to-r from-primary to-accent",
+							scoreFillClass,
+						)}
+					/>
+				</div>
+
+				<div className="mt-4 rounded-md border border-white/80 bg-white/75 px-3 py-2 shadow-sm">
+					{topContributor ? (
+						<div className="flex min-w-0 items-center gap-2">
+							<Trophy className="size-4 shrink-0 text-primary" />
+							<p className="min-w-0 truncate text-xs font-semibold text-brand-ink">
+								@{topContributor.githubUsername}
+							</p>
+							<span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+								선두 ·{" "}
+								{contributionNumberFormatter.format(
+									topContributor.contributionScore,
+								)}
+								점
+							</span>
+						</div>
+					) : (
+						<p className="text-xs leading-5 text-muted-foreground">
+							동기화 후 팀원별 PR 기여도가 여기에 표시돼요.
+						</p>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function RealGithubContributionStat({
+	icon: Icon,
 	label,
 	value,
 }: {
+	icon: LucideIcon;
 	label: string;
 	value: number;
 }) {
 	return (
-		<div className="rounded-lg border border-border/70 bg-secondary/25 p-3">
-			<p className="text-[11px] font-semibold uppercase text-muted-foreground">
-				{label}
-			</p>
-			<p className="mt-2 text-sm font-semibold text-brand-ink">
+		<div className="min-w-0 rounded-md border border-border/70 bg-secondary/25 p-3">
+			<div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+				<Icon className="size-3.5 shrink-0" />
+				<p className="truncate text-[11px] font-semibold">{label}</p>
+			</div>
+			<p className="mt-2 truncate font-mono text-sm font-semibold text-brand-ink">
 				{contributionNumberFormatter.format(value)}
 			</p>
 		</div>
@@ -646,35 +803,127 @@ function RealGithubContributionStat({
 
 function RealGithubContributorRow({
 	contributor,
+	maxContributionScore,
+	rank,
 }: {
 	contributor: GithubRepositoryContributor;
+	maxContributionScore: number;
+	rank: number;
 }) {
+	const sharePercent = calculateContributionSharePercent({
+		contributionScore: contributor.contributionScore,
+		maxContributionScore,
+	});
+	const shareClass = getContributionShareClass(sharePercent);
+
 	return (
-		<div className="grid gap-3 rounded-lg border border-border/70 bg-secondary/20 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-			<div className="min-w-0">
-				<p className="truncate text-sm font-semibold text-brand-ink">
-					@{contributor.githubUsername}
-				</p>
-				<p className="mt-1 text-xs text-muted-foreground">
-					PR {contributionNumberFormatter.format(contributor.mergedPrCount)} ·
-					이슈{" "}
-					{contributionNumberFormatter.format(contributor.linkedIssueCount)}
-				</p>
+		<div className="rounded-lg border border-border/70 bg-white p-3 shadow-sm">
+			<div className="flex min-w-0 gap-3">
+				<div
+					className={cn(
+						"flex size-8 shrink-0 items-center justify-center rounded-lg border font-mono text-xs font-semibold",
+						rank === 1
+							? "border-primary/25 bg-primary/10 text-primary"
+							: "border-border/70 bg-secondary text-muted-foreground",
+					)}
+				>
+					{rank === 1 ? <Trophy className="size-4" /> : rank}
+				</div>
+				<div className="min-w-0 flex-1">
+					<div className="flex min-w-0 flex-col gap-2 min-[440px]:flex-row min-[440px]:items-start min-[440px]:justify-between">
+						<div className="min-w-0">
+							<p className="truncate text-sm font-semibold text-brand-ink">
+								@{contributor.githubUsername}
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								PR{" "}
+								{contributionNumberFormatter.format(contributor.mergedPrCount)}{" "}
+								· 이슈{" "}
+								{contributionNumberFormatter.format(
+									contributor.linkedIssueCount,
+								)}
+							</p>
+						</div>
+						<Badge
+							className="w-fit whitespace-nowrap"
+							variant={rank === 1 ? "brand" : "neutral"}
+						>
+							{contributionNumberFormatter.format(
+								contributor.contributionScore,
+							)}
+							점
+						</Badge>
+					</div>
+
+					<div
+						aria-label={`기여도 선두 대비 ${sharePercent}%`}
+						aria-valuemax={100}
+						aria-valuemin={0}
+						aria-valuenow={sharePercent}
+						className="mt-3 h-2 overflow-hidden rounded-full bg-secondary"
+						role="progressbar"
+					>
+						<div
+							className={cn(
+								"h-full rounded-full bg-gradient-to-r from-primary to-accent",
+								shareClass,
+							)}
+						/>
+					</div>
+
+					<dl className="mt-3 grid grid-cols-2 gap-2 min-[520px]:grid-cols-4">
+						<RealGithubContributorMetric
+							label="추가"
+							tone="positive"
+							value={`+${contributionNumberFormatter.format(
+								contributor.additions,
+							)}`}
+						/>
+						<RealGithubContributorMetric
+							label="삭제"
+							tone="negative"
+							value={`-${contributionNumberFormatter.format(
+								contributor.deletions,
+							)}`}
+						/>
+						<RealGithubContributorMetric
+							label="파일"
+							value={contributionNumberFormatter.format(
+								contributor.changedFiles,
+							)}
+						/>
+						<RealGithubContributorMetric
+							label="비중"
+							value={`${sharePercent}%`}
+						/>
+					</dl>
+				</div>
 			</div>
-			<div className="flex flex-wrap gap-2 text-xs text-muted-foreground sm:justify-end">
-				<span>
-					+{contributionNumberFormatter.format(contributor.additions)}
-				</span>
-				<span>
-					-{contributionNumberFormatter.format(contributor.deletions)}
-				</span>
-				<span>
-					{contributionNumberFormatter.format(contributor.changedFiles)} files
-				</span>
-				<Badge variant="brand">
-					{contributionNumberFormatter.format(contributor.contributionScore)}
-				</Badge>
-			</div>
+		</div>
+	);
+}
+
+function RealGithubContributorMetric({
+	label,
+	tone = "neutral",
+	value,
+}: {
+	label: string;
+	tone?: "negative" | "neutral" | "positive";
+	value: string;
+}) {
+	const toneClass = {
+		negative: "text-destructive",
+		neutral: "text-brand-ink",
+		positive: "text-chart-3",
+	}[tone];
+
+	return (
+		<div className="min-w-0 rounded-md bg-secondary/50 px-2.5 py-2">
+			<dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+			<dd className={cn("mt-0.5 truncate font-mono text-xs", toneClass)}>
+				{value}
+			</dd>
 		</div>
 	);
 }
