@@ -8,6 +8,8 @@ import {
 
 import { matchQueryKeys } from "@/features/match/hooks/use-match-queries";
 import { projectGroupQueryKeys } from "@/features/project-groups/hooks/use-project-group-queries";
+import { projectChecklistQueryKeys } from "@/features/team/hooks/use-project-checklist-queries";
+import { teamSpaceQueryKeys } from "@/features/team/hooks/use-team-space-queries";
 import {
 	exchangeGithubOAuthCode,
 	login,
@@ -67,6 +69,8 @@ export function clearAuthScopedQueryData(queryClient: QueryClient) {
 	clearQueryData(queryClient, authQueryKeys.currentUser);
 	clearQueryData(queryClient, matchQueryKeys.all);
 	clearQueryData(queryClient, projectGroupQueryKeys.all);
+	clearQueryData(queryClient, projectChecklistQueryKeys.all);
+	clearQueryData(queryClient, teamSpaceQueryKeys.all);
 }
 
 export function useCurrentUserQuery() {

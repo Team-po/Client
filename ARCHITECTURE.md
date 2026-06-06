@@ -3,10 +3,14 @@
 ## Frontend Structure
 
 - Route pages stay thin under `src/pages/*` and delegate UI to feature components.
+- App routes are loaded lazily from `src/App.tsx` so large team-space and presentation screens do not inflate the initial route bundle.
 - Matching UI lives in `src/features/match/*`.
 - Team workspace UI lives in `src/features/team/*`.
+- Team workspace orchestration lives in `src/features/team/components/team-space-view.tsx`; signed-in server-backed panels are split into focused `real-team-*` components, and the signed-out mock preview lives in `src/features/team/components/mock-team-space-view.tsx`.
+- Shared team workspace chrome, status helpers, member formatting, tabs, and GitHub permission notices live in focused files under `src/features/team/components/*`.
 - Shared domain types live in `src/lib/types/*`.
 - API request functions stay in `src/lib/api/*`.
+- MSW request handlers stay in `src/lib/api/mocks/handlers.ts`, with reusable team-space fixture builders in `src/lib/api/mocks/team-space-fixtures.ts`.
 - `/team` uses project group, checklist, admin permission, and GitHub App installation request functions when a user is signed in.
 - In mock API mode, signed-in `/team` calls the same request functions through MSW; signed-out `/team` keeps the richer local demo workspace as a preview.
 
