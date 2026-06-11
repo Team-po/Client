@@ -3162,12 +3162,6 @@ function ClosingDemoScene() {
 	const reveal = motionProgress(frame, 0, seconds(0.92, fps), EASE_IN_OUT);
 	const revealEdgeTop = interpolate(reveal, [0, 1], [112, -18]);
 	const revealEdgeBottom = interpolate(reveal, [0, 1], [102, -28]);
-	const intro = motionProgress(frame, seconds(0.32, fps), seconds(0.84, fps));
-	const windowProgress = motionProgress(
-		frame,
-		seconds(0.62, fps),
-		seconds(1.02, fps),
-	);
 
 	return (
 		<AbsoluteFill
@@ -3176,21 +3170,28 @@ function ClosingDemoScene() {
 				clipPath: `polygon(${revealEdgeTop}% 0, 100% 0, 100% 100%, ${revealEdgeBottom}% 100%)`,
 			}}
 		>
-			<ClosingBackground frame={frame} fps={fps} />
-			<ClosingBrandPanel frame={frame} fps={fps} progress={intro} />
-			<ClosingRecapFlowWindow
-				frame={frame}
-				fps={fps}
-				progress={windowProgress}
-			/>
+			<KineticRecapBackground frame={frame} fps={fps} reveal={reveal} />
+			<KineticRecapBrand frame={frame} fps={fps} />
+			<KineticRecapRibbon frame={frame} fps={fps} />
+			<KineticFeatureStream frame={frame} fps={fps} />
+			<KineticRecapHeadline frame={frame} fps={fps} />
 			<MatchingRevealEdge reveal={reveal} />
 		</AbsoluteFill>
 	);
 }
 
-function ClosingBackground({ frame, fps }: { frame: number; fps: number }) {
-	const grid = motionProgress(frame, seconds(0.1, fps), seconds(1.1, fps));
-	const sweep = (frame % seconds(5.4, fps)) / seconds(5.4, fps);
+function KineticRecapBackground({
+	frame,
+	fps,
+	reveal,
+}: {
+	frame: number;
+	fps: number;
+	reveal: number;
+}) {
+	const grid = motionProgress(frame, seconds(0.08, fps), seconds(1.1, fps));
+	const sweep = (frame % seconds(3.2, fps)) / seconds(3.2, fps);
+	const halo = motionProgress(frame, seconds(2.7, fps), seconds(1.5, fps));
 
 	return (
 		<>
@@ -3198,7 +3199,8 @@ function ClosingBackground({ frame, fps }: { frame: number; fps: number }) {
 				className="absolute inset-0"
 				style={{
 					background:
-						"linear-gradient(135deg, #f8fbff 0%, #eff6ff 38%, #f0fdf4 70%, #fff7ed 100%)",
+						"linear-gradient(135deg, #f8fbff 0%, #eef6ff 34%, #f0fdf4 68%, #fff7ed 100%)",
+					opacity: reveal,
 				}}
 			/>
 			<div
@@ -3211,283 +3213,245 @@ function ClosingBackground({ frame, fps }: { frame: number; fps: number }) {
 				}}
 			/>
 			<div
-				className="absolute top-[180px] h-[2px] w-[820px]"
+				className="absolute left-[138px] top-[170px] h-[760px] w-[760px] rounded-full border border-blue-200/60"
+				style={{
+					opacity: halo * 0.42,
+					transform: `scale(${interpolate(halo, [0, 1], [0.82, 1.08])})`,
+				}}
+			/>
+			<div
+				className="absolute right-[96px] top-[112px] h-[820px] w-[820px] rounded-full border border-emerald-200/60"
+				style={{
+					opacity: halo * 0.32,
+					transform: `scale(${interpolate(halo, [0, 1], [0.74, 1.02])})`,
+				}}
+			/>
+			<div
+				className="absolute top-[184px] h-[3px] w-[940px]"
 				style={{
 					background:
-						"linear-gradient(90deg, transparent, rgba(16,185,129,0.36), rgba(59,130,246,0.28), transparent)",
+						"linear-gradient(90deg, transparent, rgba(16,185,129,0.42), rgba(59,130,246,0.34), rgba(245,158,11,0.28), transparent)",
 					opacity: grid,
-					transform: `translate3d(${interpolate(sweep, [0, 1], [-860, 2260])}px, 0, 0)`,
+					transform: `translate3d(${interpolate(sweep, [0, 1], [-980, 2360])}px, 0, 0) rotate(-8deg)`,
 				}}
 			/>
 		</>
 	);
 }
 
-function ClosingBrandPanel({
-	frame,
-	fps,
-	progress,
-}: {
-	frame: number;
-	fps: number;
-	progress: number;
-}) {
-	const po = motionProgress(frame, seconds(0.9, fps), seconds(0.48, fps));
+function KineticRecapBrand({ frame, fps }: { frame: number; fps: number }) {
+	const brand = motionProgress(frame, seconds(0.22, fps), seconds(0.68, fps));
+	const po = motionProgress(frame, seconds(0.66, fps), seconds(0.42, fps));
+
+	return (
+		<div
+			className="absolute left-[96px] top-[86px] z-20 flex items-center gap-4"
+			style={{
+				opacity: brand,
+				transform: `translate3d(0, ${interpolate(brand, [0, 1], [-28, 0])}px, 0)`,
+			}}
+		>
+			<svg
+				aria-hidden="true"
+				className="h-[58px] w-[58px] overflow-visible"
+				viewBox="0 0 140 140"
+			>
+				<path
+					d="M32 38 L72 70 L32 102"
+					fill="none"
+					stroke="#1e293b"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					strokeWidth="18"
+				/>
+				<rect fill="#10b981" height="22" rx="6" width="22" x="82" y="88" />
+				<rect fill="#3b82f6" height="22" rx="6" width="22" x="110" y="60" />
+				<rect fill="#6366f1" height="22" rx="6" width="22" x="138" y="32" />
+			</svg>
+			<div className="text-[41px] font-black leading-none tracking-normal">
+				<span className="text-slate-900">Team</span>
+				<span
+					className="inline-block text-blue-500"
+					style={{
+						opacity: po,
+						transform: `translate3d(${interpolate(po, [0, 1], [16, 0])}px, 0, 0)`,
+					}}
+				>
+					-po
+				</span>
+			</div>
+		</div>
+	);
+}
+
+function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
+	const label = motionProgress(frame, seconds(1.35, fps), seconds(0.45, fps));
+	const lineOne = motionProgress(frame, seconds(1.62, fps), seconds(0.58, fps));
+	const lineTwo = motionProgress(frame, seconds(1.95, fps), seconds(0.58, fps));
+	const lineThree = motionProgress(
+		frame,
+		seconds(2.32, fps),
+		seconds(0.58, fps),
+	);
+	const lock = motionProgress(
+		frame,
+		seconds(3.36, fps),
+		seconds(0.82, fps),
+		EASE_IN_OUT,
+	);
 	const underline = motionProgress(
 		frame,
-		seconds(1.45, fps),
-		seconds(0.8, fps),
+		seconds(3.58, fps),
+		seconds(0.78, fps),
 		EASE_IN_OUT,
 	);
 
 	return (
 		<div
-			className="absolute left-[96px] top-[132px] w-[650px]"
+			className="absolute left-[138px] top-[212px] z-20 w-[1020px]"
 			style={{
-				opacity: progress,
-				transform: `translate3d(${interpolate(progress, [0, 1], [54, 0])}px, 0, 0)`,
+				transform: `scale(${interpolate(lock, [0, 0.55, 1], [1, 1.035, 1])})`,
 			}}
 		>
-			<div className="mb-9 flex items-center gap-5">
-				<svg
-					aria-hidden="true"
-					className="h-[86px] w-[86px] overflow-visible"
-					viewBox="0 0 140 140"
+			<div
+				className="mb-6 inline-flex items-center gap-3 rounded-lg border border-blue-100 bg-white/76 px-5 py-3 text-[15px] font-black uppercase tracking-normal text-blue-500 shadow-sm backdrop-blur"
+				style={{
+					opacity: label,
+					transform: `translate3d(0, ${interpolate(label, [0, 1], [18, 0])}px, 0)`,
+				}}
+			>
+				<Sparkles size={17} strokeWidth={2.7} />
+				Kinetic Service Recap
+			</div>
+			<h2 className="text-[104px] font-black leading-[0.98] tracking-normal text-slate-950">
+				<span
+					className="block"
+					style={{
+						opacity: lineOne,
+						transform: `translate3d(${interpolate(lineOne, [0, 1], [-54, 0])}px, 0, 0)`,
+					}}
 				>
-					<path
-						d="M32 38 L72 70 L32 102"
-						fill="none"
-						stroke="#1e293b"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth="18"
-					/>
-					<rect fill="#10b981" height="22" rx="6" width="22" x="82" y="88" />
-					<rect fill="#3b82f6" height="22" rx="6" width="22" x="110" y="60" />
-					<rect fill="#6366f1" height="22" rx="6" width="22" x="138" y="32" />
-				</svg>
-				<div className="text-[58px] font-black leading-none tracking-normal">
-					<span className="text-slate-900">Team</span>
-					<span
-						className="inline-block text-blue-500"
-						style={{
-							opacity: po,
-							transform: `translate3d(${interpolate(po, [0, 1], [24, 0])}px, 0, 0)`,
-						}}
-					>
-						-po
-					</span>
-				</div>
-			</div>
-			<div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-white/80 px-4 py-2 text-[13px] font-black uppercase tracking-normal text-blue-500 shadow-sm">
-				<Sparkles size={15} strokeWidth={2.6} />
-				Service Recap
-			</div>
-			<h2 className="text-[61px] font-black leading-[1.12] tracking-normal text-slate-950">
-				팀 찾기부터
-				<br />
-				<span className="relative inline-block text-blue-500">
+					팀 찾기부터
+				</span>
+				<span
+					className="block text-blue-500"
+					style={{
+						opacity: lineTwo,
+						transform: `translate3d(${interpolate(lineTwo, [0, 1], [72, 0])}px, 0, 0)`,
+					}}
+				>
 					완주까지
+				</span>
+				<span
+					className="relative block"
+					style={{
+						opacity: lineThree,
+						transform: `translate3d(0, ${interpolate(lineThree, [0, 1], [42, 0])}px, 0)`,
+					}}
+				>
+					한 흐름으로
 					<span
-						className="absolute -bottom-1 left-0 h-1.5 rounded-full bg-blue-200/80"
+						className="absolute -bottom-4 left-1 h-3 rounded-full bg-blue-200/80"
 						style={{ width: `${underline * 100}%` }}
 					/>
 				</span>
-				<br />한 흐름으로
 			</h2>
-			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
-				앞에서 본 기능들이 하나의 팀 여정으로 이어지고
-				<br />
-				다음 액션이 계속 앞으로 움직입니다.
+			<p
+				className="mt-10 max-w-[720px] text-[28px] font-extrabold leading-[1.42] text-slate-600"
+				style={{
+					opacity: lock,
+					transform: `translate3d(0, ${interpolate(lock, [0, 1], [22, 0])}px, 0)`,
+				}}
+			>
+				흩어진 기능 설명이 아니라, 팀의 다음 액션이 앞으로 밀리는 하나의
+				여정입니다.
 			</p>
 		</div>
 	);
 }
 
-function ClosingRecapFlowWindow({
-	frame,
-	fps,
-	progress,
-}: {
-	frame: number;
-	fps: number;
-	progress: number;
-}) {
-	const line = motionProgress(
+function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
+	const draw = motionProgress(
 		frame,
-		seconds(1.18, fps),
-		seconds(2.15, fps),
+		seconds(0.9, fps),
+		seconds(2.5, fps),
 		EASE_IN_OUT,
 	);
-	const summary = motionProgress(
-		frame,
-		seconds(3.52, fps),
-		seconds(0.78, fps),
-		EASE_IN_OUT,
-	);
-	const flash = motionProgress(frame, seconds(4.18, fps), seconds(0.72, fps));
+	const surge = motionProgress(frame, seconds(3.1, fps), seconds(1.1, fps));
+	const dash = (frame % seconds(2.1, fps)) / seconds(2.1, fps);
 
 	return (
-		<div
-			className="absolute right-[76px] top-[104px] h-[768px] w-[1060px]"
-			style={{
-				opacity: progress,
-				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 42) * 3}px, 0)`,
-			}}
+		<svg
+			aria-hidden="true"
+			className="absolute inset-0 z-10 h-full w-full overflow-visible"
+			viewBox="0 0 1920 1080"
 		>
-			<div className="absolute inset-0 overflow-hidden rounded-lg border border-blue-100/80 bg-white/88 p-8 shadow-[0_34px_100px_rgba(30,64,175,0.15)] backdrop-blur">
-				<div
-					className="absolute inset-0"
-					style={{
-						background:
-							"radial-gradient(circle at 20% 20%, rgba(16,185,129,0.13), transparent 28%), radial-gradient(circle at 82% 22%, rgba(59,130,246,0.13), transparent 32%), radial-gradient(circle at 70% 78%, rgba(245,158,11,0.12), transparent 30%)",
-					}}
-				/>
-				<div className="relative z-10 flex items-start justify-between">
-					<div>
-						<p className="text-[13px] font-black uppercase tracking-normal text-blue-500">
-							one journey map
-						</p>
-						<p className="mt-2 text-[33px] font-black leading-tight text-slate-950">
-							앞 장면의 기능들이
-							<br />한 팀의 흐름으로 정렬됩니다
-						</p>
-					</div>
-					<div
-						className="rounded-lg border border-blue-100 bg-blue-50 px-5 py-3 text-[15px] font-black text-blue-600 shadow-sm"
-						style={{
-							transform: `scale(${interpolate(summary, [0, 0.45, 1], [1, 1.05, 1])})`,
-						}}
-					>
-						팀 찾기 → 운영 → 진척 → 완주
-					</div>
-				</div>
-
-				<div className="relative z-10 mt-4 h-[568px] overflow-hidden rounded-lg border border-slate-100 bg-white/70">
-					<svg
-						aria-hidden="true"
-						className="absolute inset-0 h-full w-full overflow-visible"
-						viewBox="0 0 1020 568"
-					>
-						<defs>
-							<linearGradient
-								id="closing-flow-gradient"
-								x1="0"
-								x2="1"
-								y1="0"
-								y2="0"
-							>
-								<stop offset="0%" stopColor="#10b981" />
-								<stop offset="42%" stopColor="#3b82f6" />
-								<stop offset="72%" stopColor="#6366f1" />
-								<stop offset="100%" stopColor="#f59e0b" />
-							</linearGradient>
-						</defs>
-						<path
-							d="M140 290 C248 290 286 176 392 176 C506 176 532 290 644 290 C730 290 762 176 854 176"
-							fill="none"
-							pathLength={1}
-							stroke="rgba(148,163,184,0.28)"
-							strokeLinecap="round"
-							strokeWidth="13"
-						/>
-						<path
-							d="M140 290 C248 290 286 176 392 176 C506 176 532 290 644 290 C730 290 762 176 854 176"
-							fill="none"
-							pathLength={1}
-							stroke="url(#closing-flow-gradient)"
-							strokeDasharray={1}
-							strokeDashoffset={1 - line}
-							strokeLinecap="round"
-							strokeWidth="8"
-						/>
-						{closingFlow.map((item, index) => {
-							const dot = motionProgress(
-								frame,
-								seconds(1.34 + index * 0.42, fps),
-								seconds(0.34, fps),
-							);
-							const centerX = item.x + 106;
-							const centerY = item.y + 82;
-
-							return (
-								<circle
-									cx={centerX}
-									cy={centerY}
-									fill="#ffffff"
-									key={item.id}
-									r={interpolate(dot, [0, 1], [0, 12])}
-									stroke={item.color}
-									strokeWidth="6"
-								/>
-							);
-						})}
-					</svg>
-
-					{closingFlow.map((item, index) => (
-						<ClosingRecapCard
-							frame={frame}
-							fps={fps}
-							index={index}
-							item={item}
-							key={item.id}
-						/>
-					))}
-
-					<div
-						className="absolute bottom-5 left-5 right-5 rounded-lg border border-blue-100 bg-white/94 p-5 shadow-[0_18px_54px_rgba(30,64,175,0.12)]"
-						style={{
-							opacity: summary,
-							transform: `translate3d(0, ${interpolate(summary, [0, 1], [34, 0])}px, 0) scale(${interpolate(summary, [0, 1], [0.96, 1])})`,
-						}}
-					>
-						<div className="flex items-center justify-between gap-6">
-							<div>
-								<p className="text-[12px] font-black uppercase tracking-normal text-slate-400">
-									team-po summary
-								</p>
-								<p className="mt-1 text-[25px] font-black text-slate-950">
-									네 가지 기능이 하나의 다음 액션으로 연결됩니다
-								</p>
-							</div>
-							<div className="grid h-14 w-14 place-items-center rounded-lg bg-blue-500 text-white shadow-lg shadow-blue-500/25">
-								<Check size={28} strokeWidth={3} />
-							</div>
-						</div>
-						<div className="mt-4 grid grid-cols-4 gap-2">
-							{closingFlow.map((item, index) => (
-								<div
-									className="h-2 rounded-full"
-									key={item.id}
-									style={{
-										backgroundColor: item.color,
-										opacity: interpolate(
-											summary,
-											[0, 1],
-											[0, 0.88 - index * 0.06],
-										),
-										transform: `scaleX(${interpolate(summary, [0, 1], [0.2, 1])})`,
-										transformOrigin: "left",
-									}}
-								/>
-							))}
-						</div>
-					</div>
-				</div>
-
-				<div
-					className="absolute left-[512px] top-[642px] h-24 w-24 rounded-full border-4 border-blue-400"
-					style={{
-						opacity: interpolate(flash, [0, 0.22, 1], [0, 0.52, 0]),
-						transform: `translate3d(-50%, -50%, 0) scale(${interpolate(flash, [0, 1], [0.4, 1.9])})`,
-					}}
-				/>
-			</div>
-		</div>
+			<defs>
+				<linearGradient id="kinetic-flow-gradient" x1="0" x2="1" y1="0" y2="0">
+					<stop offset="0%" stopColor="#10b981" />
+					<stop offset="38%" stopColor="#3b82f6" />
+					<stop offset="68%" stopColor="#6366f1" />
+					<stop offset="100%" stopColor="#f59e0b" />
+				</linearGradient>
+			</defs>
+			<path
+				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				fill="none"
+				pathLength={1}
+				stroke="rgba(148,163,184,0.22)"
+				strokeLinecap="round"
+				strokeWidth="34"
+			/>
+			<path
+				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				fill="none"
+				pathLength={1}
+				stroke="url(#kinetic-flow-gradient)"
+				strokeDasharray={1}
+				strokeDashoffset={1 - draw}
+				strokeLinecap="round"
+				strokeWidth={interpolate(surge, [0, 1], [18, 28])}
+			/>
+			<path
+				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				fill="none"
+				stroke="rgba(255,255,255,0.82)"
+				strokeDasharray="20 52"
+				strokeDashoffset={interpolate(dash, [0, 1], [220, -220])}
+				strokeLinecap="round"
+				strokeWidth="7"
+				style={{ opacity: draw * 0.86 }}
+			/>
+			<circle
+				cx={interpolate(draw, [0, 1], [80, 1638])}
+				cy={interpolate(draw, [0, 0.35, 0.72, 1], [792, 762, 606, 488])}
+				fill="#ffffff"
+				r={interpolate(surge, [0, 1], [8, 16])}
+				stroke="#3b82f6"
+				strokeWidth="6"
+				style={{ opacity: draw }}
+			/>
+		</svg>
 	);
 }
 
-function ClosingRecapCard({
+function KineticFeatureStream({ frame, fps }: { frame: number; fps: number }) {
+	return (
+		<>
+			{closingFlow.map((item, index) => (
+				<KineticFeatureToken
+					frame={frame}
+					fps={fps}
+					index={index}
+					item={item}
+					key={item.id}
+				/>
+			))}
+		</>
+	);
+}
+
+function KineticFeatureToken({
 	frame,
 	fps,
 	index,
@@ -3498,73 +3462,89 @@ function ClosingRecapCard({
 	index: number;
 	item: (typeof closingFlow)[number];
 }) {
+	const targets = [
+		{ x: 190, y: 782, fromX: -420, fromY: 150, rotate: -18 },
+		{ x: 612, y: 850, fromX: -160, fromY: 360, rotate: 12 },
+		{ x: 1110, y: 736, fromX: 280, fromY: 320, rotate: -10 },
+		{ x: 1510, y: 602, fromX: 460, fromY: -170, rotate: 16 },
+	] as const;
+	const target = targets[index] ?? targets[0];
 	const enter = motionProgress(
 		frame,
-		seconds(0.48 + index * 0.18, fps),
-		seconds(0.62, fps),
+		seconds(0.52 + index * 0.22, fps),
+		seconds(0.72, fps),
 		EASE_OUT,
 	);
-	const active = motionProgress(
+	const lock = motionProgress(
 		frame,
-		seconds(1.58 + index * 0.42, fps),
-		seconds(0.44, fps),
+		seconds(2.55 + index * 0.18, fps),
+		seconds(0.58, fps),
+		EASE_IN_OUT,
+	);
+	const pulse = motionProgress(
+		frame,
+		seconds(3.48 + index * 0.08, fps),
+		seconds(0.72, fps),
 		EASE_IN_OUT,
 	);
 	const float =
-		Math.sin(frame / 17 + index) * interpolate(active, [0, 1], [5, 2]);
+		Math.sin(frame / 13 + index * 1.8) * interpolate(lock, [0, 1], [20, 4]);
 
 	return (
 		<div
-			className="absolute w-[212px] rounded-lg border bg-white/96 p-5 shadow-[0_18px_54px_rgba(15,23,42,0.11)] backdrop-blur"
+			className="absolute z-30 flex items-center gap-4 rounded-full border bg-white/86 px-5 py-4 shadow-[0_20px_64px_rgba(15,23,42,0.14)] backdrop-blur"
 			style={{
-				left: item.x,
-				top: item.y,
-				borderColor: active > 0.5 ? item.color : "#e2e8f0",
+				borderColor: item.color,
+				left: target.x,
+				top: target.y,
 				opacity: enter,
-				transform: `translate3d(${interpolate(enter, [0, 1], [item.fromX, 0])}px, ${
-					interpolate(enter, [0, 1], [item.fromY, 0]) + float
-				}px, 0) scale(${interpolate(enter, [0, 1], [0.78, 1]) * interpolate(active, [0, 0.55, 1], [1, 1.06, 1])})`,
+				transform: `translate3d(${interpolate(enter, [0, 1], [target.fromX, 0])}px, ${
+					interpolate(enter, [0, 1], [target.fromY, 0]) + float
+				}px, 0) rotate(${interpolate(enter, [0, 1], [target.rotate, 0])}deg) scale(${
+					interpolate(enter, [0, 1], [0.68, 1]) *
+					interpolate(pulse, [0, 0.48, 1], [1, 1.08, 1])
+				})`,
 			}}
 		>
-			<div className="mb-4 flex items-center justify-between">
-				<div
-					className="grid h-11 w-11 place-items-center rounded-lg text-white"
-					style={{
-						backgroundColor: item.color,
-						boxShadow: `0 12px 30px ${item.color}33`,
-					}}
-				>
-					<ClosingRecapIcon id={item.id} />
-				</div>
+			<div
+				className="grid h-14 w-14 place-items-center rounded-full text-white"
+				style={{
+					backgroundColor: item.color,
+					boxShadow: `0 12px 32px ${item.color}44`,
+				}}
+			>
+				<KineticFeatureIcon id={item.id} />
+			</div>
+			<div>
 				<p className="text-[13px] font-black uppercase text-slate-400">
 					0{index + 1}
 				</p>
+				<p className="mt-0.5 text-[22px] font-black text-slate-950">
+					{item.label}
+				</p>
 			</div>
-			<p className="text-[15px] font-black text-slate-400">{item.label}</p>
-			<p className="mt-1 text-[23px] font-black leading-tight text-slate-950">
-				{item.title}
-			</p>
-			<p className="mt-3 text-[12px] font-bold leading-relaxed text-slate-500">
-				{item.detail}
-			</p>
 		</div>
 	);
 }
 
-function ClosingRecapIcon({ id }: { id: (typeof closingFlow)[number]["id"] }) {
+function KineticFeatureIcon({
+	id,
+}: {
+	id: (typeof closingFlow)[number]["id"];
+}) {
 	if (id === "matching") {
-		return <UsersRound size={23} strokeWidth={2.6} />;
+		return <UsersRound size={28} strokeWidth={2.6} />;
 	}
 
 	if (id === "workspace") {
-		return <Rocket size={23} strokeWidth={2.6} />;
+		return <Rocket size={28} strokeWidth={2.6} />;
 	}
 
 	if (id === "report") {
-		return <GitBranch size={23} strokeWidth={2.6} />;
+		return <GitBranch size={28} strokeWidth={2.6} />;
 	}
 
-	return <BadgeCheck size={23} strokeWidth={2.6} />;
+	return <BadgeCheck size={28} strokeWidth={2.6} />;
 }
 
 function FinaleLogoScene() {
