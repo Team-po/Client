@@ -36,6 +36,8 @@ const PROBLEM_SCENE_START_FRAME = 165;
 const PROBLEM_SCENE_FRAMES = 195;
 const MATCHING_SCENE_START_FRAME = 330;
 const MATCHING_SCENE_FRAMES = 300;
+const WORKSPACE_SCENE_START_FRAME = 600;
+const WORKSPACE_SCENE_FRAMES = 330;
 
 const candidateRows = [
 	{ name: "Frontend", stack: "React", color: "bg-blue-500" },
@@ -226,6 +228,39 @@ const matchingSignals = [
 	{ id: "role", label: "역할", value: "FE · BE · PM", color: "#f59e0b" },
 ] as const;
 
+const workspaceTasks = [
+	{
+		id: "scope",
+		title: "이번 주 개발 범위 합의",
+		meta: "PM · FE · BE",
+		color: "#3b82f6",
+		column: "forming",
+		delay: 0.12,
+	},
+	{
+		id: "contract",
+		title: "API 계약 정리",
+		meta: "Backend",
+		color: "#10b981",
+		column: "active",
+		delay: 0.28,
+	},
+	{
+		id: "release",
+		title: "릴리즈 체크리스트 생성",
+		meta: "Team",
+		color: "#f59e0b",
+		column: "shipping",
+		delay: 0.44,
+	},
+] as const;
+
+const workspaceChecklist = [
+	"역할과 목표 정리",
+	"이번 주 개발 범위 합의",
+	"데모 배포 체크",
+] as const;
+
 export function TeamPoPrVideo() {
 	return (
 		<AbsoluteFill className="overflow-hidden bg-[#f7fbff] font-body text-slate-950">
@@ -243,6 +278,12 @@ export function TeamPoPrVideo() {
 				from={MATCHING_SCENE_START_FRAME}
 			>
 				<MatchingScene />
+			</Sequence>
+			<Sequence
+				durationInFrames={WORKSPACE_SCENE_FRAMES}
+				from={WORKSPACE_SCENE_START_FRAME}
+			>
+				<WorkspaceDemoScene />
 			</Sequence>
 		</AbsoluteFill>
 	);
@@ -1644,7 +1685,7 @@ function MatchingOrbitBoard({
 					</section>
 				</div>
 			</div>
-			<ProductCursor frame={frame} fps={fps} />
+			<MatchingTouchPulse frame={frame} fps={fps} />
 		</div>
 	);
 }
@@ -1740,68 +1781,29 @@ function MatchingDemoCard({
 	);
 }
 
-function ProductCursor({ frame, fps }: { frame: number; fps: number }) {
-	const visible = motionProgress(frame, seconds(1.35, fps), seconds(0.35, fps));
-	const click = motionProgress(frame, seconds(1.9, fps), seconds(0.35, fps));
-	const selectClick = motionProgress(
+function MatchingTouchPulse({ frame, fps }: { frame: number; fps: number }) {
+	const startButton = motionProgress(
 		frame,
-		seconds(2.65, fps),
-		seconds(0.45, fps),
+		seconds(1.86, fps),
+		seconds(0.42, fps),
 	);
-	const x = interpolate(
+	const candidate = motionProgress(
 		frame,
-		[
-			seconds(1.35, fps),
-			seconds(1.9, fps),
-			seconds(2.55, fps),
-			seconds(3.25, fps),
-			seconds(4.2, fps),
-		],
-		[860, 940, 612, 752, 790],
-		{ extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+		seconds(2.62, fps),
+		seconds(0.5, fps),
 	);
-	const y = interpolate(
+	const teamPanel = motionProgress(
 		frame,
-		[
-			seconds(1.35, fps),
-			seconds(1.9, fps),
-			seconds(2.55, fps),
-			seconds(3.25, fps),
-			seconds(4.2, fps),
-		],
-		[146, 94, 326, 508, 640],
-		{ extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+		seconds(3.48, fps),
+		seconds(0.55, fps),
 	);
-	const ring = Math.max(click, selectClick);
 
 	return (
-		<div
-			className="pointer-events-none absolute z-30"
-			style={{
-				left: x,
-				top: y,
-				opacity: visible,
-				transform: "translate3d(0, 0, 0)",
-			}}
-		>
-			<div
-				className="absolute h-12 w-12 rounded-full border-2 border-emerald-400"
-				style={{
-					opacity: interpolate(ring, [0, 0.2, 1], [0, 0.9, 0]),
-					transform: `translate3d(-19px, -19px, 0) scale(${interpolate(ring, [0, 1], [0.45, 1.35])})`,
-				}}
-			/>
-			<div
-				style={{
-					borderBottom: "18px solid #0f172a",
-					borderRight: "14px solid transparent",
-					filter: "drop-shadow(0 12px 18px rgba(15,23,42,0.22))",
-					height: 0,
-					transform: "rotate(-28deg)",
-					width: 0,
-				}}
-			/>
-		</div>
+		<>
+			<TouchPulse color="#10b981" progress={startButton} x={950} y={96} />
+			<TouchPulse color="#3b82f6" progress={candidate} x={606} y={334} />
+			<TouchPulse color="#10b981" progress={teamPanel} x={824} y={658} />
+		</>
 	);
 }
 
@@ -1914,6 +1916,495 @@ function MatchingRevealEdge({ reveal }: { reveal: number }) {
 				transformOrigin: "left center",
 			}}
 		/>
+	);
+}
+
+function WorkspaceDemoScene() {
+	const frame = useCurrentFrame();
+	const { fps } = useVideoConfig();
+	const reveal = motionProgress(frame, 0, seconds(0.9, fps), EASE_IN_OUT);
+	const revealEdgeTop = interpolate(reveal, [0, 1], [112, -18]);
+	const revealEdgeBottom = interpolate(reveal, [0, 1], [102, -26]);
+	const intro = motionProgress(frame, seconds(0.32, fps), seconds(0.82, fps));
+	const windowProgress = motionProgress(
+		frame,
+		seconds(0.62, fps),
+		seconds(1.0, fps),
+	);
+
+	return (
+		<AbsoluteFill
+			className="overflow-hidden bg-[#fbfdff] text-slate-950"
+			style={{
+				clipPath: `polygon(${revealEdgeTop}% 0, 100% 0, 100% 100%, ${revealEdgeBottom}% 100%)`,
+			}}
+		>
+			<WorkspaceDemoBackground frame={frame} fps={fps} />
+			<WorkspaceNarrativePanel frame={frame} fps={fps} progress={intro} />
+			<WorkspaceDemoWindow frame={frame} fps={fps} progress={windowProgress} />
+			<MatchingRevealEdge reveal={reveal} />
+		</AbsoluteFill>
+	);
+}
+
+function WorkspaceDemoBackground({
+	frame,
+	fps,
+}: {
+	frame: number;
+	fps: number;
+}) {
+	const grid = motionProgress(frame, seconds(0.1, fps), seconds(1.1, fps));
+	const sweep = (frame % seconds(5, fps)) / seconds(5, fps);
+
+	return (
+		<>
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						"linear-gradient(135deg, #f8fbff 0%, #eef6ff 42%, #f0fdf4 76%, #fff7ed 100%)",
+				}}
+			/>
+			<div
+				className="absolute inset-0"
+				style={{
+					opacity: grid * 0.72,
+					backgroundImage:
+						"linear-gradient(to right, rgba(59,130,246,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(16,185,129,0.07) 1px, transparent 1px)",
+					backgroundSize: "60px 60px",
+				}}
+			/>
+			<div
+				className="absolute top-[278px] h-px w-[760px] rounded-full"
+				style={{
+					background:
+						"linear-gradient(90deg, transparent, rgba(59,130,246,0.32), rgba(16,185,129,0.22), transparent)",
+					opacity: grid,
+					transform: `translate3d(${interpolate(sweep, [0, 1], [-800, 2200])}px, 0, 0)`,
+				}}
+			/>
+		</>
+	);
+}
+
+function WorkspaceNarrativePanel({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const underline = motionProgress(
+		frame,
+		seconds(1.25, fps),
+		seconds(0.72, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="absolute left-[96px] top-[136px] w-[640px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [54, 0])}px, 0, 0)`,
+			}}
+		>
+			<div className="mb-8 inline-flex items-center gap-3 rounded-lg border border-blue-100 bg-white/82 px-5 py-3 text-[16px] font-black uppercase tracking-normal text-blue-600 shadow-sm">
+				<Rocket size={21} />
+				Solution 02
+			</div>
+			<h2 className="text-[70px] font-black leading-[0.98] tracking-normal text-slate-950">
+				팀이 생기면
+				<br />
+				<span className="relative inline-block text-blue-500">
+					바로 운영 화면으로
+					<span
+						className="absolute -bottom-2 left-0 h-2 rounded-full bg-blue-200/80"
+						style={{ width: `${underline * 100}%` }}
+					/>
+				</span>
+			</h2>
+			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
+				상태, 역할, 체크리스트가 한 페이지에서 움직여서
+				<br />
+				팀이 “지금 뭘 해야 하는지” 바로 보입니다.
+			</p>
+		</div>
+	);
+}
+
+function WorkspaceDemoWindow({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const stageProgress = motionProgress(
+		frame,
+		seconds(2.0, fps),
+		seconds(2.5, fps),
+		EASE_IN_OUT,
+	);
+	const drawer = motionProgress(frame, seconds(3.35, fps), seconds(0.82, fps));
+
+	return (
+		<div
+			className="absolute right-[42px] top-[64px] h-[900px] w-[1120px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 40) * 4}px, 0)`,
+			}}
+		>
+			<div className="absolute inset-0 overflow-hidden rounded-lg border border-blue-100/80 bg-white shadow-[0_34px_100px_rgba(30,64,175,0.16)]">
+				<div className="flex h-12 items-center gap-3 border-b border-slate-100 bg-slate-50 px-5">
+					<span className="h-3 w-3 rounded-full bg-rose-300" />
+					<span className="h-3 w-3 rounded-full bg-amber-300" />
+					<span className="h-3 w-3 rounded-full bg-emerald-300" />
+					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
+						team-po.app/team-space
+					</div>
+				</div>
+
+				<div className="grid h-[848px] grid-cols-[248px_1fr] bg-[#f8fbff]">
+					<aside className="border-r border-slate-100 bg-white p-6">
+						<div className="mb-7 flex items-center gap-3">
+							<div className="grid h-11 w-11 place-items-center rounded-lg bg-blue-500 text-white">
+								<Rocket size={22} />
+							</div>
+							<div>
+								<p className="text-[21px] font-black text-slate-950">Team-po</p>
+								<p className="text-[12px] font-bold text-slate-400">
+									Workspace
+								</p>
+							</div>
+						</div>
+						<div className="space-y-2 text-[15px] font-black">
+							<div className="rounded-lg bg-blue-50 px-4 py-3 text-blue-600">
+								프로젝트 홈
+							</div>
+							<div className="px-4 py-3 text-slate-400">역할 관리</div>
+							<div className="px-4 py-3 text-slate-400">체크리스트</div>
+							<div className="px-4 py-3 text-slate-400">회의 기록</div>
+						</div>
+						<div className="mt-8 rounded-lg bg-slate-950 p-5 text-white">
+							<p className="text-[13px] font-bold text-blue-200">이번 주</p>
+							<p className="mt-2 text-[25px] font-black">Active</p>
+							<p className="mt-2 text-[12px] font-bold text-slate-300">
+								3개 태스크 진행 중
+							</p>
+						</div>
+					</aside>
+
+					<main className="relative p-7">
+						<div className="mb-6 flex items-start justify-between">
+							<div>
+								<p className="text-[32px] font-black text-slate-950">
+									MVP 런칭 스쿼드
+								</p>
+								<p className="mt-2 text-[15px] font-bold text-slate-500">
+									랜덤 매칭으로 생성된 팀 스페이스
+								</p>
+							</div>
+							<div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-5 py-3 text-[15px] font-black text-emerald-600">
+								<Activity size={18} />
+								live
+							</div>
+						</div>
+
+						<WorkspaceStageRail
+							frame={frame}
+							fps={fps}
+							progress={stageProgress}
+						/>
+
+						<div className="mt-7 grid grid-cols-[1.15fr_0.85fr] gap-5">
+							<WorkspaceBoard frame={frame} fps={fps} />
+							<WorkspaceChecklist frame={frame} fps={fps} />
+						</div>
+
+						<WorkspaceActionDrawer progress={drawer} />
+						<WorkspaceTouchPulse frame={frame} fps={fps} />
+					</main>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function WorkspaceStageRail({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const progressWidth = interpolate(progress, [0, 1], [12, 64]);
+
+	return (
+		<div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+			<div className="relative h-3 rounded-full bg-slate-100">
+				<div
+					className="h-3 rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-400"
+					style={{ width: `${progressWidth}%` }}
+				/>
+				{lifecycleStages.map((stage, index) => {
+					const active = motionProgress(
+						frame,
+						seconds(1.6 + index * 0.42, fps),
+						seconds(0.45, fps),
+					);
+
+					return (
+						<div
+							className="absolute top-1/2 grid h-9 w-9 place-items-center rounded-lg border-4 border-white bg-slate-200 shadow-md"
+							key={stage}
+							style={{
+								left: `${index * 32}%`,
+								backgroundColor: active > 0.55 ? "#3b82f6" : "#e2e8f0",
+								color: active > 0.55 ? "#ffffff" : "#94a3b8",
+								transform: `translate3d(-50%, -50%, 0) scale(${interpolate(active, [0, 1], [0.82, 1.08])})`,
+							}}
+						>
+							<Check size={17} strokeWidth={3} />
+						</div>
+					);
+				})}
+			</div>
+			<div className="mt-4 grid grid-cols-4 text-[13px] font-black uppercase text-slate-400">
+				<span>forming</span>
+				<span>active</span>
+				<span>shipping</span>
+				<span>done</span>
+			</div>
+		</div>
+	);
+}
+
+function WorkspaceBoard({ frame, fps }: { frame: number; fps: number }) {
+	const columns = ["forming", "active", "shipping"] as const;
+
+	return (
+		<div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+			<div className="mb-5 flex items-center justify-between">
+				<p className="text-[21px] font-black text-slate-950">작업 보드</p>
+				<p className="rounded-md bg-blue-50 px-3 py-1.5 text-[12px] font-black text-blue-600">
+					자동 동기화
+				</p>
+			</div>
+			<div className="grid grid-cols-3 gap-3">
+				{columns.map((column) => (
+					<div
+						className="min-h-[350px] rounded-lg bg-slate-50 p-3"
+						key={column}
+					>
+						<p className="mb-3 text-[12px] font-black uppercase text-slate-400">
+							{column}
+						</p>
+						<div className="space-y-3">
+							{workspaceTasks
+								.filter((task) => task.column === column)
+								.map((task, index) => (
+									<WorkspaceTaskCard
+										frame={frame}
+										fps={fps}
+										index={index}
+										key={task.id}
+										task={task}
+									/>
+								))}
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function WorkspaceTaskCard({
+	frame,
+	fps,
+	index,
+	task,
+}: {
+	frame: number;
+	fps: number;
+	index: number;
+	task: (typeof workspaceTasks)[number];
+}) {
+	const enter = motionProgress(
+		frame,
+		seconds(1.15 + task.delay, fps),
+		seconds(0.58, fps),
+	);
+	const lift = motionProgress(frame, seconds(2.55, fps), seconds(0.65, fps));
+
+	return (
+		<div
+			className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm"
+			style={{
+				opacity: enter,
+				transform: `translate3d(0, ${interpolate(enter, [0, 1], [24, 0]) - (task.id === "contract" ? lift * 8 : 0)}px, 0)`,
+				boxShadow:
+					task.id === "contract" && lift > 0.2
+						? "0 18px 38px rgba(16,185,129,0.16)"
+						: "0 1px 2px rgba(15,23,42,0.04)",
+			}}
+		>
+			<div className="mb-4 flex items-center justify-between">
+				<span
+					className="h-3 w-3 rounded-full"
+					style={{ backgroundColor: task.color }}
+				/>
+				<span className="text-[11px] font-black text-slate-400">
+					D-{4 - index}
+				</span>
+			</div>
+			<p className="text-[15px] font-black leading-snug text-slate-950">
+				{task.title}
+			</p>
+			<p className="mt-2 text-[12px] font-bold text-slate-400">{task.meta}</p>
+		</div>
+	);
+}
+
+function WorkspaceChecklist({ frame, fps }: { frame: number; fps: number }) {
+	return (
+		<div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+			<div className="mb-5 flex items-center justify-between">
+				<p className="text-[21px] font-black text-slate-950">체크리스트</p>
+				<CalendarClock size={22} className="text-blue-500" />
+			</div>
+			<div className="space-y-3">
+				{workspaceChecklist.map((item, index) => {
+					const done = motionProgress(
+						frame,
+						seconds(2.0 + index * 0.36, fps),
+						seconds(0.42, fps),
+					);
+
+					return (
+						<div
+							className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/80 p-4"
+							key={item}
+						>
+							<div
+								className="grid h-8 w-8 place-items-center rounded-lg border bg-white"
+								style={{
+									borderColor: done > 0.5 ? "#10b981" : "#dbeafe",
+									backgroundColor: done > 0.5 ? "#ecfdf5" : "#ffffff",
+								}}
+							>
+								<Check
+									size={17}
+									strokeWidth={3}
+									style={{ color: "#10b981", opacity: done }}
+								/>
+							</div>
+							<p className="text-[15px] font-black text-slate-800">{item}</p>
+						</div>
+					);
+				})}
+			</div>
+			<div className="mt-5 rounded-lg bg-blue-50 p-4">
+				<p className="text-[13px] font-black text-blue-600">다음 액션</p>
+				<p className="mt-1 text-[17px] font-black text-slate-950">
+					릴리즈 체크리스트 생성
+				</p>
+			</div>
+		</div>
+	);
+}
+
+function WorkspaceActionDrawer({ progress }: { progress: number }) {
+	return (
+		<div
+			className="absolute bottom-7 right-7 w-[390px] rounded-lg border border-emerald-100 bg-slate-950 p-5 text-white shadow-[0_24px_72px_rgba(15,23,42,0.24)]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [46, 0])}px, 0, 0)`,
+			}}
+		>
+			<div className="mb-3 flex items-center gap-3">
+				<div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-400 text-slate-950">
+					<Check size={21} strokeWidth={3} />
+				</div>
+				<div>
+					<p className="text-[18px] font-black">active 단계로 전환</p>
+					<p className="text-[12px] font-bold text-slate-300">
+						팀원에게 다음 액션이 공유됩니다
+					</p>
+				</div>
+			</div>
+			<div className="h-2 rounded-full bg-white/10">
+				<div className="h-2 w-[72%] rounded-full bg-emerald-400" />
+			</div>
+		</div>
+	);
+}
+
+function WorkspaceTouchPulse({ frame, fps }: { frame: number; fps: number }) {
+	const stageTap = motionProgress(
+		frame,
+		seconds(2.18, fps),
+		seconds(0.46, fps),
+	);
+	const taskTap = motionProgress(frame, seconds(2.78, fps), seconds(0.48, fps));
+	const drawerTap = motionProgress(
+		frame,
+		seconds(3.62, fps),
+		seconds(0.5, fps),
+	);
+
+	return (
+		<>
+			<TouchPulse color="#3b82f6" progress={stageTap} x={414} y={178} />
+			<TouchPulse color="#10b981" progress={taskTap} x={332} y={464} />
+			<TouchPulse color="#10b981" progress={drawerTap} x={694} y={674} />
+		</>
+	);
+}
+
+function TouchPulse({
+	color,
+	progress,
+	x,
+	y,
+}: {
+	color: string;
+	progress: number;
+	x: number;
+	y: number;
+}) {
+	return (
+		<div
+			className="pointer-events-none absolute z-30 rounded-full"
+			style={{
+				border: `3px solid ${color}`,
+				height: 54,
+				left: x,
+				opacity: interpolate(progress, [0, 0.18, 1], [0, 0.9, 0]),
+				top: y,
+				transform: `translate3d(-50%, -50%, 0) scale(${interpolate(progress, [0, 1], [0.42, 1.65])})`,
+				width: 54,
+			}}
+		>
+			<div
+				className="absolute left-1/2 top-1/2 h-4 w-4 rounded-full"
+				style={{
+					backgroundColor: color,
+					opacity: interpolate(progress, [0, 0.22, 1], [0, 0.75, 0]),
+					transform: "translate3d(-50%, -50%, 0)",
+				}}
+			/>
+		</div>
 	);
 }
 

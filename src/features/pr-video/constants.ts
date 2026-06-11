@@ -3,7 +3,7 @@ export const TEAM_PO_PR_VIDEO = {
 	width: 1920,
 	height: 1080,
 	fps: 30,
-	durationInFrames: 630,
+	durationInFrames: 930,
 } as const;
 
 export const openingSceneTimeline = [
@@ -34,5 +34,13 @@ export const openingSceneTimeline = [
 	{
 		time: "13.5s",
 		label: "프로필 신호가 팀 조합으로 수렴",
+	},
+	{
+		time: "20.0s",
+		label: "팀 워크스페이스 기능 시연 UI 진입",
+	},
+	{
+		time: "24.0s",
+		label: "라이프사이클과 체크리스트가 함께 업데이트",
 	},
 ] as const;
