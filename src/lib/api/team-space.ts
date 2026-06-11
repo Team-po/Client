@@ -1,5 +1,8 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
+	ConfirmDevGuideRequest,
+	DevGuideHistoryContentResponse,
+	DevGuideHistoryListResponse,
 	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubAppInstallationUrl,
@@ -7,6 +10,8 @@ import type {
 	GithubRepositoryContributionRequest,
 	GithubRepositoryContributionResponse,
 	GithubRepositoryListResponse,
+	GithubWeeklySummaryListResponse,
+	GithubWeeklySummaryRequest,
 	RegenerateDevGuideRequest,
 	RegenerateDevGuideResponse,
 	SetGithubRepositoriesRequest,
@@ -28,6 +33,33 @@ export function regenerateDevGuide({
 		`/team-space/${projectGroupId}/dev-guide/regenerate`,
 		{
 			json: trimmedFeedback ? { feedback: trimmedFeedback } : undefined,
+			method: "POST",
+		},
+	);
+}
+
+export function getDevGuideHistories(projectGroupId: number) {
+	return apiRequest<DevGuideHistoryListResponse>(
+		`/team-space/${projectGroupId}/dev-guide/history`,
+	);
+}
+
+export function getDevGuideHistoryContent({
+	devGuideId,
+	projectGroupId,
+}: ConfirmDevGuideRequest) {
+	return apiRequest<DevGuideHistoryContentResponse>(
+		`/team-space/${projectGroupId}/dev-guide/history/${devGuideId}`,
+	);
+}
+
+export function confirmDevGuide({
+	devGuideId,
+	projectGroupId,
+}: ConfirmDevGuideRequest) {
+	return apiRequest<void>(
+		`/team-space/${projectGroupId}/dev-guide/${devGuideId}/confirm`,
+		{
 			method: "POST",
 		},
 	);
@@ -109,5 +141,14 @@ export function syncGithubPullRequestContributions({
 		{
 			method: "POST",
 		},
+	);
+}
+
+export function getGithubWeeklySummaries({
+	projectGroupId,
+	targetUserId,
+}: GithubWeeklySummaryRequest) {
+	return apiRequest<GithubWeeklySummaryListResponse>(
+		`/team-space/${projectGroupId}/github/users/${targetUserId}/weekly-summaries`,
 	);
 }

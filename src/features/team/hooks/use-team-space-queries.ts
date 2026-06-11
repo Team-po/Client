@@ -2,18 +2,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ApiError } from "@/lib/api/client";
 import {
+	confirmDevGuide,
 	completeGithubAppInstallation,
 	createGithubAppInstallationUrl,
 	getAvailableGithubRepositories,
 	getDevGuide,
+	getDevGuideHistories,
+	getDevGuideHistoryContent,
 	getGithubInstallationStatus,
 	getGithubRepositories,
 	getGithubRepositoryContributions,
+	getGithubWeeklySummaries,
 	regenerateDevGuide,
 	setGithubRepositories,
 	syncGithubPullRequestContributions,
 } from "@/lib/api/team-space";
 import type {
+	ConfirmDevGuideRequest,
 	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubRepositoryContributionRequest,
@@ -25,6 +30,10 @@ export const teamSpaceQueryKeys = {
 	all: ["team-space"] as const,
 	devGuide: (projectGroupId: number) =>
 		["team-space", projectGroupId, "dev-guide"] as const,
+	devGuideHistories: (projectGroupId: number) =>
+		["team-space", projectGroupId, "dev-guide", "history"] as const,
+	devGuideHistoryContent: (projectGroupId: number, devGuideId: number) =>
+		["team-space", projectGroupId, "dev-guide", "history", devGuideId] as const,
 	disabled: ["team-space", "disabled"] as const,
 	githubAvailableRepositories: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "available-repositories"] as const,
@@ -42,6 +51,15 @@ export const teamSpaceQueryKeys = {
 			githubRepositoryId,
 			"contributions",
 		] as const,
+	githubWeeklySummaries: (projectGroupId: number, targetUserId: number) =>
+		[
+			"team-space",
+			projectGroupId,
+			"github",
+			"users",
+			targetUserId,
+			"weekly-summaries",
+		] as const,
 	githubStatus: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "status"] as const,
 };
@@ -58,6 +76,14 @@ function requireProjectGroupId(projectGroupId: number | undefined) {
 	}
 
 	return projectGroupId;
+}
+
+function requireNumericId(value: number | undefined, label: string) {
+	if (typeof value !== "number") {
+		throw new Error(`${label} is required.`);
+	}
+
+	return value;
 }
 
 export function useGithubInstallationStatusQuery(
@@ -124,6 +150,71 @@ export function useRegenerateDevGuideMutation() {
 						response.remainingRegenerationCount ?? null,
 				},
 			);
+		},
+	});
+}
+
+export function useDevGuideHistoriesQuery(
+	projectGroupId: number | undefined,
+	enabled = true,
+) {
+	return useQuery({
+		enabled: enabled && typeof projectGroupId === "number",
+		queryFn: () => getDevGuideHistories(requireProjectGroupId(projectGroupId)),
+		queryKey:
+			typeof projectGroupId === "number"
+				? teamSpaceQueryKeys.devGuideHistories(projectGroupId)
+				: teamSpaceQueryKeys.disabled,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: devGuideStaleTimeMs,
+	});
+}
+
+export function useDevGuideHistoryContentQuery(
+	projectGroupId: number | undefined,
+	devGuideId: number | undefined,
+	enabled = true,
+) {
+	const hasIds =
+		typeof projectGroupId === "number" && typeof devGuideId === "number";
+
+	return useQuery({
+		enabled: enabled && hasIds,
+		queryFn: () =>
+			getDevGuideHistoryContent({
+				devGuideId: requireNumericId(devGuideId, "Dev guide id"),
+				projectGroupId: requireProjectGroupId(projectGroupId),
+			}),
+		queryKey: hasIds
+			? teamSpaceQueryKeys.devGuideHistoryContent(projectGroupId, devGuideId)
+			: teamSpaceQueryKeys.disabled,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: devGuideStaleTimeMs,
+	});
+}
+
+export function useConfirmDevGuideMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: ConfirmDevGuideRequest) => confirmDevGuide(payload),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.devGuide(variables.projectGroupId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.devGuideHistories(
+					variables.projectGroupId,
+				),
+			});
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.devGuideHistoryContent(
+					variables.projectGroupId,
+					variables.devGuideId,
+				),
+			});
 		},
 	});
 }
@@ -260,5 +351,29 @@ export function useSyncGithubPullRequestContributionsMutation() {
 				),
 			});
 		},
+	});
+}
+
+export function useGithubWeeklySummariesQuery(
+	projectGroupId: number | undefined,
+	targetUserId: number | undefined,
+	enabled = true,
+) {
+	const hasIds =
+		typeof projectGroupId === "number" && typeof targetUserId === "number";
+
+	return useQuery({
+		enabled: enabled && hasIds,
+		queryFn: () =>
+			getGithubWeeklySummaries({
+				projectGroupId: requireProjectGroupId(projectGroupId),
+				targetUserId: requireNumericId(targetUserId, "Target user id"),
+			}),
+		queryKey: hasIds
+			? teamSpaceQueryKeys.githubWeeklySummaries(projectGroupId, targetUserId)
+			: teamSpaceQueryKeys.disabled,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: githubContributionStaleTimeMs,
 	});
 }

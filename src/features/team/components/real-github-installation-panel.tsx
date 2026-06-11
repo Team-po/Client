@@ -9,6 +9,7 @@ import {
 	Save,
 	Sparkles,
 	Trophy,
+	UserRound,
 	type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -28,16 +29,22 @@ import {
 	useGithubInstallationStatusQuery,
 	useGithubRepositoriesQuery,
 	useGithubRepositoryContributionsQuery,
+	useGithubWeeklySummariesQuery,
 	useSetGithubRepositoriesMutation,
 	useSyncGithubPullRequestContributionsMutation,
 } from "@/features/team/hooks/use-team-space-queries";
 import { getApiErrorMessage } from "@/lib/api/client";
-import type { MyProjectGroup } from "@/lib/types/project-group";
+import type {
+	MyProjectGroup,
+	ProjectGroupMember,
+} from "@/lib/types/project-group";
 import type {
 	GithubRepository,
 	GithubRepositoryContributor,
+	GithubWeeklySummary,
 } from "@/lib/types/team-space";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils/date";
 
 const contributionNumberFormatter = new Intl.NumberFormat("ko-KR");
 
@@ -435,8 +442,187 @@ export function RealGithubInstallationPanel({
 						</div>
 					</div>
 				) : null}
+
+				<RealGithubWeeklySummariesPanel
+					members={projectGroup.members}
+					projectGroupId={projectGroup.projectGroupId}
+				/>
 			</div>
 		</AppPanel>
+	);
+}
+
+function RealGithubWeeklySummariesPanel({
+	members,
+	projectGroupId,
+}: {
+	members: ProjectGroupMember[];
+	projectGroupId: number;
+}) {
+	return (
+		<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<p className="text-sm font-semibold text-brand-ink">팀원 주간 요약</p>
+					<p className="mt-1 text-sm leading-6 text-muted-foreground">
+						GitHub PR과 이슈를 바탕으로 팀원별 최근 활동을 확인해요.
+					</p>
+				</div>
+				<Badge variant="neutral">{members.length}명</Badge>
+			</div>
+
+			<div className="mt-4 grid gap-3 lg:grid-cols-2">
+				{members.map((member) => (
+					<RealGithubWeeklySummaryCard
+						key={member.userId}
+						member={member}
+						projectGroupId={projectGroupId}
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function RealGithubWeeklySummaryCard({
+	member,
+	projectGroupId,
+}: {
+	member: ProjectGroupMember;
+	projectGroupId: number;
+}) {
+	const weeklySummariesQuery = useGithubWeeklySummariesQuery(
+		projectGroupId,
+		member.userId,
+	);
+	const latestSummary = weeklySummariesQuery.data?.summaries[0] ?? null;
+
+	return (
+		<div className="min-w-0 rounded-lg border border-border/70 bg-brand-warm p-4">
+			<div className="flex min-w-0 items-start gap-3">
+				<div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+					<UserRound className="size-4" />
+				</div>
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-start justify-between gap-2">
+						<div className="min-w-0">
+							<p className="truncate font-semibold text-brand-ink">
+								{member.nickname}
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								{member.memberRole}
+							</p>
+						</div>
+						{latestSummary ? (
+							<Badge variant="brand">
+								PR{" "}
+								{contributionNumberFormatter.format(
+									latestSummary.sourcePrCount,
+								)}
+							</Badge>
+						) : (
+							<Badge variant="neutral">요약 대기</Badge>
+						)}
+					</div>
+
+					{weeklySummariesQuery.isLoading ? (
+						<RealInlineStatus
+							className="mt-4 bg-white/55"
+							icon={<LoaderCircle className="size-4 animate-spin" />}
+							message="주간 요약을 불러오고 있어요."
+						/>
+					) : null}
+
+					{weeklySummariesQuery.error ? (
+						<RealInlineStatus
+							className="mt-4 bg-white/55"
+							message={getApiErrorMessage(weeklySummariesQuery.error)}
+						/>
+					) : null}
+
+					{latestSummary ? (
+						<RealGithubWeeklySummaryBody summary={latestSummary} />
+					) : null}
+
+					{weeklySummariesQuery.isSuccess && !latestSummary ? (
+						<p className="mt-4 rounded-md border border-dashed border-border bg-white/55 p-3 text-sm leading-6 text-muted-foreground">
+							아직 생성된 주간 요약이 없어요.
+						</p>
+					) : null}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function RealGithubWeeklySummaryBody({
+	summary,
+}: {
+	summary: GithubWeeklySummary;
+}) {
+	return (
+		<div className="mt-4 grid gap-3">
+			<div className="rounded-md border border-primary/15 bg-white/75 p-3">
+				<p className="text-xs font-semibold text-primary">
+					{formatDateTime(summary.periodStart)} -{" "}
+					{formatDateTime(summary.periodEnd)}
+				</p>
+				<p className="mt-2 text-sm leading-6 text-brand-ink">
+					{summary.summary.summary}
+				</p>
+			</div>
+
+			<div className="grid grid-cols-2 gap-2">
+				<RealGithubContributionStat
+					icon={GitPullRequest}
+					label="원천 PR"
+					value={summary.sourcePrCount}
+				/>
+				<RealGithubContributionStat
+					icon={ListChecks}
+					label="원천 이슈"
+					value={summary.sourceIssueCount}
+				/>
+			</div>
+
+			<RealGithubWeeklySummaryList
+				items={summary.summary.mainActivities}
+				title="주요 활동"
+			/>
+			<RealGithubWeeklySummaryList
+				items={summary.summary.followUpSuggestions}
+				title="다음 액션"
+			/>
+		</div>
+	);
+}
+
+function RealGithubWeeklySummaryList({
+	items,
+	title,
+}: {
+	items: string[];
+	title: string;
+}) {
+	if (items.length === 0) {
+		return null;
+	}
+
+	return (
+		<div>
+			<p className="text-xs font-semibold text-muted-foreground">{title}</p>
+			<ul className="mt-2 grid gap-1.5">
+				{items.slice(0, 3).map((item) => (
+					<li
+						className="flex gap-2 text-sm leading-6 text-brand-ink"
+						key={item}
+					>
+						<Sparkles className="mt-1 size-3.5 shrink-0 text-primary/70" />
+						<span>{item}</span>
+					</li>
+				))}
+			</ul>
+		</div>
 	);
 }
 

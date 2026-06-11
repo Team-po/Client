@@ -689,6 +689,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /team-space/{projectGroupId}/dev-guide/history:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get AI development guide version history
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      responses:
+        '200':
+          description: AI development guide version history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevGuideHistoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /team-space/{projectGroupId}/dev-guide/history/{devGuideId}:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get AI development guide version content
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/DevGuideId'
+      responses:
+        '200':
+          description: AI development guide version content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevGuideHistoryContentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /team-space/{projectGroupId}/dev-guide/regenerate:
     post:
       tags: [TeamSpace]
@@ -722,6 +769,28 @@ paths:
           $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /team-space/{projectGroupId}/dev-guide/{devGuideId}/confirm:
+    post:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Confirm an AI development guide version
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/DevGuideId'
+      responses:
+        '200':
+          description: AI development guide version confirmed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /team-space/{projectGroupId}/github/status:
@@ -905,6 +974,30 @@ paths:
           $ref: '#/components/responses/NotFound'
         '502':
           $ref: '#/components/responses/BadGateway'
+  /team-space/{projectGroupId}/github/users/{targetUserId}/weekly-summaries:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get weekly GitHub activity summaries for a team member
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/TargetUserId'
+      responses:
+        '200':
+          description: Weekly GitHub summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubWeeklySummaryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     bearerAuth:
@@ -929,6 +1022,13 @@ components:
     ChecklistId:
       in: path
       name: checklistId
+      required: true
+      schema:
+        type: integer
+        format: int64
+    DevGuideId:
+      in: path
+      name: devGuideId
       required: true
       schema:
         type: integer
@@ -1589,6 +1689,75 @@ components:
         contributionScore:
           type: integer
           format: int64
+    GithubWeeklySummaryListResponse:
+      type: object
+      additionalProperties: false
+      required: [summaries]
+      properties:
+        summaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/GithubWeeklySummary'
+    GithubWeeklySummary:
+      type: object
+      additionalProperties: false
+      required:
+        - weeklyGithubSummaryId
+        - periodStart
+        - periodEnd
+        - sourcePrCount
+        - sourceIssueCount
+        - summary
+      properties:
+        weeklyGithubSummaryId:
+          type: integer
+          format: int64
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+        sourcePrCount:
+          type: integer
+          format: int64
+        sourceIssueCount:
+          type: integer
+          format: int64
+        summary:
+          $ref: '#/components/schemas/GithubWeeklySummaryContent'
+    GithubWeeklySummaryContent:
+      type: object
+      additionalProperties: false
+      required:
+        - summary
+        - mainActivities
+        - pullRequestHighlights
+        - issueHighlights
+        - followUpSuggestions
+      properties:
+        summary:
+          type: string
+        mainActivities:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        pullRequestHighlights:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        issueHighlights:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        followUpSuggestions:
+          type: array
+          maxItems: 3
+          items:
+            type: string
     DevGuideGenerationStatus:
       type: string
       enum: [GENERATING, COMPLETED, FAILED]
@@ -1654,6 +1823,36 @@ components:
           type:
             - integer
             - 'null'
+    DevGuideHistory:
+      type: object
+      additionalProperties: false
+      required: [devGuideId, versionNo, generationType, confirmed, createdAt]
+      properties:
+        devGuideId:
+          type: integer
+          format: int64
+        versionNo:
+          type: integer
+        generationType:
+          $ref: '#/components/schemas/DevGuideGenerationType'
+        confirmed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    DevGuideHistoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [histories]
+      properties:
+        histories:
+          type: array
+          items:
+            $ref: '#/components/schemas/DevGuideHistory'
+    DevGuideHistoryContentResponse:
+      allOf:
+        - $ref: '#/components/schemas/DevGuideHistory'
+        - $ref: '#/components/schemas/DevGuideContent'
     DevGuideContent:
       type: object
       additionalProperties: false
