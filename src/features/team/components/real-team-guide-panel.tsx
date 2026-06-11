@@ -262,13 +262,6 @@ export function RealGuidePanel({
 				</div>
 			</AppPanel>
 
-			<div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-				<RealDevGuideTechStackPanel guide={guide} />
-				<RealDevGuideDecisionPanel guide={guide} />
-			</div>
-
-			<RealDevGuideMilestonePanel guide={guide} />
-
 			<RealDevGuideHistoryPanel
 				confirmError={confirmDevGuideMutation.error}
 				histories={histories}
@@ -282,6 +275,13 @@ export function RealGuidePanel({
 				selectedHistoryContentError={historyContentQuery.error}
 				selectedHistoryContentLoading={historyContentQuery.isLoading}
 			/>
+
+			<div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+				<RealDevGuideTechStackPanel guide={guide} />
+				<RealDevGuideDecisionPanel guide={guide} />
+			</div>
+
+			<RealDevGuideMilestonePanel guide={guide} />
 		</div>
 	);
 }

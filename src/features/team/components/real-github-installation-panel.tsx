@@ -444,6 +444,7 @@ export function RealGithubInstallationPanel({
 				) : null}
 
 				<RealGithubWeeklySummariesPanel
+					isGithubConnected={isGithubConnected}
 					members={projectGroup.members}
 					projectGroupId={projectGroup.projectGroupId}
 				/>
@@ -453,9 +454,11 @@ export function RealGithubInstallationPanel({
 }
 
 function RealGithubWeeklySummariesPanel({
+	isGithubConnected,
 	members,
 	projectGroupId,
 }: {
+	isGithubConnected: boolean;
 	members: ProjectGroupMember[];
 	projectGroupId: number;
 }) {
@@ -465,10 +468,17 @@ function RealGithubWeeklySummariesPanel({
 				<div>
 					<p className="text-sm font-semibold text-brand-ink">팀원 주간 요약</p>
 					<p className="mt-1 text-sm leading-6 text-muted-foreground">
-						GitHub PR과 이슈를 바탕으로 팀원별 최근 활동을 확인해요.
+						{isGithubConnected
+							? "GitHub PR과 이슈를 바탕으로 팀원별 최근 활동을 확인해요."
+							: "GitHub 연결 전에는 서버에 저장된 최근 요약을 먼저 확인해요."}
 					</p>
 				</div>
-				<Badge variant="neutral">{members.length}명</Badge>
+				<div className="flex flex-wrap gap-2">
+					<Badge variant={isGithubConnected ? "brand" : "neutral"}>
+						{isGithubConnected ? "연결된 요약" : "저장된 요약"}
+					</Badge>
+					<Badge variant="neutral">{members.length}명</Badge>
+				</div>
 			</div>
 
 			<div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -572,7 +582,7 @@ function RealGithubWeeklySummaryBody({
 				</p>
 			</div>
 
-			<div className="grid grid-cols-2 gap-2">
+			<div className="grid gap-2 sm:grid-cols-2">
 				<RealGithubContributionStat
 					icon={GitPullRequest}
 					label="원천 PR"
@@ -978,7 +988,7 @@ function RealGithubContributionStat({
 		<div className="min-w-0 rounded-md border border-border/70 bg-secondary/25 p-3">
 			<div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
 				<Icon className="size-3.5 shrink-0" />
-				<p className="truncate text-[11px] font-semibold">{label}</p>
+				<p className="min-w-0 text-[11px] font-semibold leading-4">{label}</p>
 			</div>
 			<p className="mt-2 truncate font-mono text-sm font-semibold text-brand-ink">
 				{contributionNumberFormatter.format(value)}
