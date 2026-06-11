@@ -32,7 +32,7 @@ pnpm dev
 
 ## API Mode
 
-API mode is controlled from [`src/lib/api/config.ts`](/Users/hwangjo/Client/src/lib/api/config.ts).
+API mode is controlled from [`src/lib/api/config.ts`](/Users/hwangjo/team-po/Client/src/lib/api/config.ts).
 
 - `VITE_API_MODE=mock`: use MSW-based mocked API
 - `VITE_API_MODE=real`: call a real backend
@@ -47,11 +47,19 @@ VITE_API_BASE_URL=https://api.example.com
 VITE_OAUTH_BASE_URL=https://api.example.com
 ```
 
+Local backend example:
+
+```bash
+VITE_API_MODE=real VITE_API_BASE_URL=http://localhost:8080/api pnpm dev --host 127.0.0.1
+```
+
+The team-space chat panel uses the same API mode. In real mode it connects to the backend STOMP endpoint derived from `VITE_API_BASE_URL`; for `http://localhost:8080/api`, chat connects to `ws://localhost:8080/ws`.
+
 ## Vercel Deployment
 
 This project uses React Router with `BrowserRouter`, so Vercel needs an SPA rewrite for deep links such as `/login`, `/signup`, and `/me`.
 
-The required rewrite is already configured in [`vercel.json`](/Users/hwangjo/Client/vercel.json).
+The required rewrite is already configured in [`vercel.json`](/Users/hwangjo/team-po/Client/vercel.json).
 
 ### Recommended Setup
 

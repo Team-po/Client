@@ -48,3 +48,8 @@
 - Route performance approach: lazy-load route pages from `src/App.tsx`, especially `/team` and `/deck/*`, to keep the initial app bundle smaller without changing route ownership.
 - Team workspace structure: keep `/team` orchestration in `team-space-view.tsx`, split signed-in server-backed panels into focused `real-team-*` components, and keep the signed-out mock preview separate while sharing tabs, status helpers, and GitHub permission notices.
 - MSW maintainability: keep route handlers in `src/lib/api/mocks/handlers.ts`, but move reusable team-space fixture builders into `src/lib/api/mocks/team-space-fixtures.ts` so handler code focuses on request behavior.
+
+## 2026-06-12
+- Team chat transport: use `@stomp/stompjs` for the signed-in team-space chat panel because the backend exposes Spring STOMP topics for real-time project-group messages.
+- Team chat state: keep message history in TanStack Query through `src/features/team/hooks/use-chat-queries.ts`, and append live STOMP messages into the same cache so REST history and real-time delivery share one UI source of truth.
+- Mock parity: keep chat handlers in MSW for `/project-groups/:projectGroupId/chat/messages` and `/project-groups/:projectGroupId/chat/read` so the same chat panel can be browser-tested without a running backend.
