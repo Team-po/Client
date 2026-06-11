@@ -411,7 +411,19 @@ export function TeamPoPrVideo() {
 			>
 				<FinaleLogoScene />
 			</Sequence>
+			<TeamGroupWatermark />
 		</AbsoluteFill>
+	);
+}
+
+function TeamGroupWatermark() {
+	return (
+		<div
+			aria-hidden="true"
+			className="absolute right-[54px] top-[42px] z-[90] text-[18px] font-extrabold tracking-normal text-slate-500/55"
+		>
+			5조 githug
+		</div>
 	);
 }
 
