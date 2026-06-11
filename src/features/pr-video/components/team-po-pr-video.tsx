@@ -1239,7 +1239,7 @@ function ProblemScene() {
 					<br />
 					시작보다
 					<br />
-					<span className="text-blue-500">완주가 어렵습니다</span>
+					<span className="text-red-500">완주가 어렵습니다</span>
 				</h2>
 				<p className="mt-9 max-w-[750px] text-[29px] font-bold leading-[1.42] tracking-normal text-slate-600">
 					팀원 찾기, 역할 조율, 진행 공유가 이어지지 않으면 프로젝트의 흐름이
