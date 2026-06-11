@@ -3,7 +3,7 @@ export const TEAM_PO_PR_VIDEO = {
 	width: 1920,
 	height: 1080,
 	fps: 30,
-	durationInFrames: 1830,
+	durationInFrames: 1770,
 } as const;
 
 export const openingSceneTimeline = [
@@ -53,10 +53,10 @@ export const openingSceneTimeline = [
 	},
 	{
 		time: "41.0s",
-		label: "Team-po 전체 완주 플로우 요약",
+		label: "Team-po 전체 완주 플로우를 짧게 요약",
 	},
 	{
-		time: "55.0s",
-		label: "팀 프로젝트 시작 CTA로 클로징",
+		time: "50.0s",
+		label: "로고 기반 임팩트 메시지로 피날레",
 	},
 ] as const;

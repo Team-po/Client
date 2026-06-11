@@ -16,7 +16,8 @@
 		"video:still:matching": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-matching-frame.png --frame=520 --scale=0.5",
 		"video:still:workspace": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-workspace-frame.png --frame=820 --scale=0.5",
 		"video:still:report": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-report-frame.png --frame=1120 --scale=0.5",
-		"video:still:closing": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-closing-frame.png --frame=1650 --scale=0.5",
+		"video:still:closing": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-closing-frame.png --frame=1440 --scale=0.5",
+		"video:still:finale": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-finale-frame.png --frame=1645 --scale=0.5",
 		"video:render": "remotion render src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-opening.mp4"
 	},
 	"dependencies": {

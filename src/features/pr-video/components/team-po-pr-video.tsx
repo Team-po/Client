@@ -41,7 +41,9 @@ const WORKSPACE_SCENE_FRAMES = 330;
 const REPORT_SCENE_START_FRAME = 900;
 const REPORT_SCENE_FRAMES = 360;
 const CLOSING_SCENE_START_FRAME = 1230;
-const CLOSING_SCENE_FRAMES = 600;
+const CLOSING_SCENE_FRAMES = 300;
+const FINALE_SCENE_START_FRAME = 1500;
+const FINALE_SCENE_FRAMES = 270;
 
 const candidateRows = [
 	{ name: "Frontend", stack: "React", color: "bg-blue-500" },
@@ -354,6 +356,12 @@ export function TeamPoPrVideo() {
 				from={CLOSING_SCENE_START_FRAME}
 			>
 				<ClosingDemoScene />
+			</Sequence>
+			<Sequence
+				durationInFrames={FINALE_SCENE_FRAMES}
+				from={FINALE_SCENE_START_FRAME}
+			>
+				<FinaleLogoScene />
 			</Sequence>
 		</AbsoluteFill>
 	);
@@ -3290,6 +3298,173 @@ function ClosingTouchPulse({ frame, fps }: { frame: number; fps: number }) {
 			<TouchPulse color="#3b82f6" progress={cardTap} x={382} y={342} />
 			<TouchPulse color="#10b981" progress={launchTap} x={888} y={40} />
 		</>
+	);
+}
+
+function FinaleLogoScene() {
+	const frame = useCurrentFrame();
+	const { fps } = useVideoConfig();
+	const reveal = motionProgress(frame, 0, seconds(0.82, fps), EASE_IN_OUT);
+	const prompt = motionProgress(frame, seconds(0.22, fps), seconds(0.6, fps));
+	const blockOne = motionProgress(
+		frame,
+		seconds(0.46, fps),
+		seconds(0.44, fps),
+	);
+	const blockTwo = motionProgress(frame, seconds(0.6, fps), seconds(0.44, fps));
+	const blockThree = motionProgress(
+		frame,
+		seconds(0.74, fps),
+		seconds(0.44, fps),
+	);
+	const team = motionProgress(frame, seconds(0.9, fps), seconds(0.62, fps));
+	const po = motionProgress(frame, seconds(1.36, fps), seconds(0.5, fps));
+	const message = motionProgress(frame, seconds(1.86, fps), seconds(0.8, fps));
+	const underline = motionProgress(
+		frame,
+		seconds(2.2, fps),
+		seconds(0.9, fps),
+		EASE_IN_OUT,
+	);
+	const finalPulse = motionProgress(
+		frame,
+		seconds(4.2, fps),
+		seconds(1.4, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<AbsoluteFill className="overflow-hidden bg-[#f8fbff] text-slate-950">
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						"linear-gradient(135deg, #f8fbff 0%, #eef6ff 46%, #ecfdf5 78%, #fff7ed 100%)",
+					opacity: reveal,
+				}}
+			/>
+			<div
+				className="absolute inset-0"
+				style={{
+					opacity: reveal * 0.72,
+					backgroundImage:
+						"linear-gradient(to right, rgba(59,130,246,0.09) 1px, transparent 1px), linear-gradient(to bottom, rgba(16,185,129,0.07) 1px, transparent 1px)",
+					backgroundSize: "58px 58px",
+					maskImage:
+						"radial-gradient(circle at 50% 48%, black 0%, black 56%, transparent 84%)",
+				}}
+			/>
+			{[
+				{ top: 150, delay: 0, color: "rgba(59,130,246,0.22)" },
+				{ top: 826, delay: 42, color: "rgba(16,185,129,0.22)" },
+				{ top: 936, delay: 88, color: "rgba(245,158,11,0.2)" },
+			].map((line) => {
+				const travel =
+					((frame + line.delay) % seconds(5.6, fps)) / seconds(5.6, fps);
+
+				return (
+					<div
+						className="absolute h-px w-[820px] rounded-full"
+						key={`${line.top}-${line.delay}`}
+						style={{
+							background: `linear-gradient(90deg, transparent, ${line.color}, transparent)`,
+							opacity: reveal * Math.sin(travel * Math.PI),
+							top: line.top,
+							transform: `translate3d(${interpolate(travel, [0, 1], [-920, 2280])}px, 0, 0)`,
+						}}
+					/>
+				);
+			})}
+
+			<div
+				className="absolute left-1/2 top-[132px] h-[300px] w-[980px]"
+				style={{
+					opacity: reveal,
+					transform: `translate3d(-50%, ${interpolate(reveal, [0, 1], [42, 0])}px, 0)`,
+				}}
+			>
+				<svg
+					aria-hidden="true"
+					className="absolute left-[70px] top-[18px] h-[190px] w-[190px] overflow-visible"
+					viewBox="0 0 140 140"
+				>
+					<path
+						d="M32 38 L72 70 L32 102"
+						fill="none"
+						stroke="#1e293b"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						strokeWidth="20"
+						style={{
+							strokeDasharray: 130,
+							strokeDashoffset: 130 * (1 - prompt),
+						}}
+					/>
+				</svg>
+				<LogoBlock progress={blockOne} x={224} y={162} color="#10b981" />
+				<LogoBlock progress={blockTwo} x={272} y={114} color="#3b82f6" />
+				<LogoBlock progress={blockThree} x={320} y={66} color="#6366f1" />
+				<div className="absolute left-[398px] top-[72px] flex h-[156px] w-[760px] origin-left whitespace-nowrap text-[146px] font-black leading-none tracking-normal">
+					<span
+						className="inline-block text-slate-800"
+						style={{
+							clipPath: `inset(0 ${100 - team * 100}% 0 0)`,
+							transform: `skewX(-15deg) translate3d(${interpolate(team, [0, 1], [-32, 0])}px, 0, 0)`,
+						}}
+					>
+						Team
+					</span>
+					<span
+						className="inline-block text-blue-500"
+						style={{
+							filter: `blur(${interpolate(po, [0, 1], [8, 0])}px)`,
+							opacity: po,
+							transform: `skewX(-15deg) translate3d(${interpolate(po, [0, 1], [44, 0])}px, 0, 0) scale(${interpolate(
+								po,
+								[0, 1],
+								[0.94, 1],
+							)})`,
+						}}
+					>
+						-po
+					</span>
+				</div>
+			</div>
+
+			<div
+				className="absolute left-1/2 top-[448px] w-[1320px] -translate-x-1/2 text-center"
+				style={{
+					opacity: message,
+					transform: `translate3d(-50%, ${interpolate(message, [0, 1], [48, 0])}px, 0)`,
+				}}
+			>
+				<p className="text-[86px] font-black leading-[1.04] tracking-normal text-slate-950">
+					사이드 프로젝트를
+					<br />
+					<span className="relative inline-block text-blue-500">
+						끝까지 움직이게
+						<span
+							className="absolute -bottom-3 left-0 h-3 rounded-full bg-blue-200/90"
+							style={{ width: `${underline * 100}%` }}
+						/>
+					</span>
+				</p>
+				<p className="mt-9 text-[31px] font-extrabold leading-tight tracking-normal text-slate-600">
+					팀 찾기부터 완주까지, Team-po
+				</p>
+			</div>
+
+			<div
+				className="absolute bottom-[96px] left-1/2 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-blue-100 bg-white/82 px-8 py-5 text-[22px] font-black text-slate-800 shadow-[0_22px_70px_rgba(30,64,175,0.14)] backdrop-blur"
+				style={{
+					opacity: interpolate(finalPulse, [0, 0.45, 1], [0, 1, 1]),
+					transform: `translate3d(-50%, ${interpolate(finalPulse, [0, 1], [28, 0])}px, 0) scale(${interpolate(finalPulse, [0, 0.55, 1], [0.96, 1.03, 1])})`,
+				}}
+			>
+				<Sparkles size={28} className="text-blue-500" />팀 프로젝트의 시작과
+				완주를 한 곳에서
+			</div>
+		</AbsoluteFill>
 	);
 }
 
