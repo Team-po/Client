@@ -1856,7 +1856,7 @@ function MatchingOrbitBoard({
 					<span className="h-3 w-3 rounded-full bg-amber-300" />
 					<span className="h-3 w-3 rounded-full bg-emerald-300" />
 					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
-						team-po.app/matching
+						team-po.cloud/matching
 					</div>
 				</div>
 
@@ -2058,7 +2058,7 @@ function MatchingDemoCard({
 			</div>
 			<div className="mt-5">
 				<div className="mb-2 flex items-center justify-between">
-					<p className="text-[13px] font-black text-slate-400">응답 흐름</p>
+					<p className="text-[13px] font-black text-slate-400">응답 상태</p>
 					<p
 						className="text-[16px] font-black"
 						style={{ color: profile.statusColor }}
@@ -2362,7 +2362,7 @@ function WorkspaceDemoWindow({
 					<span className="h-3 w-3 rounded-full bg-amber-300" />
 					<span className="h-3 w-3 rounded-full bg-emerald-300" />
 					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
-						team-po.app/team-space
+						team-po.cloud/team-space
 					</div>
 				</div>
 
@@ -2841,7 +2841,7 @@ function ReportDemoWindow({
 					<span className="h-3 w-3 rounded-full bg-amber-300" />
 					<span className="h-3 w-3 rounded-full bg-emerald-300" />
 					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
-						team-po.app/report
+						team-po.cloud/report
 					</div>
 				</div>
 
@@ -3102,10 +3102,10 @@ function ReportInsightPanel({ progress }: { progress: number }) {
 					</div>
 					<div>
 						<p className="text-[23px] font-black">
-							이번 주 병목은 API 응답 지연
+							이번 주 병목은 API 응답 지연 PR
 						</p>
 						<p className="mt-1 text-[13px] font-bold text-slate-500">
-							배포 체크리스트 전에 API 이슈를 먼저 닫는 것을 추천합니다.
+							배포 체크리스트보다 API 응답 지연 PR을 먼저 마무리해요.
 						</p>
 					</div>
 				</div>
