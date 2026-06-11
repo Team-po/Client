@@ -150,6 +150,11 @@ export function useRegenerateDevGuideMutation() {
 						response.remainingRegenerationCount ?? null,
 				},
 			);
+			queryClient.invalidateQueries({
+				queryKey: teamSpaceQueryKeys.devGuideHistories(
+					variables.projectGroupId,
+				),
+			});
 		},
 	});
 }

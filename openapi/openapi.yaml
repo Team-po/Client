@@ -1850,9 +1850,58 @@ components:
           items:
             $ref: '#/components/schemas/DevGuideHistory'
     DevGuideHistoryContentResponse:
-      allOf:
-        - $ref: '#/components/schemas/DevGuideHistory'
-        - $ref: '#/components/schemas/DevGuideContent'
+      type: object
+      additionalProperties: false
+      required:
+        - devGuideId
+        - versionNo
+        - generationType
+        - confirmed
+        - createdAt
+        - overview
+        - techStack
+        - mvpPriorities
+        - decisionPoints
+        - milestones
+      properties:
+        devGuideId:
+          type: integer
+          format: int64
+        versionNo:
+          type: integer
+        generationType:
+          $ref: '#/components/schemas/DevGuideGenerationType'
+        confirmed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        overview:
+          type: string
+        techStack:
+          type: array
+          minItems: 5
+          maxItems: 7
+          items:
+            $ref: '#/components/schemas/DevGuideTechStackItem'
+        mvpPriorities:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/DevGuideMvpPriority'
+        decisionPoints:
+          type: array
+          minItems: 3
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/DevGuideDecisionPoint'
+        milestones:
+          type: array
+          minItems: 12
+          maxItems: 12
+          items:
+            $ref: '#/components/schemas/DevGuideMilestone'
     DevGuideContent:
       type: object
       additionalProperties: false
