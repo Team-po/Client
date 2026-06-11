@@ -12,6 +12,7 @@ tags:
   - name: Match
   - name: ProjectGroups
   - name: ProjectChecklists
+  - name: Chat
   - name: TeamSpace
 paths:
   /signup/email:
@@ -666,6 +667,75 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /project-groups/{projectGroupId}/chat/messages:
+    get:
+      tags: [Chat]
+      security:
+        - bearerAuth: []
+      summary: Get project group chat messages
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - in: query
+          name: beforeMessageId
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Return messages older than this message id.
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 30
+      responses:
+        '200':
+          description: Project group chat message page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /project-groups/{projectGroupId}/chat/read:
+    patch:
+      tags: [Chat]
+      security:
+        - bearerAuth: []
+      summary: Mark project group chat messages as read
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkChatReadRequest'
+      responses:
+        '200':
+          description: Chat read state updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatReadState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /team-space/{projectGroupId}/dev-guide:
     get:
       tags: [TeamSpace]
@@ -1466,6 +1536,84 @@ components:
           format: int64
         aiAdvice:
           $ref: '#/components/schemas/ChecklistAiAdvice'
+    ChatMessageType:
+      type: string
+      enum: [TEXT, SYSTEM]
+    ChatMessage:
+      type: object
+      additionalProperties: false
+      required:
+        - messageId
+        - projectGroupId
+        - senderUserId
+        - senderNickname
+        - senderProfileImage
+        - type
+        - content
+        - createdAt
+        - mine
+      properties:
+        messageId:
+          type: integer
+          format: int64
+        projectGroupId:
+          type: integer
+          format: int64
+        senderUserId:
+          type: integer
+          format: int64
+        senderNickname:
+          type: string
+        senderProfileImage:
+          type:
+            - string
+            - 'null'
+        type:
+          $ref: '#/components/schemas/ChatMessageType'
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        mine:
+          type: boolean
+    ChatMessagePage:
+      type: object
+      additionalProperties: false
+      required: [messages, nextBeforeMessageId, hasNext]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        nextBeforeMessageId:
+          type:
+            - integer
+            - 'null'
+          format: int64
+        hasNext:
+          type: boolean
+    MarkChatReadRequest:
+      type: object
+      additionalProperties: false
+      required: [lastReadMessageId]
+      properties:
+        lastReadMessageId:
+          type: integer
+          format: int64
+    ChatReadState:
+      type: object
+      additionalProperties: false
+      required: [lastReadMessageId, updatedAt]
+      properties:
+        lastReadMessageId:
+          type:
+            - integer
+            - 'null'
+          format: int64
+        updatedAt:
+          type: string
+          format: date-time
     GithubInstallationStatus:
       type: object
       additionalProperties: false

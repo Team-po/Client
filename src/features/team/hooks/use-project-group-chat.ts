@@ -2,7 +2,7 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { getAuthSession } from "@/lib/api/auth-session";
+import { ensureFreshAuthSession } from "@/lib/api/client";
 import { getChatWebSocketUrl } from "@/lib/api/chat";
 import { apiConfig } from "@/lib/api/config";
 import type {
@@ -38,6 +38,8 @@ export function useProjectGroupChat({
 	);
 
 	useEffect(() => {
+		let isActiveEffect = true;
+
 		if (!enabled || typeof projectGroupId !== "number") {
 			setConnectionState("idle");
 			setConnectionMessage(null);
@@ -50,18 +52,24 @@ export function useProjectGroupChat({
 			return;
 		}
 
-		const session = getAuthSession();
-		if (!session) {
-			setConnectionState("error");
-			setConnectionMessage("채팅 연결을 위해 로그인이 필요해요.");
-			return;
-		}
-
 		const client = new Client({
-			brokerURL: getChatWebSocketUrl(),
-			connectHeaders: {
-				Authorization: `Bearer ${session.accessToken}`,
+			beforeConnect: async (stompClient) => {
+				const session = await ensureFreshAuthSession();
+
+				if (!session) {
+					if (isActiveEffect) {
+						setConnectionState("error");
+						setConnectionMessage("채팅 연결을 위해 로그인이 필요해요.");
+					}
+					void stompClient.deactivate({ force: true });
+					return;
+				}
+
+				stompClient.connectHeaders = {
+					Authorization: `Bearer ${session.accessToken}`,
+				};
 			},
+			brokerURL: getChatWebSocketUrl(),
 			debug: () => undefined,
 			heartbeatIncoming: 10_000,
 			heartbeatOutgoing: 10_000,
@@ -108,6 +116,7 @@ export function useProjectGroupChat({
 		client.activate();
 
 		return () => {
+			isActiveEffect = false;
 			clientRef.current = null;
 			void client.deactivate();
 		};

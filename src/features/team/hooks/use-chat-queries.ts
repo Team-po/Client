@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getChatMessages, markChatRead } from "@/lib/api/chat";
 import type { ChatMessagePage } from "@/lib/types/chat";
@@ -14,17 +14,27 @@ export function useChatMessagesQuery(
 	projectGroupId: number | undefined,
 	enabled = true,
 ) {
+	const queryClient = useQueryClient();
+	const queryKey =
+		typeof projectGroupId === "number"
+			? chatQueryKeys.messages(projectGroupId)
+			: ["team-space", "chat", "disabled"];
+
 	return useQuery({
 		enabled: enabled && typeof projectGroupId === "number",
-		queryFn: () =>
-			getChatMessages({
-				projectGroupId: requireProjectGroupId(projectGroupId),
+		queryFn: async () => {
+			const requiredProjectGroupId = requireProjectGroupId(projectGroupId);
+			const historyPage = await getChatMessages({
+				projectGroupId: requiredProjectGroupId,
 				size: 30,
-			}),
-		queryKey:
-			typeof projectGroupId === "number"
-				? chatQueryKeys.messages(projectGroupId)
-				: ["team-space", "chat", "disabled"],
+			});
+			const cachedPage = queryClient.getQueryData<ChatMessagePage>(
+				chatQueryKeys.messages(requiredProjectGroupId),
+			);
+
+			return mergeChatMessagePages(historyPage, cachedPage);
+		},
+		queryKey,
 		refetchOnWindowFocus: false,
 		retry: false,
 		staleTime: chatMessagesStaleTimeMs,
@@ -56,6 +66,33 @@ export function appendChatMessagePage(
 	return {
 		...current,
 		messages: [...current.messages, message],
+	};
+}
+
+export function mergeChatMessagePages(
+	historyPage: ChatMessagePage,
+	cachedPage: ChatMessagePage | undefined,
+): ChatMessagePage {
+	if (!cachedPage?.messages.length) {
+		return historyPage;
+	}
+
+	const messagesById = new Map<number, ChatMessagePage["messages"][number]>();
+
+	for (const message of cachedPage.messages) {
+		messagesById.set(message.messageId, message);
+	}
+
+	for (const message of historyPage.messages) {
+		messagesById.set(message.messageId, message);
+	}
+
+	return {
+		...historyPage,
+		messages: Array.from(messagesById.values()).sort(
+			(firstMessage, secondMessage) =>
+				firstMessage.messageId - secondMessage.messageId,
+		),
 	};
 }
 
