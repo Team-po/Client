@@ -10,7 +10,6 @@ import {
 	Database,
 	GitBranch,
 	GitPullRequest,
-	Layers3,
 	MessageSquare,
 	Palette,
 	Rocket,
@@ -48,7 +47,7 @@ const FINALE_SCENE_FRAMES = 270;
 const candidateRows = [
 	{ name: "Frontend", stack: "React", color: "bg-blue-500" },
 	{ name: "Backend", stack: "Spring", color: "bg-emerald-500" },
-	{ name: "Product", stack: "PM", color: "bg-amber-400" },
+	{ name: "Design", stack: "UX", color: "bg-violet-500" },
 ] as const;
 
 const lifecycleStages = ["forming", "active", "shipping", "done"] as const;
@@ -107,7 +106,7 @@ const issueNodes = [
 		id: "role",
 		kind: "search",
 		title: "역할 조율",
-		meta: "FE? BE? PM?",
+		meta: "FE? BE? DESIGN?",
 		x: 400,
 		y: 76,
 		color: "amber",
@@ -203,22 +202,23 @@ const painPoints = [
 
 const matchingProfiles = [
 	{
-		id: "profile-fe",
-		name: "Frontend",
-		stack: "React · UI",
-		icon: "code",
-		color: "#3b82f6",
+		id: "host-backend",
+		name: "Backend",
+		stack: "호스트",
+		icon: "database",
+		color: "#10b981",
 		x: 98,
 		y: 118,
 		targetX: 94,
 		targetY: 166,
 		delay: 0.1,
-		score: 94,
+		status: "수락됨",
+		statusColor: "#10b981",
 	},
 	{
-		id: "profile-be",
+		id: "member-backend",
 		name: "Backend",
-		stack: "Spring · API",
+		stack: "멤버",
 		icon: "database",
 		color: "#10b981",
 		x: 612,
@@ -226,25 +226,27 @@ const matchingProfiles = [
 		targetX: 594,
 		targetY: 166,
 		delay: 0.26,
-		score: 91,
+		status: "수락됨",
+		statusColor: "#10b981",
 	},
 	{
-		id: "profile-pm",
-		name: "Product",
-		stack: "PM · 기획",
-		icon: "layers",
-		color: "#f59e0b",
+		id: "member-frontend",
+		name: "Frontend",
+		stack: "멤버",
+		icon: "code",
+		color: "#3b82f6",
 		x: 126,
 		y: 456,
 		targetX: 102,
 		targetY: 486,
 		delay: 0.42,
-		score: 88,
+		status: "응답 대기",
+		statusColor: "#f59e0b",
 	},
 	{
-		id: "profile-design",
+		id: "member-design",
 		name: "Design",
-		stack: "UX · System",
+		stack: "멤버",
 		icon: "palette",
 		color: "#6366f1",
 		x: 580,
@@ -252,21 +254,39 @@ const matchingProfiles = [
 		targetX: 584,
 		targetY: 486,
 		delay: 0.58,
-		score: 86,
+		status: "응답 대기",
+		statusColor: "#f59e0b",
 	},
 ] as const;
 
 const matchingSignals = [
-	{ id: "goal", label: "목표", value: "MVP 출시", color: "#3b82f6" },
-	{ id: "pace", label: "속도", value: "주 2회", color: "#10b981" },
-	{ id: "role", label: "역할", value: "FE · BE · PM", color: "#f59e0b" },
+	{ id: "role", label: "선택 역할", value: "BACKEND", color: "#10b981" },
+	{
+		id: "project",
+		label: "프로젝트",
+		value: "Team-po 매칭 실험",
+		color: "#3b82f6",
+	},
+	{
+		id: "mvp",
+		label: "MVP 범위",
+		value: "매칭 요청 · 팀 스페이스",
+		color: "#f59e0b",
+	},
+] as const;
+
+const matchedRoleSlots = [
+	{ id: "backend-host", label: "BACKEND" },
+	{ id: "backend-member", label: "BACKEND" },
+	{ id: "frontend-member", label: "FRONTEND" },
+	{ id: "design-member", label: "DESIGN" },
 ] as const;
 
 const workspaceTasks = [
 	{
 		id: "scope",
 		title: "이번 주 개발 범위 합의",
-		meta: "PM · FE · BE",
+		meta: "Design · FE · BE",
 		color: "#3b82f6",
 		column: "forming",
 		delay: 0.12,
@@ -797,7 +817,7 @@ function OrbitNetwork({ pulse }: { pulse: number }) {
 			</svg>
 			<OrbitNode label="FE" left={62} top={17} progress={pulse} />
 			<OrbitNode label="BE" left={112} top={88} progress={pulse * 0.9} />
-			<OrbitNode label="PM" left={22} top={96} progress={pulse * 0.82} />
+			<OrbitNode label="DS" left={22} top={96} progress={pulse * 0.82} />
 			<div className="absolute left-[64px] top-[78px] grid h-9 w-9 place-items-center rounded-lg border border-blue-100 bg-white text-[11px] font-black text-blue-600 shadow-sm">
 				+
 			</div>
@@ -1797,9 +1817,8 @@ function MatchingNarrativePanel({
 				</span>
 			</h2>
 			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
-				역할, 목표, 진행 속도를 한 화면에서 맞춰 보고
-				<br />
-				함께 시작할 팀을 빠르게 찾습니다.
+				역할과 프로젝트 정보를 보내면
+				<br />팀 매칭 요청이 바로 시작됩니다.
 			</p>
 		</div>
 	);
@@ -1868,7 +1887,7 @@ function MatchingOrbitBoard({
 						}}
 						type="button"
 					>
-						랜덤 매칭 시작
+						매칭 요청 보내기
 					</button>
 				</div>
 
@@ -1877,10 +1896,10 @@ function MatchingOrbitBoard({
 						<div className="mb-6 flex items-center justify-between">
 							<div>
 								<p className="text-[19px] font-black text-slate-950">
-									매칭 조건
+									매칭 요청
 								</p>
 								<p className="mt-1 text-[12px] font-bold text-slate-400">
-									입력한 프로필 기준
+									역할과 프로젝트 정보
 								</p>
 							</div>
 							<div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -1920,29 +1939,21 @@ function MatchingOrbitBoard({
 								);
 							})}
 						</div>
-						<div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50 p-5">
-							<p className="text-[13px] font-bold text-emerald-600">
-								AI 추천 기준
-							</p>
-							<p className="mt-2 text-[18px] font-black leading-snug text-slate-950">
-								역할 균형과 진행 가능성을 함께 계산
-							</p>
-						</div>
 					</aside>
 
 					<section className="relative overflow-hidden rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
 						<div className="mb-5 flex items-center justify-between">
 							<div>
 								<p className="text-[24px] font-black text-slate-950">
-									추천 후보
+									매칭 세션
 								</p>
 								<p className="mt-1 text-[13px] font-bold text-slate-400">
-									이번 주 바로 시작 가능한 프로필
+									팀원 역할과 응답 상태를 확인해요
 								</p>
 							</div>
 							<div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-[14px] font-bold text-slate-500">
-								<Search size={17} />
-								React, Spring, PM
+								<UsersRound size={17} />
+								BACKEND · FRONTEND · DESIGN
 							</div>
 						</div>
 
@@ -1999,10 +2010,12 @@ function MatchingDemoCard({
 		seconds(0.45, fps),
 		EASE_IN_OUT,
 	);
+	const isAccepted = profile.status === "수락됨";
+	const responseWidth = isAccepted ? 100 : 58;
 
 	return (
 		<div
-			className="relative min-h-[176px] rounded-lg border bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]"
+			className="relative min-h-[146px] rounded-lg border bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]"
 			style={{
 				borderColor: selected > 0.55 ? profile.color : "#e2e8f0",
 				backgroundColor: selected > 0.55 ? "#f8fffc" : "#ffffff",
@@ -2031,35 +2044,34 @@ function MatchingDemoCard({
 					</div>
 				</div>
 				<div
-					className="grid h-8 w-8 place-items-center rounded-full border"
+					className="rounded-full border px-3 py-1.5 text-[12px] font-black"
 					style={{
-						borderColor: selected > 0.55 ? profile.color : "#e2e8f0",
-						backgroundColor: selected > 0.55 ? profile.color : "#ffffff",
+						borderColor:
+							selected > 0.55 ? `${profile.statusColor}55` : "#e2e8f0",
+						backgroundColor:
+							selected > 0.55 ? `${profile.statusColor}12` : "#ffffff",
+						color: selected > 0.55 ? profile.statusColor : "#94a3b8",
 					}}
 				>
-					<Check
-						size={17}
-						strokeWidth={3}
-						style={{ color: "#ffffff", opacity: selected }}
-					/>
+					{profile.status}
 				</div>
 			</div>
 			<div className="mt-5">
 				<div className="mb-2 flex items-center justify-between">
-					<p className="text-[13px] font-black text-slate-400">signal</p>
+					<p className="text-[13px] font-black text-slate-400">응답 흐름</p>
 					<p
 						className="text-[16px] font-black"
-						style={{ color: profile.color }}
+						style={{ color: profile.statusColor }}
 					>
-						{Math.round(profile.score * enter)}%
+						{isAccepted ? "수락 완료" : "대기 중"}
 					</p>
 				</div>
 				<div className="h-2.5 rounded-full bg-slate-100">
 					<div
 						className="h-2.5 rounded-full"
 						style={{
-							backgroundColor: profile.color,
-							width: `${interpolate(enter, [0, 1], [12, profile.score])}%`,
+							backgroundColor: profile.statusColor,
+							width: `${interpolate(enter, [0, 1], [12, responseWidth])}%`,
 						}}
 					/>
 				</div>
@@ -2107,10 +2119,6 @@ function MatchingProfileIcon({
 		return <Database size={24} strokeWidth={2.5} />;
 	}
 
-	if (icon === "layers") {
-		return <Layers3 size={24} strokeWidth={2.5} />;
-	}
-
 	return <Palette size={24} strokeWidth={2.5} />;
 }
 
@@ -2146,18 +2154,18 @@ function RecommendedTeamPanel({
 						</div>
 						<div>
 							<p className="text-[24px] font-black leading-tight">
-								MVP 런칭 스쿼드 추천
+								매칭 세션이 생성됐어요
 							</p>
 							<p className="mt-1 text-[13px] font-bold text-slate-500">
-								목표, 속도, 역할 균형이 맞는 조합입니다.
+								팀원들이 수락하면 팀 스페이스로 이어집니다.
 							</p>
 						</div>
 					</div>
-					<div className="grid grid-cols-3 gap-2">
-						{["FE", "BE", "PM"].map((role, index) => (
+					<div className="grid grid-cols-4 gap-2">
+						{matchedRoleSlots.map((role, index) => (
 							<div
-								className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-3 text-center text-[15px] font-black text-slate-950"
-								key={role}
+								className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-3 text-center text-[13px] font-black text-slate-950"
+								key={role.id}
 								style={{
 									opacity: motionProgress(
 										frame,
@@ -2166,7 +2174,7 @@ function RecommendedTeamPanel({
 									),
 								}}
 							>
-								{role}
+								{role.label}
 							</div>
 						))}
 					</div>
@@ -2177,12 +2185,12 @@ function RecommendedTeamPanel({
 						boxShadow: `0 0 ${interpolate(spark, [0, 1], [0, 28])}px rgba(52,211,153,0.45)`,
 					}}
 				>
-					<p className="text-[13px] font-bold text-emerald-600">match score</p>
+					<p className="text-[13px] font-bold text-emerald-600">응답 상태</p>
 					<p className="mt-2 text-[42px] font-black leading-none text-emerald-600">
-						98%
+						2/4
 					</p>
 					<p className="mt-2 text-[12px] font-bold text-slate-500">
-						바로 팀 스페이스 생성 가능
+						호스트 포함 2명 수락
 					</p>
 				</div>
 			</div>
