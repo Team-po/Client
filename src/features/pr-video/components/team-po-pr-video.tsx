@@ -149,6 +149,34 @@ const issueNodes = [
 	},
 ] as const;
 
+const problemConvergencePaths = [
+	{
+		id: "from-recruit",
+		d: "M144 216 C272 304 392 370 520 432",
+		stroke: "rgba(245,158,11,0.4)",
+	},
+	{
+		id: "from-role",
+		d: "M548 144 C580 246 574 332 548 430",
+		stroke: "rgba(239,68,68,0.34)",
+	},
+	{
+		id: "from-chat",
+		d: "M344 366 C414 390 482 414 536 438",
+		stroke: "rgba(16,185,129,0.34)",
+	},
+	{
+		id: "from-schedule",
+		d: "M724 306 C676 358 620 398 566 438",
+		stroke: "rgba(245,158,11,0.38)",
+	},
+	{
+		id: "from-github",
+		d: "M238 566 C350 526 452 478 536 448",
+		stroke: "rgba(99,102,241,0.34)",
+	},
+] as const;
+
 const painPoints = [
 	{
 		id: "matching",
@@ -1126,6 +1154,7 @@ function ProblemScene() {
 	const revealEdgeTop = interpolate(reveal, [0, 1], [108, -12]);
 	const revealEdgeBottom = interpolate(reveal, [0, 1], [100, -20]);
 	const content = motionProgress(frame, seconds(0.45, fps), seconds(0.95, fps));
+	const bridge = motionProgress(frame, seconds(4.45, fps), seconds(0.75, fps));
 	const settle = motionProgress(
 		frame,
 		seconds(2.8, fps),
@@ -1141,6 +1170,7 @@ function ProblemScene() {
 			}}
 		>
 			<ProblemBackground frame={frame} fps={fps} />
+			<ProblemWarningField frame={frame} fps={fps} />
 			<div
 				className="absolute left-[128px] top-[128px] w-[790px]"
 				style={{
@@ -1148,19 +1178,31 @@ function ProblemScene() {
 					transform: `translate3d(${interpolate(content, [0, 1], [64, 0])}px, 0, 0)`,
 				}}
 			>
-				<div className="mb-8 inline-flex items-center gap-3 rounded-lg border border-slate-200 bg-white/80 px-5 py-3 text-[16px] font-black uppercase tracking-normal text-slate-500 shadow-sm">
+				<div className="mb-8 inline-flex items-center gap-3 rounded-lg border border-amber-200 bg-white/84 px-5 py-3 text-[16px] font-black tracking-normal text-slate-500 shadow-sm">
 					<CircleDashed size={20} className="text-amber-500" />
-					Before Team-po
+					문제 제기 · Before Team-po
 				</div>
 				<h2 className="text-[84px] font-black leading-[0.96] tracking-normal text-slate-950">
-					사이드 프로젝트,
+					사이드 프로젝트는
 					<br />
-					<span className="text-blue-500">시작 전부터 흩어져요</span>
+					시작보다
+					<br />
+					<span className="text-blue-500">완주가 어렵습니다</span>
 				</h2>
 				<p className="mt-9 max-w-[750px] text-[29px] font-bold leading-[1.42] tracking-normal text-slate-600">
-					팀원 찾기, 역할 조율, 진행 공유가 서로 다른 곳에 흩어지면 좋은
-					아이디어도 완주까지 가기 어렵습니다.
+					팀원 찾기, 역할 조율, 진행 공유가 이어지지 않으면 프로젝트의 흐름이
+					끊깁니다.
 				</p>
+				<div
+					className="mt-8 inline-flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-5 py-3 text-[18px] font-black text-blue-600 shadow-sm"
+					style={{
+						opacity: bridge,
+						transform: `translate3d(${interpolate(bridge, [0, 1], [24, 0])}px, 0, 0)`,
+					}}
+				>
+					<span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+					Team-po는 이 신호를 하나의 흐름으로 연결합니다
+				</div>
 			</div>
 
 			<ScatteredIssueBoard frame={frame} fps={fps} settle={settle} />
@@ -1212,6 +1254,70 @@ function ProblemBackground({ frame, fps }: { frame: number; fps: number }) {
 	);
 }
 
+function ProblemWarningField({ frame, fps }: { frame: number; fps: number }) {
+	const warning = motionProgress(
+		frame,
+		seconds(1.25, fps),
+		seconds(1.55, fps),
+		EASE_IN_OUT,
+	);
+	const sweep = ((frame % seconds(2.7, fps)) / seconds(2.7, fps)) * 1;
+	const scanX = interpolate(sweep, [0, 1], [-380, 1220]);
+	const tremor = Math.sin(frame / 5) * 3;
+
+	return (
+		<>
+			<div
+				className="absolute right-[34px] top-[58px] h-[760px] w-[990px] overflow-hidden rounded-lg border border-amber-200/45"
+				style={{
+					opacity: warning * 0.72,
+					backgroundImage:
+						"linear-gradient(135deg, rgba(245,158,11,0.13) 0 1px, transparent 1px 20px)",
+					backgroundPosition: `${frame * -1.4}px ${frame * 0.55}px`,
+					boxShadow: `inset 0 0 ${interpolate(warning, [0, 1], [0, 52])}px rgba(245,158,11,0.12)`,
+					transform: `translate3d(${tremor * warning}px, 0, 0)`,
+				}}
+			/>
+			<div
+				className="absolute right-[82px] top-[116px] h-[3px] w-[860px] rounded-full bg-gradient-to-r from-transparent via-amber-400/60 to-transparent"
+				style={{
+					opacity:
+						warning * interpolate(sweep, [0, 0.2, 0.74, 1], [0, 0.9, 0.6, 0]),
+					transform: `translate3d(${scanX}px, ${interpolate(sweep, [0, 1], [0, 540])}px, 0) rotate(-9deg)`,
+				}}
+			/>
+			<svg
+				aria-hidden="true"
+				className="absolute right-[44px] top-[72px] h-[722px] w-[960px] overflow-visible"
+				viewBox="0 0 960 722"
+			>
+				<path
+					d="M154 172 L268 242 L222 304 L402 392 L356 454 L596 548"
+					fill="none"
+					stroke="rgba(239,68,68,0.26)"
+					strokeDasharray="18 18"
+					strokeWidth="4"
+					style={{
+						opacity: warning,
+						strokeDashoffset: -frame * 1.7,
+					}}
+				/>
+				<path
+					d="M624 116 L548 220 L628 304 L544 406 L682 560"
+					fill="none"
+					stroke="rgba(245,158,11,0.28)"
+					strokeDasharray="12 20"
+					strokeWidth="3"
+					style={{
+						opacity: warning,
+						strokeDashoffset: frame * 1.35,
+					}}
+				/>
+			</svg>
+		</>
+	);
+}
+
 function ScatteredIssueBoard({
 	frame,
 	fps,
@@ -1237,6 +1343,12 @@ function ScatteredIssueBoard({
 	const signalScale =
 		interpolate(signalReveal, [0, 1], [0.88, 1]) *
 		interpolate(signalFocus, [0, 0.52, 1], [1, 1.045, 1.01]);
+	const problemPressure = motionProgress(
+		frame,
+		seconds(1.82, fps),
+		seconds(1.45, fps),
+		EASE_IN_OUT,
+	);
 
 	return (
 		<div
@@ -1275,9 +1387,46 @@ function ScatteredIssueBoard({
 						strokeDashoffset: frame * 1.1,
 					}}
 				/>
+				{problemConvergencePaths.map((path, index) => (
+					<path
+						d={path.d}
+						fill="none"
+						key={path.id}
+						stroke={path.stroke}
+						strokeDasharray="8 13"
+						strokeLinecap="round"
+						strokeWidth="4"
+						style={{
+							opacity: signalFocus * 0.9,
+							strokeDashoffset: interpolate(
+								signalFocus,
+								[0, 1],
+								[160 - index * 16, -26],
+							),
+						}}
+					/>
+				))}
 			</svg>
 			{issueNodes.map((node) => (
-				<IssueNode frame={frame} fps={fps} key={node.id} node={node} />
+				<IssueNode
+					frame={frame}
+					fps={fps}
+					key={node.id}
+					node={node}
+					problemPressure={problemPressure}
+				/>
+			))}
+			{[0, 1, 2].map((ring) => (
+				<div
+					className="absolute left-[298px] top-[332px] z-10 h-[220px] w-[504px] rounded-lg border border-amber-300/70"
+					key={ring}
+					style={{
+						opacity:
+							interpolate(signalFocus, [0, 0.42, 1], [0, 0.42, 0.08]) *
+							(1 - ring * 0.2),
+						transform: `scale(${1 + signalFocus * 0.08 + ring * 0.06})`,
+					}}
+				/>
 			))}
 			<div
 				className="absolute left-[318px] top-[352px] z-20 w-[462px] rounded-lg border bg-white/94 p-7 shadow-[0_26px_78px_rgba(15,23,42,0.13)] backdrop-blur"
@@ -1325,10 +1474,12 @@ function IssueNode({
 	frame,
 	fps,
 	node,
+	problemPressure,
 }: {
 	frame: number;
 	fps: number;
 	node: (typeof issueNodes)[number];
+	problemPressure: number;
 }) {
 	const enter = motionProgress(
 		frame,
@@ -1341,6 +1492,10 @@ function IssueNode({
 		seconds(2.7 + node.delay, fps),
 		seconds(0.7, fps),
 	);
+	const jitter = interpolate(problemPressure, [0, 0.58, 1], [0, 7, 2.4]);
+	const stressRotation =
+		Math.sin(frame / 4.5 + node.x / 90) *
+		interpolate(problemPressure, [0, 1], [0, 2.2]);
 
 	return (
 		<div
@@ -1348,14 +1503,29 @@ function IssueNode({
 			style={{
 				left: node.x,
 				top: node.y,
-				opacity: enter,
-				transform: `translate3d(${interpolate(enter, [0, 1], [76, 0])}px, ${float}px, 0) rotate(${node.rotation * enter}deg) scale(${interpolate(
+				filter: `saturate(${interpolate(problemPressure, [0, 1], [1, 0.76])}) brightness(${interpolate(problemPressure, [0, 1], [1, 0.96])})`,
+				opacity: enter * interpolate(problemPressure, [0, 1], [1, 0.82]),
+				transform: `translate3d(${
+					interpolate(enter, [0, 1], [76, 0]) +
+					Math.sin(frame / 3.7 + node.x / 80) * jitter
+				}px, ${
+					float + Math.cos(frame / 4.1 + node.y / 80) * jitter * 0.56
+				}px, 0) rotate(${node.rotation * enter + stressRotation}deg) scale(${interpolate(
 					enter,
 					[0, 1],
 					[0.94, 1],
 				)})`,
 			}}
 		>
+			<div
+				className="absolute -right-2 -top-2 grid h-7 w-7 place-items-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600 shadow-sm"
+				style={{
+					opacity: alert * problemPressure,
+					transform: `scale(${interpolate(alert, [0, 1], [0.74, 1.05])})`,
+				}}
+			>
+				<AlertTriangle size={15} strokeWidth={2.8} />
+			</div>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<div
@@ -1380,6 +1550,7 @@ function IssueNode({
 					className="h-3 w-3 rounded-full"
 					style={{
 						backgroundColor: alert > 0.5 ? "#f59e0b" : "#dbeafe",
+						boxShadow: alert > 0.5 ? "0 0 18px rgba(245,158,11,0.46)" : "none",
 						transform: `scale(${interpolate(alert, [0, 1], [0.75, 1.15])})`,
 					}}
 				/>
