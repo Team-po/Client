@@ -3,7 +3,7 @@ export const TEAM_PO_PR_VIDEO = {
 	width: 1920,
 	height: 1080,
 	fps: 30,
-	durationInFrames: 360,
+	durationInFrames: 630,
 } as const;
 
 export const openingSceneTimeline = [
@@ -26,5 +26,13 @@ export const openingSceneTimeline = [
 	{
 		time: "6.0s",
 		label: "팀 구성과 완주가 어려운 이유를 모션으로 제시",
+	},
+	{
+		time: "11.0s",
+		label: "랜덤 팀 매칭 씬으로 밝게 리빌",
+	},
+	{
+		time: "13.5s",
+		label: "프로필 신호가 팀 조합으로 수렴",
 	},
 ] as const;

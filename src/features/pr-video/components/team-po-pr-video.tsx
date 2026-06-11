@@ -2,14 +2,21 @@ import type { CSSProperties } from "react";
 import {
 	Activity,
 	AlertTriangle,
+	BadgeCheck,
 	CalendarClock,
 	Check,
 	CircleDashed,
+	Code2,
+	Database,
 	GitBranch,
 	GitPullRequest,
+	Layers3,
 	MessageSquare,
+	Palette,
 	Rocket,
 	Search,
+	Shuffle,
+	SlidersHorizontal,
 	Sparkles,
 	UsersRound,
 } from "lucide-react";
@@ -27,6 +34,8 @@ const EASE_IN_OUT = Easing.bezier(0.45, 0, 0.55, 1);
 const OPENING_SCENE_FRAMES = 180;
 const PROBLEM_SCENE_START_FRAME = 165;
 const PROBLEM_SCENE_FRAMES = 195;
+const MATCHING_SCENE_START_FRAME = 330;
+const MATCHING_SCENE_FRAMES = 300;
 
 const candidateRows = [
 	{ name: "Frontend", stack: "React", color: "bg-blue-500" },
@@ -156,6 +165,67 @@ const painPoints = [
 	},
 ] as const;
 
+const matchingProfiles = [
+	{
+		id: "profile-fe",
+		name: "Frontend",
+		stack: "React · UI",
+		icon: "code",
+		color: "#3b82f6",
+		x: 98,
+		y: 118,
+		targetX: 94,
+		targetY: 166,
+		delay: 0.1,
+		score: 94,
+	},
+	{
+		id: "profile-be",
+		name: "Backend",
+		stack: "Spring · API",
+		icon: "database",
+		color: "#10b981",
+		x: 612,
+		y: 124,
+		targetX: 594,
+		targetY: 166,
+		delay: 0.26,
+		score: 91,
+	},
+	{
+		id: "profile-pm",
+		name: "Product",
+		stack: "PM · 기획",
+		icon: "layers",
+		color: "#f59e0b",
+		x: 126,
+		y: 456,
+		targetX: 102,
+		targetY: 486,
+		delay: 0.42,
+		score: 88,
+	},
+	{
+		id: "profile-design",
+		name: "Design",
+		stack: "UX · System",
+		icon: "palette",
+		color: "#6366f1",
+		x: 580,
+		y: 448,
+		targetX: 584,
+		targetY: 486,
+		delay: 0.58,
+		score: 86,
+	},
+] as const;
+
+const matchingSignals = [
+	{ id: "goal", label: "목표", value: "MVP 출시", color: "#3b82f6" },
+	{ id: "pace", label: "속도", value: "주 2회", color: "#10b981" },
+	{ id: "role", label: "역할", value: "FE · BE · PM", color: "#f59e0b" },
+] as const;
+
 export function TeamPoPrVideo() {
 	return (
 		<AbsoluteFill className="overflow-hidden bg-[#f7fbff] font-body text-slate-950">
@@ -167,6 +237,12 @@ export function TeamPoPrVideo() {
 				from={PROBLEM_SCENE_START_FRAME}
 			>
 				<ProblemScene />
+			</Sequence>
+			<Sequence
+				durationInFrames={MATCHING_SCENE_FRAMES}
+				from={MATCHING_SCENE_START_FRAME}
+			>
+				<MatchingScene />
 			</Sequence>
 		</AbsoluteFill>
 	);
@@ -1258,6 +1334,583 @@ function ProblemRevealEdge({ reveal }: { reveal: number }) {
 				filter: "blur(8px)",
 				opacity: interpolate(reveal, [0, 0.35, 0.82, 1], [0, 0.9, 0.42, 0]),
 				transform: `translate3d(${interpolate(reveal, [0, 1], [1700, -260])}px, 0, 0) skewX(-10deg)`,
+				transformOrigin: "left center",
+			}}
+		/>
+	);
+}
+
+function MatchingScene() {
+	const frame = useCurrentFrame();
+	const { fps } = useVideoConfig();
+	const reveal = motionProgress(frame, 0, seconds(0.92, fps), EASE_IN_OUT);
+	const revealEdgeTop = interpolate(reveal, [0, 1], [110, -16]);
+	const revealEdgeBottom = interpolate(reveal, [0, 1], [100, -26]);
+	const intro = motionProgress(frame, seconds(0.35, fps), seconds(0.85, fps));
+	const board = motionProgress(frame, seconds(0.7, fps), seconds(1.05, fps));
+
+	return (
+		<AbsoluteFill
+			className="overflow-hidden bg-[#f8fbff] text-slate-950"
+			style={{
+				clipPath: `polygon(${revealEdgeTop}% 0, 100% 0, 100% 100%, ${revealEdgeBottom}% 100%)`,
+			}}
+		>
+			<MatchingBackground frame={frame} fps={fps} />
+			<MatchingNarrativePanel frame={frame} fps={fps} progress={intro} />
+			<MatchingOrbitBoard frame={frame} fps={fps} progress={board} />
+			<MatchingRevealEdge reveal={reveal} />
+		</AbsoluteFill>
+	);
+}
+
+function MatchingBackground({ frame, fps }: { frame: number; fps: number }) {
+	const grid = motionProgress(frame, seconds(0.12, fps), seconds(1.2, fps));
+	const scan = (frame % seconds(4.4, fps)) / seconds(4.4, fps);
+
+	return (
+		<>
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						"linear-gradient(135deg, #f7fbff 0%, #ecfdf5 42%, #eff6ff 72%, #fff7ed 100%)",
+				}}
+			/>
+			<div
+				className="absolute inset-0"
+				style={{
+					opacity: grid * 0.72,
+					backgroundImage:
+						"linear-gradient(to right, rgba(16,185,129,0.09) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.08) 1px, transparent 1px)",
+					backgroundSize: "60px 60px",
+				}}
+			/>
+			<div
+				className="absolute inset-y-0 w-[360px]"
+				style={{
+					background:
+						"linear-gradient(90deg, transparent, rgba(255,255,255,0.55), rgba(59,130,246,0.12), transparent)",
+					opacity: grid * 0.7,
+					transform: `translate3d(${interpolate(scan, [0, 1], [-420, 2140])}px, 0, 0) skewX(-10deg)`,
+				}}
+			/>
+		</>
+	);
+}
+
+function MatchingNarrativePanel({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const underline = motionProgress(
+		frame,
+		seconds(1.35, fps),
+		seconds(0.7, fps),
+		EASE_IN_OUT,
+	);
+	const chips = motionProgress(frame, seconds(1.65, fps), seconds(0.9, fps));
+
+	return (
+		<div
+			className="absolute left-[96px] top-[136px] w-[640px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [54, 0])}px, 0, 0)`,
+			}}
+		>
+			<div className="mb-8 inline-flex items-center gap-3 rounded-lg border border-emerald-100 bg-white/82 px-5 py-3 text-[16px] font-black uppercase tracking-normal text-emerald-600 shadow-sm">
+				<Shuffle size={21} />
+				Solution 01
+			</div>
+			<h2 className="text-[70px] font-black leading-[0.98] tracking-normal text-slate-950">
+				프로필 신호로
+				<br />
+				<span className="relative inline-block text-emerald-500">
+					팀을 빠르게 묶어요
+					<span
+						className="absolute -bottom-2 left-0 h-2 rounded-full bg-emerald-200/80"
+						style={{ width: `${underline * 100}%` }}
+					/>
+				</span>
+			</h2>
+			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
+				관심사, 역할, 가능한 속도를 한 화면에서 맞춰 보고
+				<br />
+				시작 가능한 조합만 선명하게 보여줍니다.
+			</p>
+			<div className="mt-8 grid w-[610px] grid-cols-3 gap-3">
+				{matchingSignals.map((signal, index) => {
+					const item = Math.max(0, Math.min(1, chips - index * 0.18));
+
+					return (
+						<div
+							className="rounded-lg border border-white/80 bg-white/78 p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur"
+							key={signal.id}
+							style={{
+								opacity: item,
+								transform: `translate3d(0, ${interpolate(item, [0, 1], [24, 0])}px, 0)`,
+							}}
+						>
+							<div className="mb-2 flex items-center gap-2">
+								<span
+									className="h-2.5 w-2.5 rounded-full"
+									style={{ backgroundColor: signal.color }}
+								/>
+								<p className="text-[13px] font-black text-slate-400">
+									{signal.label}
+								</p>
+							</div>
+							<p className="text-[18px] font-black text-slate-900">
+								{signal.value}
+							</p>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+function MatchingOrbitBoard({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const buttonClick = motionProgress(
+		frame,
+		seconds(1.85, fps),
+		seconds(0.45, fps),
+		EASE_IN_OUT,
+	);
+	const panel = motionProgress(frame, seconds(3.2, fps), seconds(0.9, fps));
+	const scan = motionProgress(frame, seconds(2.25, fps), seconds(0.9, fps));
+
+	return (
+		<div
+			className="absolute right-[42px] top-[64px] h-[900px] w-[1120px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 38) * 4}px, 0)`,
+			}}
+		>
+			<div className="absolute inset-0 overflow-hidden rounded-lg border border-emerald-100/80 bg-white shadow-[0_34px_100px_rgba(15,118,110,0.18)]">
+				<div className="flex h-12 items-center gap-3 border-b border-slate-100 bg-slate-50 px-5">
+					<span className="h-3 w-3 rounded-full bg-rose-300" />
+					<span className="h-3 w-3 rounded-full bg-amber-300" />
+					<span className="h-3 w-3 rounded-full bg-emerald-300" />
+					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
+						team-po.app/matching
+					</div>
+				</div>
+
+				<div className="flex h-20 items-center justify-between border-b border-slate-100 px-7">
+					<div className="flex items-center gap-4">
+						<div className="grid h-12 w-12 place-items-center rounded-lg bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
+							<Shuffle size={25} strokeWidth={2.6} />
+						</div>
+						<div>
+							<p className="text-[24px] font-black text-slate-950">Team-po</p>
+							<p className="mt-0.5 text-[13px] font-bold text-slate-400">
+								Matching workspace
+							</p>
+						</div>
+						<div className="ml-7 flex gap-2 text-[14px] font-black text-slate-400">
+							<span className="rounded-md bg-emerald-50 px-4 py-2 text-emerald-600">
+								팀 매칭
+							</span>
+							<span className="px-4 py-2">팀 스페이스</span>
+							<span className="px-4 py-2">리포트</span>
+						</div>
+					</div>
+					<button
+						className="rounded-lg bg-slate-950 px-6 py-3 text-[16px] font-black text-white shadow-[0_14px_30px_rgba(15,23,42,0.22)]"
+						style={{
+							transform: `scale(${interpolate(buttonClick, [0, 0.45, 1], [1, 0.96, 1.04])})`,
+							boxShadow: `0 14px ${interpolate(buttonClick, [0, 1], [30, 48])}px rgba(15,23,42,0.24)`,
+						}}
+						type="button"
+					>
+						랜덤 매칭 시작
+					</button>
+				</div>
+
+				<div className="grid h-[748px] grid-cols-[318px_1fr] gap-7 bg-[#f8fbff] p-7">
+					<aside className="rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
+						<div className="mb-6 flex items-center justify-between">
+							<div>
+								<p className="text-[19px] font-black text-slate-950">
+									매칭 조건
+								</p>
+								<p className="mt-1 text-[12px] font-bold text-slate-400">
+									입력한 프로필 기준
+								</p>
+							</div>
+							<div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
+								<SlidersHorizontal size={20} />
+							</div>
+						</div>
+						<div className="space-y-4">
+							{matchingSignals.map((signal, index) => {
+								const item = motionProgress(
+									frame,
+									seconds(1.05 + index * 0.16, fps),
+									seconds(0.45, fps),
+								);
+
+								return (
+									<div
+										className="rounded-lg border border-slate-100 bg-slate-50/80 p-4"
+										key={signal.id}
+										style={{
+											opacity: item,
+											transform: `translate3d(0, ${interpolate(item, [0, 1], [18, 0])}px, 0)`,
+										}}
+									>
+										<div className="mb-2 flex items-center gap-2">
+											<span
+												className="h-2.5 w-2.5 rounded-full"
+												style={{ backgroundColor: signal.color }}
+											/>
+											<p className="text-[13px] font-black text-slate-400">
+												{signal.label}
+											</p>
+										</div>
+										<p className="text-[20px] font-black text-slate-950">
+											{signal.value}
+										</p>
+									</div>
+								);
+							})}
+						</div>
+						<div className="mt-6 rounded-lg bg-slate-950 p-5 text-white">
+							<p className="text-[13px] font-bold text-emerald-200">
+								AI 추천 기준
+							</p>
+							<p className="mt-2 text-[18px] font-black leading-snug">
+								역할 균형과 진행 가능성을 함께 계산
+							</p>
+						</div>
+					</aside>
+
+					<section className="relative overflow-hidden rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
+						<div className="mb-5 flex items-center justify-between">
+							<div>
+								<p className="text-[24px] font-black text-slate-950">
+									추천 후보
+								</p>
+								<p className="mt-1 text-[13px] font-bold text-slate-400">
+									이번 주 바로 시작 가능한 프로필
+								</p>
+							</div>
+							<div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-[14px] font-bold text-slate-500">
+								<Search size={17} />
+								React, Spring, PM
+							</div>
+						</div>
+
+						<div
+							className="pointer-events-none absolute left-0 right-0 top-[112px] h-px"
+							style={{
+								background:
+									"linear-gradient(90deg, transparent, rgba(16,185,129,0.55), transparent)",
+								opacity: scan,
+								transform: `translate3d(0, ${interpolate(scan, [0, 1], [0, 470])}px, 0)`,
+							}}
+						/>
+
+						<div className="grid grid-cols-2 gap-4">
+							{matchingProfiles.map((profile, index) => (
+								<MatchingDemoCard
+									frame={frame}
+									fps={fps}
+									index={index}
+									key={profile.id}
+									profile={profile}
+								/>
+							))}
+						</div>
+
+						<RecommendedTeamPanel frame={frame} fps={fps} progress={panel} />
+					</section>
+				</div>
+			</div>
+			<ProductCursor frame={frame} fps={fps} />
+		</div>
+	);
+}
+
+function MatchingDemoCard({
+	frame,
+	fps,
+	index,
+	profile,
+}: {
+	frame: number;
+	fps: number;
+	index: number;
+	profile: (typeof matchingProfiles)[number];
+}) {
+	const enter = motionProgress(
+		frame,
+		seconds(1.0 + profile.delay, fps),
+		seconds(0.72, fps),
+	);
+	const selected = motionProgress(
+		frame,
+		seconds(2.45 + index * 0.18, fps),
+		seconds(0.45, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="relative min-h-[176px] rounded-lg border bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.08)]"
+			style={{
+				borderColor: selected > 0.55 ? profile.color : "#e2e8f0",
+				backgroundColor: selected > 0.55 ? "#f8fffc" : "#ffffff",
+				opacity: enter,
+				transform: `translate3d(0, ${interpolate(enter, [0, 1], [30, 0])}px, 0) scale(${interpolate(selected, [0, 1], [1, 1.025])})`,
+			}}
+		>
+			<div className="flex items-start justify-between">
+				<div className="flex items-center gap-4">
+					<div
+						className="grid h-14 w-14 place-items-center rounded-lg text-white shadow-lg"
+						style={{
+							backgroundColor: profile.color,
+							boxShadow: `0 12px 28px ${profile.color}24`,
+						}}
+					>
+						<MatchingProfileIcon icon={profile.icon} />
+					</div>
+					<div className="min-w-0">
+						<p className="text-[19px] font-black text-slate-950">
+							{profile.name}
+						</p>
+						<p className="mt-1 text-[13px] font-bold text-slate-400">
+							{profile.stack}
+						</p>
+					</div>
+				</div>
+				<div
+					className="grid h-8 w-8 place-items-center rounded-full border"
+					style={{
+						borderColor: selected > 0.55 ? profile.color : "#e2e8f0",
+						backgroundColor: selected > 0.55 ? profile.color : "#ffffff",
+					}}
+				>
+					<Check
+						size={17}
+						strokeWidth={3}
+						style={{ color: "#ffffff", opacity: selected }}
+					/>
+				</div>
+			</div>
+			<div className="mt-5">
+				<div className="mb-2 flex items-center justify-between">
+					<p className="text-[13px] font-black text-slate-400">signal</p>
+					<p
+						className="text-[16px] font-black"
+						style={{ color: profile.color }}
+					>
+						{Math.round(profile.score * enter)}%
+					</p>
+				</div>
+				<div className="h-2.5 rounded-full bg-slate-100">
+					<div
+						className="h-2.5 rounded-full"
+						style={{
+							backgroundColor: profile.color,
+							width: `${interpolate(enter, [0, 1], [12, profile.score])}%`,
+						}}
+					/>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function ProductCursor({ frame, fps }: { frame: number; fps: number }) {
+	const visible = motionProgress(frame, seconds(1.35, fps), seconds(0.35, fps));
+	const click = motionProgress(frame, seconds(1.9, fps), seconds(0.35, fps));
+	const selectClick = motionProgress(
+		frame,
+		seconds(2.65, fps),
+		seconds(0.45, fps),
+	);
+	const x = interpolate(
+		frame,
+		[
+			seconds(1.35, fps),
+			seconds(1.9, fps),
+			seconds(2.55, fps),
+			seconds(3.25, fps),
+			seconds(4.2, fps),
+		],
+		[860, 940, 612, 752, 790],
+		{ extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+	);
+	const y = interpolate(
+		frame,
+		[
+			seconds(1.35, fps),
+			seconds(1.9, fps),
+			seconds(2.55, fps),
+			seconds(3.25, fps),
+			seconds(4.2, fps),
+		],
+		[146, 94, 326, 508, 640],
+		{ extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+	);
+	const ring = Math.max(click, selectClick);
+
+	return (
+		<div
+			className="pointer-events-none absolute z-30"
+			style={{
+				left: x,
+				top: y,
+				opacity: visible,
+				transform: "translate3d(0, 0, 0)",
+			}}
+		>
+			<div
+				className="absolute h-12 w-12 rounded-full border-2 border-emerald-400"
+				style={{
+					opacity: interpolate(ring, [0, 0.2, 1], [0, 0.9, 0]),
+					transform: `translate3d(-19px, -19px, 0) scale(${interpolate(ring, [0, 1], [0.45, 1.35])})`,
+				}}
+			/>
+			<div
+				style={{
+					borderBottom: "18px solid #0f172a",
+					borderRight: "14px solid transparent",
+					filter: "drop-shadow(0 12px 18px rgba(15,23,42,0.22))",
+					height: 0,
+					transform: "rotate(-28deg)",
+					width: 0,
+				}}
+			/>
+		</div>
+	);
+}
+
+function MatchingProfileIcon({
+	icon,
+}: {
+	icon: (typeof matchingProfiles)[number]["icon"];
+}) {
+	if (icon === "code") {
+		return <Code2 size={24} strokeWidth={2.5} />;
+	}
+
+	if (icon === "database") {
+		return <Database size={24} strokeWidth={2.5} />;
+	}
+
+	if (icon === "layers") {
+		return <Layers3 size={24} strokeWidth={2.5} />;
+	}
+
+	return <Palette size={24} strokeWidth={2.5} />;
+}
+
+function RecommendedTeamPanel({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const spark = motionProgress(
+		frame,
+		seconds(3.55, fps),
+		seconds(1.1, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="absolute bottom-6 left-6 right-6 rounded-lg border border-emerald-100 bg-slate-950 p-6 text-white shadow-[0_26px_80px_rgba(15,23,42,0.25)]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(0, ${interpolate(progress, [0, 1], [44, 0])}px, 0)`,
+			}}
+		>
+			<div className="grid grid-cols-[1fr_210px] gap-6">
+				<div>
+					<div className="mb-4 flex items-center gap-3">
+						<div className="grid h-12 w-12 place-items-center rounded-lg bg-emerald-400 text-slate-950">
+							<BadgeCheck size={25} strokeWidth={2.6} />
+						</div>
+						<div>
+							<p className="text-[24px] font-black leading-tight">
+								MVP 런칭 스쿼드 추천
+							</p>
+							<p className="mt-1 text-[13px] font-bold text-slate-300">
+								목표, 속도, 역할 균형이 맞는 조합입니다.
+							</p>
+						</div>
+					</div>
+					<div className="grid grid-cols-3 gap-2">
+						{["FE", "BE", "PM"].map((role, index) => (
+							<div
+								className="rounded-lg bg-white px-3 py-3 text-center text-[15px] font-black text-slate-950"
+								key={role}
+								style={{
+									opacity: motionProgress(
+										frame,
+										seconds(3.45 + index * 0.14, fps),
+										seconds(0.34, fps),
+									),
+								}}
+							>
+								{role}
+							</div>
+						))}
+					</div>
+				</div>
+				<div
+					className="rounded-lg bg-white/10 p-5"
+					style={{
+						boxShadow: `0 0 ${interpolate(spark, [0, 1], [0, 28])}px rgba(52,211,153,0.45)`,
+					}}
+				>
+					<p className="text-[13px] font-bold text-emerald-200">match score</p>
+					<p className="mt-2 text-[42px] font-black leading-none text-white">
+						98%
+					</p>
+					<p className="mt-2 text-[12px] font-bold text-slate-300">
+						바로 팀 스페이스 생성 가능
+					</p>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function MatchingRevealEdge({ reveal }: { reveal: number }) {
+	return (
+		<div
+			className="absolute inset-y-[-8%] left-0 w-[240px]"
+			style={{
+				background:
+					"linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.92) 40%, rgba(16,185,129,0.24) 72%, transparent 100%)",
+				filter: "blur(8px)",
+				opacity: interpolate(reveal, [0, 0.35, 0.82, 1], [0, 0.88, 0.38, 0]),
+				transform: `translate3d(${interpolate(reveal, [0, 1], [1700, -280])}px, 0, 0) skewX(-10deg)`,
 				transformOrigin: "left center",
 			}}
 		/>

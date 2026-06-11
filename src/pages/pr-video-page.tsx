@@ -45,7 +45,7 @@ export function PrVideoPage() {
 
 				<PrVideoPlayer />
 
-				<section className="grid gap-3 md:grid-cols-5">
+				<section className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
 					{openingSceneTimeline.map((item) => (
 						<div
 							className="rounded-lg border border-white/10 bg-white/[0.06] p-4"

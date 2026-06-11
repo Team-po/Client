@@ -13,6 +13,7 @@
 		"video:studio": "remotion studio src/remotion-entry.tsx",
 		"video:still": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-opening-frame.png --frame=110 --scale=0.5",
 		"video:still:problem": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-problem-frame.png --frame=330 --scale=0.5",
+		"video:still:matching": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-matching-frame.png --frame=520 --scale=0.5",
 		"video:render": "remotion render src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-opening.mp4"
 	},
 	"dependencies": {
