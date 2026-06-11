@@ -3305,6 +3305,25 @@ function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
 		seconds(0.78, fps),
 		EASE_IN_OUT,
 	);
+	const shine = motionProgress(
+		frame,
+		seconds(3.18, fps),
+		seconds(0.86, fps),
+		EASE_IN_OUT,
+	);
+	const shineStyle: CSSProperties = {
+		backgroundClip: "text",
+		backgroundImage:
+			"linear-gradient(112deg, transparent 0%, transparent 44%, rgba(219,234,254,0.18) 48%, rgba(255,255,255,0.88) 50%, rgba(96,165,250,0.42) 52%, transparent 57%, transparent 100%)",
+		backgroundPosition: `${interpolate(shine, [0, 1], [-172, 190])}% 50%`,
+		backgroundRepeat: "no-repeat",
+		backgroundSize: "340% 100%",
+		color: "transparent",
+		filter: `drop-shadow(0 0 ${interpolate(shine, [0, 0.52, 1], [0, 11, 0])}px rgba(96, 165, 250, 0.22))`,
+		opacity: interpolate(shine, [0, 0.14, 0.78, 1], [0, 0.68, 0.5, 0]),
+		WebkitBackgroundClip: "text",
+		WebkitTextFillColor: "transparent",
+	};
 
 	return (
 		<div className="absolute left-[138px] top-[212px] z-20 w-[1020px]">
@@ -3318,39 +3337,50 @@ function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
 				<Sparkles size={17} strokeWidth={2.7} />
 				Kinetic Service Recap
 			</div>
-			<h2 className="text-[104px] font-black leading-[0.98] tracking-normal text-slate-950">
-				<span
-					className="block"
-					style={{
-						opacity: lineOne,
-						transform: `translate3d(${interpolate(lineOne, [0, 1], [-54, 0])}px, 0, 0)`,
-					}}
-				>
-					팀 찾기부터
-				</span>
-				<span
-					className="block text-blue-500"
-					style={{
-						opacity: lineTwo,
-						transform: `translate3d(${interpolate(lineTwo, [0, 1], [72, 0])}px, 0, 0)`,
-					}}
-				>
-					완주까지
-				</span>
-				<span
-					className="relative block"
-					style={{
-						opacity: lineThree,
-						transform: `translate3d(0, ${interpolate(lineThree, [0, 1], [42, 0])}px, 0)`,
-					}}
-				>
-					한 흐름으로
+			<div className="relative w-[1020px]">
+				<h2 className="text-[104px] font-black leading-[0.98] tracking-normal text-slate-950">
 					<span
-						className="absolute -bottom-4 left-1 h-3 rounded-full bg-blue-200/80"
-						style={{ width: `${underline * 100}%` }}
-					/>
-				</span>
-			</h2>
+						className="block"
+						style={{
+							opacity: lineOne,
+							transform: `translate3d(${interpolate(lineOne, [0, 1], [-54, 0])}px, 0, 0)`,
+						}}
+					>
+						팀 찾기부터
+					</span>
+					<span
+						className="block text-blue-500"
+						style={{
+							opacity: lineTwo,
+							transform: `translate3d(${interpolate(lineTwo, [0, 1], [72, 0])}px, 0, 0)`,
+						}}
+					>
+						완주까지
+					</span>
+					<span
+						className="relative block"
+						style={{
+							opacity: lineThree,
+							transform: `translate3d(0, ${interpolate(lineThree, [0, 1], [42, 0])}px, 0)`,
+						}}
+					>
+						한 흐름으로
+						<span
+							className="absolute -bottom-4 left-1 h-3 rounded-full bg-blue-200/80"
+							style={{ width: `${underline * 100}%` }}
+						/>
+					</span>
+				</h2>
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute inset-0 text-[104px] font-black leading-[0.98] tracking-normal"
+					style={shineStyle}
+				>
+					<span className="block">팀 찾기부터</span>
+					<span className="block">완주까지</span>
+					<span className="block">한 흐름으로</span>
+				</div>
+			</div>
 			<p
 				className="mt-10 max-w-[720px] text-[28px] font-extrabold leading-[1.42] text-slate-600"
 				style={{
@@ -3429,16 +3459,16 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 				strokeDasharray="170 1900"
 				strokeDashoffset={interpolate(sweep, [0, 1], [1180, -760])}
 				strokeLinecap="round"
-				strokeWidth="14"
+				strokeWidth="10"
 				style={{
-					opacity: interpolate(sweep, [0, 0.16, 0.82, 1], [0, 0.76, 0.62, 0]),
+					opacity: interpolate(sweep, [0, 0.16, 0.82, 1], [0, 0.42, 0.3, 0]),
 				}}
 			/>
 			<circle
 				cx={interpolate(draw, [0, 1], [80, 1638])}
 				cy={interpolate(draw, [0, 0.35, 0.72, 1], [792, 762, 606, 488])}
 				fill="#ffffff"
-				r={interpolate(sweep, [0, 0.5, 1], [8, 13, 8])}
+				r={interpolate(sweep, [0, 0.5, 1], [8, 11, 8])}
 				stroke="#3b82f6"
 				strokeWidth="6"
 				style={{ opacity: draw }}
