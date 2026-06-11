@@ -3363,11 +3363,11 @@ function ClosingRecapFlowWindow({
 					</div>
 				</div>
 
-				<div className="relative z-10 mt-4 h-[526px] overflow-hidden rounded-lg border border-slate-100 bg-white/70">
+				<div className="relative z-10 mt-4 h-[568px] overflow-hidden rounded-lg border border-slate-100 bg-white/70">
 					<svg
 						aria-hidden="true"
 						className="absolute inset-0 h-full w-full overflow-visible"
-						viewBox="0 0 1020 526"
+						viewBox="0 0 1020 568"
 					>
 						<defs>
 							<linearGradient
