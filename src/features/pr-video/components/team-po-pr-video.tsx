@@ -1760,7 +1760,6 @@ function MatchingNarrativePanel({
 		seconds(0.7, fps),
 		EASE_IN_OUT,
 	);
-	const chips = motionProgress(frame, seconds(1.65, fps), seconds(0.9, fps));
 
 	return (
 		<div
@@ -1790,35 +1789,6 @@ function MatchingNarrativePanel({
 				<br />
 				함께 시작할 팀을 빠르게 찾습니다.
 			</p>
-			<div className="mt-8 grid w-[610px] grid-cols-3 gap-3">
-				{matchingSignals.map((signal, index) => {
-					const item = Math.max(0, Math.min(1, chips - index * 0.18));
-
-					return (
-						<div
-							className="rounded-lg border border-white/80 bg-white/78 p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur"
-							key={signal.id}
-							style={{
-								opacity: item,
-								transform: `translate3d(0, ${interpolate(item, [0, 1], [24, 0])}px, 0)`,
-							}}
-						>
-							<div className="mb-2 flex items-center gap-2">
-								<span
-									className="h-2.5 w-2.5 rounded-full"
-									style={{ backgroundColor: signal.color }}
-								/>
-								<p className="text-[13px] font-black text-slate-400">
-									{signal.label}
-								</p>
-							</div>
-							<p className="text-[18px] font-black text-slate-900">
-								{signal.value}
-							</p>
-						</div>
-					);
-				})}
-			</div>
 		</div>
 	);
 }
@@ -3395,6 +3365,8 @@ function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
 }
 
 function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
+	const flowPath =
+		"M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544";
 	const draw = motionProgress(
 		frame,
 		seconds(0.9, fps),
@@ -3407,6 +3379,13 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 		seconds(1.05, fps),
 		EASE_IN_OUT,
 	);
+	const comet = motionProgress(
+		frame,
+		seconds(4.72, fps),
+		seconds(2.1, fps),
+		EASE_IN_OUT,
+	);
+	const cometOpacity = interpolate(comet, [0, 0.06, 0.9, 1], [0, 1, 0.88, 0]);
 	const dash = (frame % seconds(2.1, fps)) / seconds(2.1, fps);
 
 	return (
@@ -3422,9 +3401,24 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 					<stop offset="68%" stopColor="#6366f1" />
 					<stop offset="100%" stopColor="#f59e0b" />
 				</linearGradient>
+				<linearGradient id="kinetic-comet-gradient" x1="0" x2="1" y1="0" y2="0">
+					<stop offset="0%" stopColor="rgba(96,165,250,0)" />
+					<stop offset="45%" stopColor="rgba(219,234,254,0.76)" />
+					<stop offset="78%" stopColor="rgba(255,255,255,0.96)" />
+					<stop offset="100%" stopColor="rgba(16,185,129,0.68)" />
+				</linearGradient>
+				<filter
+					id="kinetic-comet-blur"
+					x="-20%"
+					y="-80%"
+					width="140%"
+					height="260%"
+				>
+					<feGaussianBlur stdDeviation="7" />
+				</filter>
 			</defs>
 			<path
-				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				d={flowPath}
 				fill="none"
 				pathLength={1}
 				stroke="rgba(148,163,184,0.22)"
@@ -3432,7 +3426,7 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 				strokeWidth="34"
 			/>
 			<path
-				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				d={flowPath}
 				fill="none"
 				pathLength={1}
 				stroke="url(#kinetic-flow-gradient)"
@@ -3442,7 +3436,7 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 				strokeWidth="21"
 			/>
 			<path
-				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				d={flowPath}
 				fill="none"
 				stroke="rgba(255,255,255,0.82)"
 				strokeDasharray="20 52"
@@ -3452,7 +3446,7 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 				style={{ opacity: draw * 0.86 }}
 			/>
 			<path
-				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				d={flowPath}
 				fill="none"
 				stroke="rgba(255,255,255,0.82)"
 				strokeDasharray="170 1900"
@@ -3463,14 +3457,32 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 					opacity: interpolate(sweep, [0, 0.16, 0.82, 1], [0, 0.42, 0.3, 0]),
 				}}
 			/>
-			<circle
-				cx={interpolate(draw, [0, 1], [80, 1638])}
-				cy={interpolate(draw, [0, 0.35, 0.72, 1], [792, 762, 606, 488])}
-				fill="#ffffff"
-				r={interpolate(sweep, [0, 0.5, 1], [8, 11, 8])}
-				stroke="#3b82f6"
-				strokeWidth="6"
-				style={{ opacity: draw }}
+			<path
+				d={flowPath}
+				fill="none"
+				pathLength={1}
+				stroke="rgba(147,197,253,0.46)"
+				strokeDasharray="0.18 1"
+				strokeDashoffset={1 - comet}
+				strokeLinecap="round"
+				strokeWidth="34"
+				style={{
+					filter: "url(#kinetic-comet-blur)",
+					opacity: cometOpacity * draw * 0.62,
+				}}
+			/>
+			<path
+				d={flowPath}
+				fill="none"
+				pathLength={1}
+				stroke="url(#kinetic-comet-gradient)"
+				strokeDasharray="0.12 1"
+				strokeDashoffset={1 - comet}
+				strokeLinecap="round"
+				strokeWidth="15"
+				style={{
+					opacity: cometOpacity * draw,
+				}}
 			/>
 		</svg>
 	);
@@ -3528,6 +3540,13 @@ function KineticFeatureToken({
 		seconds(0.72, fps),
 		EASE_IN_OUT,
 	);
+	const ignition = motionProgress(
+		frame,
+		seconds(4.82 + index * 0.48, fps),
+		seconds(0.76, fps),
+		EASE_OUT,
+	);
+	const ignitionGlow = interpolate(ignition, [0, 0.32, 1], [0, 1, 0]);
 	const float =
 		Math.sin(frame / 13 + index * 1.8) * interpolate(lock, [0, 1], [20, 4]);
 
@@ -3539,21 +3558,41 @@ function KineticFeatureToken({
 				left: target.x,
 				top: target.y,
 				opacity: enter,
+				boxShadow: `0 20px 64px rgba(15,23,42,0.14), 0 0 ${interpolate(ignitionGlow, [0, 1], [0, 42])}px ${item.color}55`,
 				transform: `translate3d(${interpolate(enter, [0, 1], [target.fromX, 0])}px, ${
 					interpolate(enter, [0, 1], [target.fromY, 0]) + float
 				}px, 0) rotate(${interpolate(enter, [0, 1], [target.rotate, 0])}deg) scale(${
 					interpolate(enter, [0, 1], [0.68, 1]) *
-					interpolate(pulse, [0, 0.48, 1], [1, 1.08, 1])
+					interpolate(pulse, [0, 0.48, 1], [1, 1.08, 1]) *
+					interpolate(ignition, [0, 0.32, 1], [1, 1.045, 1])
 				})`,
 			}}
 		>
 			<div
-				className="grid h-14 w-14 place-items-center rounded-full text-white"
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-[-9px] rounded-full border-2"
+				style={{
+					borderColor: item.color,
+					opacity: ignitionGlow * 0.62,
+					transform: `scale(${interpolate(ignition, [0, 1], [0.9, 1.22])})`,
+				}}
+			/>
+			<div
+				className="relative grid h-14 w-14 place-items-center rounded-full text-white"
 				style={{
 					backgroundColor: item.color,
-					boxShadow: `0 12px 32px ${item.color}44`,
+					boxShadow: `0 12px 32px ${item.color}44, 0 0 ${interpolate(ignitionGlow, [0, 1], [0, 28])}px ${item.color}88`,
 				}}
 			>
+				<span
+					aria-hidden="true"
+					className="absolute inset-[-7px] rounded-full border"
+					style={{
+						borderColor: item.color,
+						opacity: ignitionGlow * 0.7,
+						transform: `scale(${interpolate(ignition, [0, 1], [0.86, 1.34])})`,
+					}}
+				/>
 				<KineticFeatureIcon id={item.id} />
 			</div>
 			<div>
