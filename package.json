@@ -15,6 +15,7 @@
 		"video:still:problem": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-problem-frame.png --frame=330 --scale=0.5",
 		"video:still:matching": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-matching-frame.png --frame=520 --scale=0.5",
 		"video:still:workspace": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-workspace-frame.png --frame=820 --scale=0.5",
+		"video:still:report": "remotion still src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-report-frame.png --frame=1120 --scale=0.5",
 		"video:render": "remotion render src/remotion-entry.tsx TeamPoPrVideo artifacts/pr-video/team-po-pr-opening.mp4"
 	},
 	"dependencies": {

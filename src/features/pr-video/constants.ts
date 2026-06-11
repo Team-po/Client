@@ -3,7 +3,7 @@ export const TEAM_PO_PR_VIDEO = {
 	width: 1920,
 	height: 1080,
 	fps: 30,
-	durationInFrames: 930,
+	durationInFrames: 1260,
 } as const;
 
 export const openingSceneTimeline = [
@@ -42,5 +42,13 @@ export const openingSceneTimeline = [
 	{
 		time: "24.0s",
 		label: "라이프사이클과 체크리스트가 함께 업데이트",
+	},
+	{
+		time: "30.0s",
+		label: "진척 리포트 대시보드 UI 진입",
+	},
+	{
+		time: "35.0s",
+		label: "GitHub 활동과 AI 인사이트가 다음 액션으로 연결",
 	},
 ] as const;

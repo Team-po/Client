@@ -38,6 +38,8 @@ const MATCHING_SCENE_START_FRAME = 330;
 const MATCHING_SCENE_FRAMES = 300;
 const WORKSPACE_SCENE_START_FRAME = 600;
 const WORKSPACE_SCENE_FRAMES = 330;
+const REPORT_SCENE_START_FRAME = 900;
+const REPORT_SCENE_FRAMES = 360;
 
 const candidateRows = [
 	{ name: "Frontend", stack: "React", color: "bg-blue-500" },
@@ -261,6 +263,33 @@ const workspaceChecklist = [
 	"데모 배포 체크",
 ] as const;
 
+const reportMetrics = [
+	{ id: "pr", label: "PR merged", value: 84, color: "#3b82f6" },
+	{ id: "task", label: "Tasks done", value: 72, color: "#10b981" },
+	{ id: "pace", label: "Shipping pace", value: 61, color: "#f59e0b" },
+] as const;
+
+const reportRows = [
+	{
+		id: "row-pr",
+		title: "로그인 플로우 PR merged",
+		meta: "GitHub · 12분 전",
+		color: "#3b82f6",
+	},
+	{
+		id: "row-task",
+		title: "배포 체크리스트 3개 완료",
+		meta: "Checklist · 오늘",
+		color: "#10b981",
+	},
+	{
+		id: "row-risk",
+		title: "API 응답 지연 이슈 감지",
+		meta: "AI signal · 확인 필요",
+		color: "#f59e0b",
+	},
+] as const;
+
 export function TeamPoPrVideo() {
 	return (
 		<AbsoluteFill className="overflow-hidden bg-[#f7fbff] font-body text-slate-950">
@@ -284,6 +313,12 @@ export function TeamPoPrVideo() {
 				from={WORKSPACE_SCENE_START_FRAME}
 			>
 				<WorkspaceDemoScene />
+			</Sequence>
+			<Sequence
+				durationInFrames={REPORT_SCENE_FRAMES}
+				from={REPORT_SCENE_START_FRAME}
+			>
+				<ReportDemoScene />
 			</Sequence>
 		</AbsoluteFill>
 	);
@@ -2405,6 +2440,443 @@ function TouchPulse({
 				}}
 			/>
 		</div>
+	);
+}
+
+function ReportDemoScene() {
+	const frame = useCurrentFrame();
+	const { fps } = useVideoConfig();
+	const reveal = motionProgress(frame, 0, seconds(0.92, fps), EASE_IN_OUT);
+	const revealEdgeTop = interpolate(reveal, [0, 1], [112, -18]);
+	const revealEdgeBottom = interpolate(reveal, [0, 1], [102, -28]);
+	const intro = motionProgress(frame, seconds(0.32, fps), seconds(0.84, fps));
+	const windowProgress = motionProgress(
+		frame,
+		seconds(0.62, fps),
+		seconds(1.02, fps),
+	);
+
+	return (
+		<AbsoluteFill
+			className="overflow-hidden bg-[#fbfdff] text-slate-950"
+			style={{
+				clipPath: `polygon(${revealEdgeTop}% 0, 100% 0, 100% 100%, ${revealEdgeBottom}% 100%)`,
+			}}
+		>
+			<ReportDemoBackground frame={frame} fps={fps} />
+			<ReportNarrativePanel frame={frame} fps={fps} progress={intro} />
+			<ReportDemoWindow frame={frame} fps={fps} progress={windowProgress} />
+			<MatchingRevealEdge reveal={reveal} />
+		</AbsoluteFill>
+	);
+}
+
+function ReportDemoBackground({ frame, fps }: { frame: number; fps: number }) {
+	const grid = motionProgress(frame, seconds(0.1, fps), seconds(1.1, fps));
+	const sweep = (frame % seconds(4.8, fps)) / seconds(4.8, fps);
+
+	return (
+		<>
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						"linear-gradient(135deg, #f8fbff 0%, #eef2ff 42%, #f0fdf4 72%, #fff7ed 100%)",
+				}}
+			/>
+			<div
+				className="absolute inset-0"
+				style={{
+					opacity: grid * 0.72,
+					backgroundImage:
+						"linear-gradient(to right, rgba(99,102,241,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(16,185,129,0.07) 1px, transparent 1px)",
+					backgroundSize: "60px 60px",
+				}}
+			/>
+			<div
+				className="absolute inset-y-0 w-[380px]"
+				style={{
+					background:
+						"linear-gradient(90deg, transparent, rgba(255,255,255,0.58), rgba(99,102,241,0.12), transparent)",
+					opacity: grid * 0.72,
+					transform: `translate3d(${interpolate(sweep, [0, 1], [-460, 2220])}px, 0, 0) skewX(-10deg)`,
+				}}
+			/>
+		</>
+	);
+}
+
+function ReportNarrativePanel({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const underline = motionProgress(
+		frame,
+		seconds(1.22, fps),
+		seconds(0.72, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="absolute left-[96px] top-[136px] w-[640px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [54, 0])}px, 0, 0)`,
+			}}
+		>
+			<div className="mb-8 inline-flex items-center gap-3 rounded-lg border border-indigo-100 bg-white/82 px-5 py-3 text-[16px] font-black uppercase tracking-normal text-indigo-600 shadow-sm">
+				<GitBranch size={21} />
+				Solution 03
+			</div>
+			<h2 className="text-[70px] font-black leading-[0.98] tracking-normal text-slate-950">
+				진척은 자동으로
+				<br />
+				<span className="relative inline-block text-indigo-500">
+					팀에게 돌아와요
+					<span
+						className="absolute -bottom-2 left-0 h-2 rounded-full bg-indigo-200/80"
+						style={{ width: `${underline * 100}%` }}
+					/>
+				</span>
+			</h2>
+			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
+				GitHub, 체크리스트, 활동 신호를 묶어
+				<br />
+				다음 액션이 필요한 지점을 바로 보여줍니다.
+			</p>
+		</div>
+	);
+}
+
+function ReportDemoWindow({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const insight = motionProgress(frame, seconds(3.15, fps), seconds(0.9, fps));
+
+	return (
+		<div
+			className="absolute right-[42px] top-[64px] h-[900px] w-[1120px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 42) * 4}px, 0)`,
+			}}
+		>
+			<div className="absolute inset-0 overflow-hidden rounded-lg border border-indigo-100/80 bg-white shadow-[0_34px_100px_rgba(67,56,202,0.16)]">
+				<div className="flex h-12 items-center gap-3 border-b border-slate-100 bg-slate-50 px-5">
+					<span className="h-3 w-3 rounded-full bg-rose-300" />
+					<span className="h-3 w-3 rounded-full bg-amber-300" />
+					<span className="h-3 w-3 rounded-full bg-emerald-300" />
+					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
+						team-po.app/report
+					</div>
+				</div>
+
+				<div className="grid h-[848px] grid-cols-[248px_1fr] bg-[#f8fbff]">
+					<aside className="border-r border-slate-100 bg-white p-6">
+						<div className="mb-7 flex items-center gap-3">
+							<div className="grid h-11 w-11 place-items-center rounded-lg bg-indigo-500 text-white">
+								<GitBranch size={22} />
+							</div>
+							<div>
+								<p className="text-[21px] font-black text-slate-950">Team-po</p>
+								<p className="text-[12px] font-bold text-slate-400">Report</p>
+							</div>
+						</div>
+						<div className="space-y-2 text-[15px] font-black">
+							<div className="px-4 py-3 text-slate-400">프로젝트 홈</div>
+							<div className="px-4 py-3 text-slate-400">체크리스트</div>
+							<div className="rounded-lg bg-indigo-50 px-4 py-3 text-indigo-600">
+								진척 리포트
+							</div>
+							<div className="px-4 py-3 text-slate-400">회고</div>
+						</div>
+						<div className="mt-8 rounded-lg bg-slate-950 p-5 text-white">
+							<p className="text-[13px] font-bold text-indigo-200">이번 주</p>
+							<p className="mt-2 text-[25px] font-black">Shipping</p>
+							<p className="mt-2 text-[12px] font-bold text-slate-300">
+								릴리즈까지 D-3
+							</p>
+						</div>
+					</aside>
+
+					<main className="relative p-7">
+						<div className="mb-6 flex items-start justify-between">
+							<div>
+								<p className="text-[32px] font-black text-slate-950">
+									진척 리포트
+								</p>
+								<p className="mt-2 text-[15px] font-bold text-slate-500">
+									GitHub + 체크리스트 + 팀 활동 신호
+								</p>
+							</div>
+							<div className="flex items-center gap-2 rounded-lg bg-indigo-50 px-5 py-3 text-[15px] font-black text-indigo-600">
+								<Sparkles size={18} />
+								AI signal synced
+							</div>
+						</div>
+
+						<div className="grid grid-cols-3 gap-4">
+							{reportMetrics.map((metric, index) => (
+								<ReportMetricCard
+									frame={frame}
+									fps={fps}
+									index={index}
+									key={metric.id}
+									metric={metric}
+								/>
+							))}
+						</div>
+
+						<div className="mt-5 grid grid-cols-[1.1fr_0.9fr] gap-5">
+							<ReportTrendChart frame={frame} fps={fps} />
+							<ReportActivityList frame={frame} fps={fps} />
+						</div>
+
+						<ReportInsightPanel progress={insight} />
+						<ReportTouchPulse frame={frame} fps={fps} />
+					</main>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function ReportMetricCard({
+	frame,
+	fps,
+	index,
+	metric,
+}: {
+	frame: number;
+	fps: number;
+	index: number;
+	metric: (typeof reportMetrics)[number];
+}) {
+	const enter = motionProgress(
+		frame,
+		seconds(1.05 + index * 0.15, fps),
+		seconds(0.55, fps),
+	);
+	const fill = motionProgress(
+		frame,
+		seconds(1.7 + index * 0.18, fps),
+		seconds(1.1, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm"
+			style={{
+				opacity: enter,
+				transform: `translate3d(0, ${interpolate(enter, [0, 1], [24, 0])}px, 0)`,
+			}}
+		>
+			<div className="mb-4 flex items-center justify-between">
+				<p className="text-[14px] font-black text-slate-400">{metric.label}</p>
+				<Activity size={17} style={{ color: metric.color }} />
+			</div>
+			<p className="text-[38px] font-black leading-none text-slate-950">
+				{Math.round(metric.value * fill)}%
+			</p>
+			<div className="mt-5 h-2.5 rounded-full bg-slate-100">
+				<div
+					className="h-2.5 rounded-full"
+					style={{
+						backgroundColor: metric.color,
+						width: `${metric.value * fill}%`,
+					}}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function ReportTrendChart({ frame, fps }: { frame: number; fps: number }) {
+	const draw = motionProgress(frame, seconds(1.8, fps), seconds(1.6, fps));
+	const points = [
+		{ x: 32, y: 210 },
+		{ x: 112, y: 172 },
+		{ x: 192, y: 184 },
+		{ x: 272, y: 118 },
+		{ x: 352, y: 96 },
+		{ x: 432, y: 62 },
+	];
+
+	return (
+		<div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+			<div className="mb-4 flex items-center justify-between">
+				<div>
+					<p className="text-[21px] font-black text-slate-950">완주 추세</p>
+					<p className="mt-1 text-[12px] font-bold text-slate-400">
+						최근 6일 활동 흐름
+					</p>
+				</div>
+				<p className="rounded-md bg-emerald-50 px-3 py-1.5 text-[12px] font-black text-emerald-600">
+					+18%
+				</p>
+			</div>
+			<svg
+				aria-hidden="true"
+				className="h-[258px] w-full"
+				viewBox="0 0 470 260"
+			>
+				{[50, 110, 170, 230].map((y) => (
+					<line
+						key={y}
+						stroke="rgba(148,163,184,0.24)"
+						strokeDasharray="6 8"
+						x1="24"
+						x2="448"
+						y1={y}
+						y2={y}
+					/>
+				))}
+				<polyline
+					fill="none"
+					points={points.map((point) => `${point.x},${point.y}`).join(" ")}
+					stroke="#6366f1"
+					strokeDasharray="680"
+					strokeWidth="6"
+					style={{
+						strokeDashoffset: 680 * (1 - draw),
+					}}
+				/>
+				{points.map((point, index) => {
+					const dot = motionProgress(
+						frame,
+						seconds(2.2 + index * 0.12, fps),
+						seconds(0.3, fps),
+					);
+
+					return (
+						<circle
+							cx={point.x}
+							cy={point.y}
+							fill="#ffffff"
+							key={`${point.x}-${point.y}`}
+							r={8 * dot}
+							stroke="#6366f1"
+							strokeWidth="5"
+						/>
+					);
+				})}
+			</svg>
+		</div>
+	);
+}
+
+function ReportActivityList({ frame, fps }: { frame: number; fps: number }) {
+	return (
+		<div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+			<div className="mb-5 flex items-center justify-between">
+				<p className="text-[21px] font-black text-slate-950">활동 신호</p>
+				<GitPullRequest size={22} className="text-indigo-500" />
+			</div>
+			<div className="space-y-3">
+				{reportRows.map((row, index) => {
+					const enter = motionProgress(
+						frame,
+						seconds(1.55 + index * 0.22, fps),
+						seconds(0.52, fps),
+					);
+
+					return (
+						<div
+							className="rounded-lg border border-slate-100 bg-slate-50/80 p-4"
+							key={row.id}
+							style={{
+								opacity: enter,
+								transform: `translate3d(0, ${interpolate(enter, [0, 1], [20, 0])}px, 0)`,
+							}}
+						>
+							<div className="mb-3 flex items-center gap-3">
+								<span
+									className="h-3 w-3 rounded-full"
+									style={{ backgroundColor: row.color }}
+								/>
+								<p className="text-[12px] font-black text-slate-400">
+									{row.meta}
+								</p>
+							</div>
+							<p className="text-[16px] font-black leading-snug text-slate-950">
+								{row.title}
+							</p>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+function ReportInsightPanel({ progress }: { progress: number }) {
+	return (
+		<div
+			className="absolute bottom-7 left-7 right-7 rounded-lg border border-indigo-100 bg-slate-950 p-6 text-white shadow-[0_24px_72px_rgba(15,23,42,0.24)]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(0, ${interpolate(progress, [0, 1], [44, 0])}px, 0)`,
+			}}
+		>
+			<div className="grid grid-cols-[1fr_210px] gap-6">
+				<div className="flex items-center gap-4">
+					<div className="grid h-12 w-12 place-items-center rounded-lg bg-indigo-400 text-slate-950">
+						<Sparkles size={25} strokeWidth={2.6} />
+					</div>
+					<div>
+						<p className="text-[23px] font-black">
+							이번 주 병목은 API 응답 지연
+						</p>
+						<p className="mt-1 text-[13px] font-bold text-slate-300">
+							배포 체크리스트 전에 API 이슈를 먼저 닫는 것을 추천합니다.
+						</p>
+					</div>
+				</div>
+				<div className="rounded-lg bg-white/10 p-4">
+					<p className="text-[13px] font-bold text-indigo-200">next action</p>
+					<p className="mt-2 text-[20px] font-black">BE 리뷰 요청</p>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function ReportTouchPulse({ frame, fps }: { frame: number; fps: number }) {
+	const metricTap = motionProgress(
+		frame,
+		seconds(1.76, fps),
+		seconds(0.48, fps),
+	);
+	const chartTap = motionProgress(
+		frame,
+		seconds(2.72, fps),
+		seconds(0.52, fps),
+	);
+	const insightTap = motionProgress(
+		frame,
+		seconds(3.62, fps),
+		seconds(0.52, fps),
+	);
+
+	return (
+		<>
+			<TouchPulse color="#6366f1" progress={metricTap} x={178} y={170} />
+			<TouchPulse color="#10b981" progress={chartTap} x={392} y={420} />
+			<TouchPulse color="#6366f1" progress={insightTap} x={620} y={710} />
+		</>
 	);
 }
 
