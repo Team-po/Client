@@ -3307,12 +3307,7 @@ function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
 	);
 
 	return (
-		<div
-			className="absolute left-[138px] top-[212px] z-20 w-[1020px]"
-			style={{
-				transform: `scale(${interpolate(lock, [0, 0.55, 1], [1, 1.035, 1])})`,
-			}}
-		>
+		<div className="absolute left-[138px] top-[212px] z-20 w-[1020px]">
 			<div
 				className="mb-6 inline-flex items-center gap-3 rounded-lg border border-blue-100 bg-white/76 px-5 py-3 text-[15px] font-black uppercase tracking-normal text-blue-500 shadow-sm backdrop-blur"
 				style={{
@@ -3377,7 +3372,12 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 		seconds(2.5, fps),
 		EASE_IN_OUT,
 	);
-	const surge = motionProgress(frame, seconds(3.1, fps), seconds(1.1, fps));
+	const sweep = motionProgress(
+		frame,
+		seconds(3.08, fps),
+		seconds(1.05, fps),
+		EASE_IN_OUT,
+	);
 	const dash = (frame % seconds(2.1, fps)) / seconds(2.1, fps);
 
 	return (
@@ -3410,7 +3410,7 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 				strokeDasharray={1}
 				strokeDashoffset={1 - draw}
 				strokeLinecap="round"
-				strokeWidth={interpolate(surge, [0, 1], [18, 28])}
+				strokeWidth="21"
 			/>
 			<path
 				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
@@ -3422,11 +3422,23 @@ function KineticRecapRibbon({ frame, fps }: { frame: number; fps: number }) {
 				strokeWidth="7"
 				style={{ opacity: draw * 0.86 }}
 			/>
+			<path
+				d="M-120 824 C250 640 516 884 786 712 C1048 545 1212 690 1464 542 C1638 440 1776 428 2060 544"
+				fill="none"
+				stroke="rgba(255,255,255,0.82)"
+				strokeDasharray="170 1900"
+				strokeDashoffset={interpolate(sweep, [0, 1], [1180, -760])}
+				strokeLinecap="round"
+				strokeWidth="14"
+				style={{
+					opacity: interpolate(sweep, [0, 0.16, 0.82, 1], [0, 0.76, 0.62, 0]),
+				}}
+			/>
 			<circle
 				cx={interpolate(draw, [0, 1], [80, 1638])}
 				cy={interpolate(draw, [0, 0.35, 0.72, 1], [792, 762, 606, 488])}
 				fill="#ffffff"
-				r={interpolate(surge, [0, 1], [8, 16])}
+				r={interpolate(sweep, [0, 0.5, 1], [8, 13, 8])}
 				stroke="#3b82f6"
 				strokeWidth="6"
 				style={{ opacity: draw }}
