@@ -325,27 +325,47 @@ const reportRows = [
 const closingFlow = [
 	{
 		id: "matching",
-		label: "팀 매칭",
-		title: "역할과 목표가 맞는 팀 생성",
+		label: "팀 찾기",
+		title: "랜덤 매칭",
+		detail: "역할·목표·속도 신호 정렬",
 		color: "#10b981",
+		fromX: -260,
+		fromY: -110,
+		x: 34,
+		y: 206,
 	},
 	{
 		id: "workspace",
-		label: "운영",
-		title: "상태와 체크리스트로 같은 화면 보기",
+		label: "팀 운영",
+		title: "워크스페이스",
+		detail: "상태와 체크리스트를 한 화면에",
 		color: "#3b82f6",
+		fromX: -80,
+		fromY: -240,
+		x: 286,
+		y: 92,
 	},
 	{
 		id: "report",
-		label: "리포트",
-		title: "진척 신호가 다음 액션으로 연결",
+		label: "진척 확인",
+		title: "진척 리포트",
+		detail: "GitHub·태스크 신호를 다음 액션으로",
 		color: "#6366f1",
+		fromX: 110,
+		fromY: 260,
+		x: 538,
+		y: 206,
 	},
 	{
 		id: "shipping",
 		label: "완주",
-		title: "멈추기 전에 출시 루틴 유지",
+		title: "출시 루틴",
+		detail: "멈추기 전에 완주 리듬 유지",
 		color: "#f59e0b",
+		fromX: 300,
+		fromY: -140,
+		x: 748,
+		y: 92,
 	},
 ] as const;
 
@@ -3158,7 +3178,7 @@ function ClosingDemoScene() {
 		>
 			<ClosingBackground frame={frame} fps={fps} />
 			<ClosingBrandPanel frame={frame} fps={fps} progress={intro} />
-			<ClosingDashboardWindow
+			<ClosingRecapFlowWindow
 				frame={frame}
 				fps={fps}
 				progress={windowProgress}
@@ -3259,27 +3279,32 @@ function ClosingBrandPanel({
 					</span>
 				</div>
 			</div>
-			<h2 className="text-[68px] font-black leading-[0.98] tracking-normal text-slate-950">
+			<div className="mb-6 inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-white/80 px-4 py-2 text-[13px] font-black uppercase tracking-normal text-blue-500 shadow-sm">
+				<Sparkles size={15} strokeWidth={2.6} />
+				Service Recap
+			</div>
+			<h2 className="text-[61px] font-black leading-[1.12] tracking-normal text-slate-950">
 				팀 찾기부터
 				<br />
 				<span className="relative inline-block text-blue-500">
-					완주까지 한 흐름으로
+					완주까지
 					<span
-						className="absolute -bottom-2 left-0 h-2 rounded-full bg-blue-200/80"
+						className="absolute -bottom-1 left-0 h-1.5 rounded-full bg-blue-200/80"
 						style={{ width: `${underline * 100}%` }}
 					/>
 				</span>
+				<br />한 흐름으로
 			</h2>
 			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
-				사이드 프로젝트가 시작만 하고 멈추지 않도록
+				앞에서 본 기능들이 하나의 팀 여정으로 이어지고
 				<br />
-				팀의 다음 액션을 계속 앞으로 밀어줍니다.
+				다음 액션이 계속 앞으로 움직입니다.
 			</p>
 		</div>
 	);
 }
 
-function ClosingDashboardWindow({
+function ClosingRecapFlowWindow({
 	frame,
 	fps,
 	progress,
@@ -3288,170 +3313,181 @@ function ClosingDashboardWindow({
 	fps: number;
 	progress: number;
 }) {
-	const launch = motionProgress(
+	const line = motionProgress(
 		frame,
-		seconds(4.2, fps),
-		seconds(1.2, fps),
+		seconds(1.18, fps),
+		seconds(2.15, fps),
 		EASE_IN_OUT,
 	);
+	const summary = motionProgress(
+		frame,
+		seconds(3.52, fps),
+		seconds(0.78, fps),
+		EASE_IN_OUT,
+	);
+	const flash = motionProgress(frame, seconds(4.18, fps), seconds(0.72, fps));
 
 	return (
 		<div
-			className="absolute right-[42px] top-[64px] h-[900px] w-[1120px]"
+			className="absolute right-[76px] top-[104px] h-[768px] w-[1060px]"
 			style={{
 				opacity: progress,
-				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 42) * 4}px, 0)`,
+				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 42) * 3}px, 0)`,
 			}}
 		>
-			<div className="absolute inset-0 overflow-hidden rounded-lg border border-blue-100/80 bg-white shadow-[0_34px_100px_rgba(30,64,175,0.16)]">
-				<div className="flex h-12 items-center gap-3 border-b border-slate-100 bg-slate-50 px-5">
-					<span className="h-3 w-3 rounded-full bg-rose-300" />
-					<span className="h-3 w-3 rounded-full bg-amber-300" />
-					<span className="h-3 w-3 rounded-full bg-emerald-300" />
-					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
-						team-po.app/finish
+			<div className="absolute inset-0 overflow-hidden rounded-lg border border-blue-100/80 bg-white/88 p-8 shadow-[0_34px_100px_rgba(30,64,175,0.15)] backdrop-blur">
+				<div
+					className="absolute inset-0"
+					style={{
+						background:
+							"radial-gradient(circle at 20% 20%, rgba(16,185,129,0.13), transparent 28%), radial-gradient(circle at 82% 22%, rgba(59,130,246,0.13), transparent 32%), radial-gradient(circle at 70% 78%, rgba(245,158,11,0.12), transparent 30%)",
+					}}
+				/>
+				<div className="relative z-10 flex items-start justify-between">
+					<div>
+						<p className="text-[13px] font-black uppercase tracking-normal text-blue-500">
+							one journey map
+						</p>
+						<p className="mt-2 text-[33px] font-black leading-tight text-slate-950">
+							앞 장면의 기능들이
+							<br />한 팀의 흐름으로 정렬됩니다
+						</p>
+					</div>
+					<div
+						className="rounded-lg border border-blue-100 bg-blue-50 px-5 py-3 text-[15px] font-black text-blue-600 shadow-sm"
+						style={{
+							transform: `scale(${interpolate(summary, [0, 0.45, 1], [1, 1.05, 1])})`,
+						}}
+					>
+						팀 찾기 → 운영 → 진척 → 완주
 					</div>
 				</div>
 
-				<div className="h-[848px] bg-[#f8fbff] p-8">
-					<div className="mb-7 flex items-start justify-between">
-						<div>
-							<p className="text-[34px] font-black text-slate-950">
-								프로젝트 완주 준비 완료
-							</p>
-							<p className="mt-2 text-[15px] font-bold text-slate-500">
-								팀 생성부터 출시 루틴까지 하나의 워크플로우
-							</p>
+				<div className="relative z-10 mt-4 h-[526px] overflow-hidden rounded-lg border border-slate-100 bg-white/70">
+					<svg
+						aria-hidden="true"
+						className="absolute inset-0 h-full w-full overflow-visible"
+						viewBox="0 0 1020 526"
+					>
+						<defs>
+							<linearGradient
+								id="closing-flow-gradient"
+								x1="0"
+								x2="1"
+								y1="0"
+								y2="0"
+							>
+								<stop offset="0%" stopColor="#10b981" />
+								<stop offset="42%" stopColor="#3b82f6" />
+								<stop offset="72%" stopColor="#6366f1" />
+								<stop offset="100%" stopColor="#f59e0b" />
+							</linearGradient>
+						</defs>
+						<path
+							d="M140 290 C248 290 286 176 392 176 C506 176 532 290 644 290 C730 290 762 176 854 176"
+							fill="none"
+							pathLength={1}
+							stroke="rgba(148,163,184,0.28)"
+							strokeLinecap="round"
+							strokeWidth="13"
+						/>
+						<path
+							d="M140 290 C248 290 286 176 392 176 C506 176 532 290 644 290 C730 290 762 176 854 176"
+							fill="none"
+							pathLength={1}
+							stroke="url(#closing-flow-gradient)"
+							strokeDasharray={1}
+							strokeDashoffset={1 - line}
+							strokeLinecap="round"
+							strokeWidth="8"
+						/>
+						{closingFlow.map((item, index) => {
+							const dot = motionProgress(
+								frame,
+								seconds(1.34 + index * 0.42, fps),
+								seconds(0.34, fps),
+							);
+							const centerX = item.x + 106;
+							const centerY = item.y + 82;
+
+							return (
+								<circle
+									cx={centerX}
+									cy={centerY}
+									fill="#ffffff"
+									key={item.id}
+									r={interpolate(dot, [0, 1], [0, 12])}
+									stroke={item.color}
+									strokeWidth="6"
+								/>
+							);
+						})}
+					</svg>
+
+					{closingFlow.map((item, index) => (
+						<ClosingRecapCard
+							frame={frame}
+							fps={fps}
+							index={index}
+							item={item}
+							key={item.id}
+						/>
+					))}
+
+					<div
+						className="absolute bottom-5 left-5 right-5 rounded-lg border border-blue-100 bg-white/94 p-5 shadow-[0_18px_54px_rgba(30,64,175,0.12)]"
+						style={{
+							opacity: summary,
+							transform: `translate3d(0, ${interpolate(summary, [0, 1], [34, 0])}px, 0) scale(${interpolate(summary, [0, 1], [0.96, 1])})`,
+						}}
+					>
+						<div className="flex items-center justify-between gap-6">
+							<div>
+								<p className="text-[12px] font-black uppercase tracking-normal text-slate-400">
+									team-po summary
+								</p>
+								<p className="mt-1 text-[25px] font-black text-slate-950">
+									네 가지 기능이 하나의 다음 액션으로 연결됩니다
+								</p>
+							</div>
+							<div className="grid h-14 w-14 place-items-center rounded-lg bg-blue-500 text-white shadow-lg shadow-blue-500/25">
+								<Check size={28} strokeWidth={3} />
+							</div>
 						</div>
-						<div
-							className="rounded-lg bg-blue-500 px-6 py-4 text-[17px] font-black text-white shadow-[0_14px_34px_rgba(59,130,246,0.24)]"
-							style={{
-								transform: `scale(${interpolate(launch, [0, 0.45, 1], [1, 0.97, 1.05])})`,
-							}}
-						>
-							팀 프로젝트 시작하기
+						<div className="mt-4 grid grid-cols-4 gap-2">
+							{closingFlow.map((item, index) => (
+								<div
+									className="h-2 rounded-full"
+									key={item.id}
+									style={{
+										backgroundColor: item.color,
+										opacity: interpolate(
+											summary,
+											[0, 1],
+											[0, 0.88 - index * 0.06],
+										),
+										transform: `scaleX(${interpolate(summary, [0, 1], [0.2, 1])})`,
+										transformOrigin: "left",
+									}}
+								/>
+							))}
 						</div>
 					</div>
-
-					<div className="grid grid-cols-[1fr_330px] gap-6">
-						<div className="rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
-							<div className="mb-6 flex items-center justify-between">
-								<p className="text-[22px] font-black text-slate-950">
-									완주 플로우
-								</p>
-								<p className="rounded-md bg-emerald-50 px-3 py-1.5 text-[12px] font-black text-emerald-600">
-									ready
-								</p>
-							</div>
-							<div className="grid grid-cols-2 gap-4">
-								{closingFlow.map((item, index) => (
-									<ClosingFlowCard
-										frame={frame}
-										fps={fps}
-										index={index}
-										item={item}
-										key={item.id}
-									/>
-								))}
-							</div>
-						</div>
-
-						<div className="rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
-							<p className="text-[22px] font-black text-slate-950">이번 팀</p>
-							<p className="mt-2 text-[13px] font-bold text-slate-400">
-								MVP 런칭 스쿼드
-							</p>
-							<div className="mt-7 grid grid-cols-2 gap-3">
-								{[
-									["98%", "match"],
-									["84%", "PR"],
-									["72%", "tasks"],
-									["D-3", "ship"],
-								].map(([value, label], index) => {
-									const enter = motionProgress(
-										frame,
-										seconds(2.1 + index * 0.15, fps),
-										seconds(0.42, fps),
-									);
-
-									return (
-										<div
-											className="rounded-lg bg-slate-50 p-4"
-											key={label}
-											style={{
-												opacity: enter,
-												transform: `translate3d(0, ${interpolate(enter, [0, 1], [16, 0])}px, 0)`,
-											}}
-										>
-											<p className="text-[28px] font-black text-slate-950">
-												{value}
-											</p>
-											<p className="mt-1 text-[12px] font-black uppercase text-slate-400">
-												{label}
-											</p>
-										</div>
-									);
-								})}
-							</div>
-							<div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50 p-5">
-								<p className="text-[13px] font-bold text-emerald-600">
-									next action
-								</p>
-								<p className="mt-2 text-[21px] font-black text-slate-950">
-									데모 배포 체크
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div className="mt-6 rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
-						<div className="mb-4 flex items-center justify-between">
-							<p className="text-[20px] font-black text-slate-950">
-								다음 7일 루틴
-							</p>
-							<p className="rounded-md bg-blue-50 px-3 py-1.5 text-[12px] font-black text-blue-600">
-								auto plan
-							</p>
-						</div>
-						<div className="grid grid-cols-4 gap-3">
-							{["역할 확정", "API 리뷰", "데모 배포", "회고 작성"].map(
-								(item, index) => {
-									const enter = motionProgress(
-										frame,
-										seconds(3.0 + index * 0.16, fps),
-										seconds(0.42, fps),
-									);
-
-									return (
-										<div
-											className="rounded-lg bg-slate-50 px-4 py-4"
-											key={item}
-											style={{
-												opacity: enter,
-												transform: `translate3d(0, ${interpolate(enter, [0, 1], [14, 0])}px, 0)`,
-											}}
-										>
-											<p className="text-[12px] font-black text-slate-400">
-												step {index + 1}
-											</p>
-											<p className="mt-1 text-[16px] font-black text-slate-950">
-												{item}
-											</p>
-										</div>
-									);
-								},
-							)}
-						</div>
-					</div>
-
-					<ClosingTouchPulse frame={frame} fps={fps} />
 				</div>
+
+				<div
+					className="absolute left-[512px] top-[642px] h-24 w-24 rounded-full border-4 border-blue-400"
+					style={{
+						opacity: interpolate(flash, [0, 0.22, 1], [0, 0.52, 0]),
+						transform: `translate3d(-50%, -50%, 0) scale(${interpolate(flash, [0, 1], [0.4, 1.9])})`,
+					}}
+				/>
 			</div>
 		</div>
 	);
 }
 
-function ClosingFlowCard({
+function ClosingRecapCard({
 	frame,
 	fps,
 	index,
@@ -3464,56 +3500,71 @@ function ClosingFlowCard({
 }) {
 	const enter = motionProgress(
 		frame,
-		seconds(1.25 + index * 0.2, fps),
-		seconds(0.55, fps),
+		seconds(0.48 + index * 0.18, fps),
+		seconds(0.62, fps),
+		EASE_OUT,
 	);
 	const active = motionProgress(
 		frame,
-		seconds(2.65 + index * 0.24, fps),
-		seconds(0.45, fps),
+		seconds(1.58 + index * 0.42, fps),
+		seconds(0.44, fps),
+		EASE_IN_OUT,
 	);
+	const float =
+		Math.sin(frame / 17 + index) * interpolate(active, [0, 1], [5, 2]);
 
 	return (
 		<div
-			className="min-h-[172px] rounded-lg border bg-white p-5 shadow-sm"
+			className="absolute w-[212px] rounded-lg border bg-white/96 p-5 shadow-[0_18px_54px_rgba(15,23,42,0.11)] backdrop-blur"
 			style={{
+				left: item.x,
+				top: item.y,
 				borderColor: active > 0.5 ? item.color : "#e2e8f0",
 				opacity: enter,
-				transform: `translate3d(0, ${interpolate(enter, [0, 1], [24, 0])}px, 0) scale(${interpolate(active, [0, 1], [1, 1.025])})`,
+				transform: `translate3d(${interpolate(enter, [0, 1], [item.fromX, 0])}px, ${
+					interpolate(enter, [0, 1], [item.fromY, 0]) + float
+				}px, 0) scale(${interpolate(enter, [0, 1], [0.78, 1]) * interpolate(active, [0, 0.55, 1], [1, 1.06, 1])})`,
 			}}
 		>
-			<div className="mb-5 flex items-center justify-between">
+			<div className="mb-4 flex items-center justify-between">
 				<div
 					className="grid h-11 w-11 place-items-center rounded-lg text-white"
-					style={{ backgroundColor: item.color }}
+					style={{
+						backgroundColor: item.color,
+						boxShadow: `0 12px 30px ${item.color}33`,
+					}}
 				>
-					<Check size={22} strokeWidth={3} />
+					<ClosingRecapIcon id={item.id} />
 				</div>
 				<p className="text-[13px] font-black uppercase text-slate-400">
-					{item.label}
+					0{index + 1}
 				</p>
 			</div>
-			<p className="text-[20px] font-black leading-snug text-slate-950">
+			<p className="text-[15px] font-black text-slate-400">{item.label}</p>
+			<p className="mt-1 text-[23px] font-black leading-tight text-slate-950">
 				{item.title}
+			</p>
+			<p className="mt-3 text-[12px] font-bold leading-relaxed text-slate-500">
+				{item.detail}
 			</p>
 		</div>
 	);
 }
 
-function ClosingTouchPulse({ frame, fps }: { frame: number; fps: number }) {
-	const cardTap = motionProgress(frame, seconds(2.9, fps), seconds(0.55, fps));
-	const launchTap = motionProgress(
-		frame,
-		seconds(4.25, fps),
-		seconds(0.6, fps),
-	);
+function ClosingRecapIcon({ id }: { id: (typeof closingFlow)[number]["id"] }) {
+	if (id === "matching") {
+		return <UsersRound size={23} strokeWidth={2.6} />;
+	}
 
-	return (
-		<>
-			<TouchPulse color="#3b82f6" progress={cardTap} x={382} y={342} />
-			<TouchPulse color="#10b981" progress={launchTap} x={888} y={40} />
-		</>
-	);
+	if (id === "workspace") {
+		return <Rocket size={23} strokeWidth={2.6} />;
+	}
+
+	if (id === "report") {
+		return <GitBranch size={23} strokeWidth={2.6} />;
+	}
+
+	return <BadgeCheck size={23} strokeWidth={2.6} />;
 }
 
 function FinaleLogoScene() {
