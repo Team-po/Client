@@ -281,7 +281,7 @@ const workspaceTasks = [
 	},
 	{
 		id: "release",
-		title: "릴리즈 체크리스트 생성",
+		title: "배포 체크리스트",
 		meta: "Team",
 		color: "#f59e0b",
 		column: "shipping",
@@ -863,7 +863,7 @@ function WorkspaceCard({ frame, fps }: { frame: number; fps: number }) {
 					frame={frame}
 					fps={fps}
 					index={2}
-					label="릴리즈 체크리스트 생성"
+					label="배포 체크리스트"
 				/>
 			</div>
 		</div>
@@ -1775,10 +1775,10 @@ function MatchingNarrativePanel({
 				Solution 01
 			</div>
 			<h2 className="text-[70px] font-black leading-[0.98] tracking-normal text-slate-950">
-				프로필 신호로
+				매칭으로
 				<br />
 				<span className="relative inline-block text-emerald-500">
-					팀을 빠르게 묶어요
+					팀을 바로 시작해요
 					<span
 						className="absolute -bottom-2 left-0 h-2 rounded-full bg-emerald-200/80"
 						style={{ width: `${underline * 100}%` }}
@@ -1786,9 +1786,9 @@ function MatchingNarrativePanel({
 				</span>
 			</h2>
 			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
-				관심사, 역할, 가능한 속도를 한 화면에서 맞춰 보고
+				역할, 목표, 진행 속도를 한 화면에서 맞춰 보고
 				<br />
-				시작 가능한 조합만 선명하게 보여줍니다.
+				함께 시작할 팀을 빠르게 찾습니다.
 			</p>
 			<div className="mt-8 grid w-[610px] grid-cols-3 gap-3">
 				{matchingSignals.map((signal, index) => {
@@ -2453,7 +2453,7 @@ function WorkspaceStageRail({
 	fps: number;
 	progress: number;
 }) {
-	const progressWidth = interpolate(progress, [0, 1], [12, 64]);
+	const progressWidth = interpolate(progress, [0, 1], [12, 96]);
 
 	return (
 		<div className="rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
@@ -2623,7 +2623,7 @@ function WorkspaceChecklist({ frame, fps }: { frame: number; fps: number }) {
 			<div className="mt-5 rounded-lg bg-blue-50 p-4">
 				<p className="text-[13px] font-black text-blue-600">다음 액션</p>
 				<p className="mt-1 text-[17px] font-black text-slate-950">
-					릴리즈 체크리스트 생성
+					배포 체크리스트 만들기
 				</p>
 			</div>
 		</div>
@@ -3367,7 +3367,7 @@ function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
 						한 흐름으로
 						<span
 							className="absolute -bottom-4 left-1 h-3 rounded-full bg-blue-200/80"
-							style={{ width: `${underline * 100}%` }}
+							style={{ width: `${underline * 420}px` }}
 						/>
 					</span>
 				</h2>
@@ -3388,8 +3388,7 @@ function KineticRecapHeadline({ frame, fps }: { frame: number; fps: number }) {
 					transform: `translate3d(0, ${interpolate(lock, [0, 1], [22, 0])}px, 0)`,
 				}}
 			>
-				흩어진 기능 설명이 아니라, 팀의 다음 액션이 앞으로 밀리는 하나의
-				여정입니다.
+				매칭 후 바로 팀 스페이스에서 작업하고, 진척을 보며 완주까지 이어갑니다.
 			</p>
 		</div>
 	);
