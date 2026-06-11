@@ -3,7 +3,7 @@ export const TEAM_PO_PR_VIDEO = {
 	width: 1920,
 	height: 1080,
 	fps: 30,
-	durationInFrames: 1260,
+	durationInFrames: 1830,
 } as const;
 
 export const openingSceneTimeline = [
@@ -50,5 +50,13 @@ export const openingSceneTimeline = [
 	{
 		time: "35.0s",
 		label: "GitHub 활동과 AI 인사이트가 다음 액션으로 연결",
+	},
+	{
+		time: "41.0s",
+		label: "Team-po 전체 완주 플로우 요약",
+	},
+	{
+		time: "55.0s",
+		label: "팀 프로젝트 시작 CTA로 클로징",
 	},
 ] as const;

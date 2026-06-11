@@ -40,6 +40,8 @@ const WORKSPACE_SCENE_START_FRAME = 600;
 const WORKSPACE_SCENE_FRAMES = 330;
 const REPORT_SCENE_START_FRAME = 900;
 const REPORT_SCENE_FRAMES = 360;
+const CLOSING_SCENE_START_FRAME = 1230;
+const CLOSING_SCENE_FRAMES = 600;
 
 const candidateRows = [
 	{ name: "Frontend", stack: "React", color: "bg-blue-500" },
@@ -290,6 +292,33 @@ const reportRows = [
 	},
 ] as const;
 
+const closingFlow = [
+	{
+		id: "matching",
+		label: "팀 매칭",
+		title: "역할과 목표가 맞는 팀 생성",
+		color: "#10b981",
+	},
+	{
+		id: "workspace",
+		label: "운영",
+		title: "상태와 체크리스트로 같은 화면 보기",
+		color: "#3b82f6",
+	},
+	{
+		id: "report",
+		label: "리포트",
+		title: "진척 신호가 다음 액션으로 연결",
+		color: "#6366f1",
+	},
+	{
+		id: "shipping",
+		label: "완주",
+		title: "멈추기 전에 출시 루틴 유지",
+		color: "#f59e0b",
+	},
+] as const;
+
 export function TeamPoPrVideo() {
 	return (
 		<AbsoluteFill className="overflow-hidden bg-[#f7fbff] font-body text-slate-950">
@@ -319,6 +348,12 @@ export function TeamPoPrVideo() {
 				from={REPORT_SCENE_START_FRAME}
 			>
 				<ReportDemoScene />
+			</Sequence>
+			<Sequence
+				durationInFrames={CLOSING_SCENE_FRAMES}
+				from={CLOSING_SCENE_START_FRAME}
+			>
+				<ClosingDemoScene />
 			</Sequence>
 		</AbsoluteFill>
 	);
@@ -2876,6 +2911,384 @@ function ReportTouchPulse({ frame, fps }: { frame: number; fps: number }) {
 			<TouchPulse color="#6366f1" progress={metricTap} x={178} y={170} />
 			<TouchPulse color="#10b981" progress={chartTap} x={392} y={420} />
 			<TouchPulse color="#6366f1" progress={insightTap} x={620} y={710} />
+		</>
+	);
+}
+
+function ClosingDemoScene() {
+	const frame = useCurrentFrame();
+	const { fps } = useVideoConfig();
+	const reveal = motionProgress(frame, 0, seconds(0.92, fps), EASE_IN_OUT);
+	const revealEdgeTop = interpolate(reveal, [0, 1], [112, -18]);
+	const revealEdgeBottom = interpolate(reveal, [0, 1], [102, -28]);
+	const intro = motionProgress(frame, seconds(0.32, fps), seconds(0.84, fps));
+	const windowProgress = motionProgress(
+		frame,
+		seconds(0.62, fps),
+		seconds(1.02, fps),
+	);
+
+	return (
+		<AbsoluteFill
+			className="overflow-hidden bg-[#fbfdff] text-slate-950"
+			style={{
+				clipPath: `polygon(${revealEdgeTop}% 0, 100% 0, 100% 100%, ${revealEdgeBottom}% 100%)`,
+			}}
+		>
+			<ClosingBackground frame={frame} fps={fps} />
+			<ClosingBrandPanel frame={frame} fps={fps} progress={intro} />
+			<ClosingDashboardWindow
+				frame={frame}
+				fps={fps}
+				progress={windowProgress}
+			/>
+			<MatchingRevealEdge reveal={reveal} />
+		</AbsoluteFill>
+	);
+}
+
+function ClosingBackground({ frame, fps }: { frame: number; fps: number }) {
+	const grid = motionProgress(frame, seconds(0.1, fps), seconds(1.1, fps));
+	const sweep = (frame % seconds(5.4, fps)) / seconds(5.4, fps);
+
+	return (
+		<>
+			<div
+				className="absolute inset-0"
+				style={{
+					background:
+						"linear-gradient(135deg, #f8fbff 0%, #eff6ff 38%, #f0fdf4 70%, #fff7ed 100%)",
+				}}
+			/>
+			<div
+				className="absolute inset-0"
+				style={{
+					opacity: grid * 0.72,
+					backgroundImage:
+						"linear-gradient(to right, rgba(59,130,246,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(16,185,129,0.07) 1px, transparent 1px)",
+					backgroundSize: "60px 60px",
+				}}
+			/>
+			<div
+				className="absolute top-[180px] h-[2px] w-[820px]"
+				style={{
+					background:
+						"linear-gradient(90deg, transparent, rgba(16,185,129,0.36), rgba(59,130,246,0.28), transparent)",
+					opacity: grid,
+					transform: `translate3d(${interpolate(sweep, [0, 1], [-860, 2260])}px, 0, 0)`,
+				}}
+			/>
+		</>
+	);
+}
+
+function ClosingBrandPanel({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const po = motionProgress(frame, seconds(0.9, fps), seconds(0.48, fps));
+	const underline = motionProgress(
+		frame,
+		seconds(1.45, fps),
+		seconds(0.8, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="absolute left-[96px] top-[132px] w-[650px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [54, 0])}px, 0, 0)`,
+			}}
+		>
+			<div className="mb-9 flex items-center gap-5">
+				<svg
+					aria-hidden="true"
+					className="h-[86px] w-[86px] overflow-visible"
+					viewBox="0 0 140 140"
+				>
+					<path
+						d="M32 38 L72 70 L32 102"
+						fill="none"
+						stroke="#1e293b"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						strokeWidth="18"
+					/>
+					<rect fill="#10b981" height="22" rx="6" width="22" x="82" y="88" />
+					<rect fill="#3b82f6" height="22" rx="6" width="22" x="110" y="60" />
+					<rect fill="#6366f1" height="22" rx="6" width="22" x="138" y="32" />
+				</svg>
+				<div className="text-[58px] font-black leading-none tracking-normal">
+					<span className="text-slate-900">Team</span>
+					<span
+						className="inline-block text-blue-500"
+						style={{
+							opacity: po,
+							transform: `translate3d(${interpolate(po, [0, 1], [24, 0])}px, 0, 0)`,
+						}}
+					>
+						-po
+					</span>
+				</div>
+			</div>
+			<h2 className="text-[68px] font-black leading-[0.98] tracking-normal text-slate-950">
+				팀 찾기부터
+				<br />
+				<span className="relative inline-block text-blue-500">
+					완주까지 한 흐름으로
+					<span
+						className="absolute -bottom-2 left-0 h-2 rounded-full bg-blue-200/80"
+						style={{ width: `${underline * 100}%` }}
+					/>
+				</span>
+			</h2>
+			<p className="mt-8 text-[25px] font-bold leading-[1.44] tracking-normal text-slate-600">
+				사이드 프로젝트가 시작만 하고 멈추지 않도록
+				<br />
+				팀의 다음 액션을 계속 앞으로 밀어줍니다.
+			</p>
+		</div>
+	);
+}
+
+function ClosingDashboardWindow({
+	frame,
+	fps,
+	progress,
+}: {
+	frame: number;
+	fps: number;
+	progress: number;
+}) {
+	const launch = motionProgress(
+		frame,
+		seconds(4.2, fps),
+		seconds(1.2, fps),
+		EASE_IN_OUT,
+	);
+
+	return (
+		<div
+			className="absolute right-[42px] top-[64px] h-[900px] w-[1120px]"
+			style={{
+				opacity: progress,
+				transform: `translate3d(${interpolate(progress, [0, 1], [112, 0])}px, ${Math.sin(frame / 42) * 4}px, 0)`,
+			}}
+		>
+			<div className="absolute inset-0 overflow-hidden rounded-lg border border-blue-100/80 bg-white shadow-[0_34px_100px_rgba(30,64,175,0.16)]">
+				<div className="flex h-12 items-center gap-3 border-b border-slate-100 bg-slate-50 px-5">
+					<span className="h-3 w-3 rounded-full bg-rose-300" />
+					<span className="h-3 w-3 rounded-full bg-amber-300" />
+					<span className="h-3 w-3 rounded-full bg-emerald-300" />
+					<div className="ml-5 rounded-md bg-white px-4 py-1.5 text-[13px] font-bold text-slate-400">
+						team-po.app/finish
+					</div>
+				</div>
+
+				<div className="h-[848px] bg-[#f8fbff] p-8">
+					<div className="mb-7 flex items-start justify-between">
+						<div>
+							<p className="text-[34px] font-black text-slate-950">
+								프로젝트 완주 준비 완료
+							</p>
+							<p className="mt-2 text-[15px] font-bold text-slate-500">
+								팀 생성부터 출시 루틴까지 하나의 워크플로우
+							</p>
+						</div>
+						<div
+							className="rounded-lg bg-slate-950 px-6 py-4 text-[17px] font-black text-white shadow-[0_14px_34px_rgba(15,23,42,0.22)]"
+							style={{
+								transform: `scale(${interpolate(launch, [0, 0.45, 1], [1, 0.97, 1.05])})`,
+							}}
+						>
+							팀 프로젝트 시작하기
+						</div>
+					</div>
+
+					<div className="grid grid-cols-[1fr_330px] gap-6">
+						<div className="rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
+							<div className="mb-6 flex items-center justify-between">
+								<p className="text-[22px] font-black text-slate-950">
+									완주 플로우
+								</p>
+								<p className="rounded-md bg-emerald-50 px-3 py-1.5 text-[12px] font-black text-emerald-600">
+									ready
+								</p>
+							</div>
+							<div className="grid grid-cols-2 gap-4">
+								{closingFlow.map((item, index) => (
+									<ClosingFlowCard
+										frame={frame}
+										fps={fps}
+										index={index}
+										item={item}
+										key={item.id}
+									/>
+								))}
+							</div>
+						</div>
+
+						<div className="rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
+							<p className="text-[22px] font-black text-slate-950">이번 팀</p>
+							<p className="mt-2 text-[13px] font-bold text-slate-400">
+								MVP 런칭 스쿼드
+							</p>
+							<div className="mt-7 grid grid-cols-2 gap-3">
+								{[
+									["98%", "match"],
+									["84%", "PR"],
+									["72%", "tasks"],
+									["D-3", "ship"],
+								].map(([value, label], index) => {
+									const enter = motionProgress(
+										frame,
+										seconds(2.1 + index * 0.15, fps),
+										seconds(0.42, fps),
+									);
+
+									return (
+										<div
+											className="rounded-lg bg-slate-50 p-4"
+											key={label}
+											style={{
+												opacity: enter,
+												transform: `translate3d(0, ${interpolate(enter, [0, 1], [16, 0])}px, 0)`,
+											}}
+										>
+											<p className="text-[28px] font-black text-slate-950">
+												{value}
+											</p>
+											<p className="mt-1 text-[12px] font-black uppercase text-slate-400">
+												{label}
+											</p>
+										</div>
+									);
+								})}
+							</div>
+							<div className="mt-6 rounded-lg bg-slate-950 p-5 text-white">
+								<p className="text-[13px] font-bold text-emerald-200">
+									next action
+								</p>
+								<p className="mt-2 text-[21px] font-black">데모 배포 체크</p>
+							</div>
+						</div>
+					</div>
+
+					<div className="mt-6 rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
+						<div className="mb-4 flex items-center justify-between">
+							<p className="text-[20px] font-black text-slate-950">
+								다음 7일 루틴
+							</p>
+							<p className="rounded-md bg-blue-50 px-3 py-1.5 text-[12px] font-black text-blue-600">
+								auto plan
+							</p>
+						</div>
+						<div className="grid grid-cols-4 gap-3">
+							{["역할 확정", "API 리뷰", "데모 배포", "회고 작성"].map(
+								(item, index) => {
+									const enter = motionProgress(
+										frame,
+										seconds(3.0 + index * 0.16, fps),
+										seconds(0.42, fps),
+									);
+
+									return (
+										<div
+											className="rounded-lg bg-slate-50 px-4 py-4"
+											key={item}
+											style={{
+												opacity: enter,
+												transform: `translate3d(0, ${interpolate(enter, [0, 1], [14, 0])}px, 0)`,
+											}}
+										>
+											<p className="text-[12px] font-black text-slate-400">
+												step {index + 1}
+											</p>
+											<p className="mt-1 text-[16px] font-black text-slate-950">
+												{item}
+											</p>
+										</div>
+									);
+								},
+							)}
+						</div>
+					</div>
+
+					<ClosingTouchPulse frame={frame} fps={fps} />
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function ClosingFlowCard({
+	frame,
+	fps,
+	index,
+	item,
+}: {
+	frame: number;
+	fps: number;
+	index: number;
+	item: (typeof closingFlow)[number];
+}) {
+	const enter = motionProgress(
+		frame,
+		seconds(1.25 + index * 0.2, fps),
+		seconds(0.55, fps),
+	);
+	const active = motionProgress(
+		frame,
+		seconds(2.65 + index * 0.24, fps),
+		seconds(0.45, fps),
+	);
+
+	return (
+		<div
+			className="min-h-[172px] rounded-lg border bg-white p-5 shadow-sm"
+			style={{
+				borderColor: active > 0.5 ? item.color : "#e2e8f0",
+				opacity: enter,
+				transform: `translate3d(0, ${interpolate(enter, [0, 1], [24, 0])}px, 0) scale(${interpolate(active, [0, 1], [1, 1.025])})`,
+			}}
+		>
+			<div className="mb-5 flex items-center justify-between">
+				<div
+					className="grid h-11 w-11 place-items-center rounded-lg text-white"
+					style={{ backgroundColor: item.color }}
+				>
+					<Check size={22} strokeWidth={3} />
+				</div>
+				<p className="text-[13px] font-black uppercase text-slate-400">
+					{item.label}
+				</p>
+			</div>
+			<p className="text-[20px] font-black leading-snug text-slate-950">
+				{item.title}
+			</p>
+		</div>
+	);
+}
+
+function ClosingTouchPulse({ frame, fps }: { frame: number; fps: number }) {
+	const cardTap = motionProgress(frame, seconds(2.9, fps), seconds(0.55, fps));
+	const launchTap = motionProgress(
+		frame,
+		seconds(4.25, fps),
+		seconds(0.6, fps),
+	);
+
+	return (
+		<>
+			<TouchPulse color="#3b82f6" progress={cardTap} x={382} y={342} />
+			<TouchPulse color="#10b981" progress={launchTap} x={888} y={40} />
 		</>
 	);
 }
