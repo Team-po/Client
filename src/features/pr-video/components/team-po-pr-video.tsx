@@ -712,7 +712,7 @@ function MatchingCard({ frame, fps }: { frame: number; fps: number }) {
 
 function OrbitNetwork({ pulse }: { pulse: number }) {
 	return (
-		<div className="relative h-[160px] rounded-lg bg-slate-950">
+		<div className="relative h-[160px] overflow-hidden rounded-lg border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-emerald-50">
 			<svg
 				aria-hidden="true"
 				className="absolute inset-0 h-full w-full"
@@ -721,7 +721,7 @@ function OrbitNetwork({ pulse }: { pulse: number }) {
 				<path
 					d="M80 32 C126 42 136 112 82 132 C30 112 34 48 80 32Z"
 					fill="none"
-					stroke="rgba(96,165,250,0.38)"
+					stroke="rgba(59,130,246,0.36)"
 					strokeDasharray="10 10"
 					strokeWidth="2"
 					style={{
@@ -731,14 +731,14 @@ function OrbitNetwork({ pulse }: { pulse: number }) {
 				<path
 					d="M38 112 L80 32 L126 104 L82 132 Z"
 					fill="none"
-					stroke="rgba(16,185,129,0.4)"
+					stroke="rgba(16,185,129,0.32)"
 					strokeWidth="2"
 				/>
 			</svg>
 			<OrbitNode label="FE" left={62} top={17} progress={pulse} />
 			<OrbitNode label="BE" left={112} top={88} progress={pulse * 0.9} />
 			<OrbitNode label="PM" left={22} top={96} progress={pulse * 0.82} />
-			<div className="absolute left-[64px] top-[78px] grid h-9 w-9 place-items-center rounded-lg bg-white text-[11px] font-black text-slate-950">
+			<div className="absolute left-[64px] top-[78px] grid h-9 w-9 place-items-center rounded-lg border border-blue-100 bg-white text-[11px] font-black text-blue-600 shadow-sm">
 				+
 			</div>
 		</div>
@@ -956,7 +956,7 @@ function ProgressCard({ frame, fps }: { frame: number; fps: number }) {
 				</div>
 				<Heatmap frame={frame} fps={fps} />
 			</div>
-			<div className="mt-4 rounded-lg bg-slate-950 px-4 py-3 text-[12px] font-bold text-white">
+			<div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-[12px] font-bold text-blue-700">
 				이번 주 병목은 배포 체크리스트에 집중
 			</div>
 		</div>
@@ -1222,6 +1222,21 @@ function ScatteredIssueBoard({
 	settle: number;
 }) {
 	const board = motionProgress(frame, seconds(0.62, fps), seconds(1.0, fps));
+	const signalReveal = motionProgress(
+		frame,
+		seconds(2.18, fps),
+		seconds(0.78, fps),
+		EASE_OUT,
+	);
+	const signalFocus = motionProgress(
+		frame,
+		seconds(2.62, fps),
+		seconds(0.86, fps),
+		EASE_IN_OUT,
+	);
+	const signalScale =
+		interpolate(signalReveal, [0, 1], [0.88, 1]) *
+		interpolate(signalFocus, [0, 0.52, 1], [1, 1.045, 1.01]);
 
 	return (
 		<div
@@ -1265,20 +1280,41 @@ function ScatteredIssueBoard({
 				<IssueNode frame={frame} fps={fps} key={node.id} node={node} />
 			))}
 			<div
-				className="absolute left-[392px] top-[372px] w-[288px] rounded-lg border border-slate-200 bg-white/92 p-6 shadow-[0_20px_58px_rgba(15,23,42,0.12)]"
+				className="absolute left-[318px] top-[352px] z-20 w-[462px] rounded-lg border bg-white/94 p-7 shadow-[0_26px_78px_rgba(15,23,42,0.13)] backdrop-blur"
 				style={{
-					opacity: motionProgress(frame, seconds(2.1, fps), seconds(0.8, fps)),
-					transform: `translate3d(0, ${Math.sin(frame / 24) * 5}px, 0)`,
+					borderColor: `rgba(245, 158, 11, ${interpolate(signalFocus, [0, 1], [0.28, 0.72])})`,
+					boxShadow: `0 28px 84px rgba(15,23,42,0.14), 0 0 ${interpolate(
+						signalFocus,
+						[0, 1],
+						[0, 42],
+					)}px rgba(245,158,11,0.28)`,
+					opacity: signalReveal,
+					transform: `translate3d(0, ${
+						interpolate(signalReveal, [0, 1], [46, 0]) +
+						Math.sin(frame / 24) * 4
+					}px, 0) scale(${signalScale})`,
 				}}
 			>
-				<div className="mb-4 flex items-center gap-2 text-[16px] font-black text-slate-900">
-					<AlertTriangle size={19} className="text-amber-500" />
-					진행 신호가 분산됨
+				<div className="mb-4 flex items-center gap-3">
+					<div className="grid h-12 w-12 place-items-center rounded-lg bg-amber-100 text-amber-600">
+						<AlertTriangle size={25} strokeWidth={2.6} />
+					</div>
+					<div>
+						<p className="text-[13px] font-black uppercase tracking-normal text-amber-500">
+							핵심 병목
+						</p>
+						<p className="mt-0.5 text-[27px] font-black leading-none tracking-normal text-slate-950">
+							진행 신호가 분산됨
+						</p>
+					</div>
 				</div>
-				<div className="space-y-3">
-					<SignalBar color="#3b82f6" delay={2.25} frame={frame} fps={fps} />
-					<SignalBar color="#10b981" delay={2.42} frame={frame} fps={fps} />
-					<SignalBar color="#f59e0b" delay={2.59} frame={frame} fps={fps} />
+				<p className="mb-5 text-[15px] font-bold leading-relaxed text-slate-500">
+					팀 찾기, 역할 조율, 진척 공유가 이어지지 않아 다음 액션이 흐려집니다.
+				</p>
+				<div className="space-y-3.5">
+					<SignalBar color="#3b82f6" delay={2.32} frame={frame} fps={fps} />
+					<SignalBar color="#10b981" delay={2.5} frame={frame} fps={fps} />
+					<SignalBar color="#f59e0b" delay={2.68} frame={frame} fps={fps} />
 				</div>
 			</div>
 		</div>
@@ -1652,10 +1688,10 @@ function MatchingOrbitBoard({
 						</div>
 					</div>
 					<button
-						className="rounded-lg bg-slate-950 px-6 py-3 text-[16px] font-black text-white shadow-[0_14px_30px_rgba(15,23,42,0.22)]"
+						className="rounded-lg bg-emerald-500 px-6 py-3 text-[16px] font-black text-white shadow-[0_14px_30px_rgba(16,185,129,0.24)]"
 						style={{
 							transform: `scale(${interpolate(buttonClick, [0, 0.45, 1], [1, 0.96, 1.04])})`,
-							boxShadow: `0 14px ${interpolate(buttonClick, [0, 1], [30, 48])}px rgba(15,23,42,0.24)`,
+							boxShadow: `0 14px ${interpolate(buttonClick, [0, 1], [30, 48])}px rgba(16,185,129,0.26)`,
 						}}
 						type="button"
 					>
@@ -1711,11 +1747,11 @@ function MatchingOrbitBoard({
 								);
 							})}
 						</div>
-						<div className="mt-6 rounded-lg bg-slate-950 p-5 text-white">
-							<p className="text-[13px] font-bold text-emerald-200">
+						<div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50 p-5">
+							<p className="text-[13px] font-bold text-emerald-600">
 								AI 추천 기준
 							</p>
-							<p className="mt-2 text-[18px] font-black leading-snug">
+							<p className="mt-2 text-[18px] font-black leading-snug text-slate-950">
 								역할 균형과 진행 가능성을 함께 계산
 							</p>
 						</div>
@@ -1923,7 +1959,7 @@ function RecommendedTeamPanel({
 
 	return (
 		<div
-			className="absolute bottom-6 left-6 right-6 rounded-lg border border-emerald-100 bg-slate-950 p-6 text-white shadow-[0_26px_80px_rgba(15,23,42,0.25)]"
+			className="absolute bottom-6 left-6 right-6 rounded-lg border border-emerald-100 bg-white/96 p-6 text-slate-950 shadow-[0_26px_80px_rgba(15,118,110,0.16)] backdrop-blur"
 			style={{
 				opacity: progress,
 				transform: `translate3d(0, ${interpolate(progress, [0, 1], [44, 0])}px, 0)`,
@@ -1932,14 +1968,14 @@ function RecommendedTeamPanel({
 			<div className="grid grid-cols-[1fr_210px] gap-6">
 				<div>
 					<div className="mb-4 flex items-center gap-3">
-						<div className="grid h-12 w-12 place-items-center rounded-lg bg-emerald-400 text-slate-950">
+						<div className="grid h-12 w-12 place-items-center rounded-lg bg-emerald-100 text-emerald-600">
 							<BadgeCheck size={25} strokeWidth={2.6} />
 						</div>
 						<div>
 							<p className="text-[24px] font-black leading-tight">
 								MVP 런칭 스쿼드 추천
 							</p>
-							<p className="mt-1 text-[13px] font-bold text-slate-300">
+							<p className="mt-1 text-[13px] font-bold text-slate-500">
 								목표, 속도, 역할 균형이 맞는 조합입니다.
 							</p>
 						</div>
@@ -1947,7 +1983,7 @@ function RecommendedTeamPanel({
 					<div className="grid grid-cols-3 gap-2">
 						{["FE", "BE", "PM"].map((role, index) => (
 							<div
-								className="rounded-lg bg-white px-3 py-3 text-center text-[15px] font-black text-slate-950"
+								className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-3 text-center text-[15px] font-black text-slate-950"
 								key={role}
 								style={{
 									opacity: motionProgress(
@@ -1963,16 +1999,16 @@ function RecommendedTeamPanel({
 					</div>
 				</div>
 				<div
-					className="rounded-lg bg-white/10 p-5"
+					className="rounded-lg border border-emerald-100 bg-emerald-50 p-5"
 					style={{
 						boxShadow: `0 0 ${interpolate(spark, [0, 1], [0, 28])}px rgba(52,211,153,0.45)`,
 					}}
 				>
-					<p className="text-[13px] font-bold text-emerald-200">match score</p>
-					<p className="mt-2 text-[42px] font-black leading-none text-white">
+					<p className="text-[13px] font-bold text-emerald-600">match score</p>
+					<p className="mt-2 text-[42px] font-black leading-none text-emerald-600">
 						98%
 					</p>
-					<p className="mt-2 text-[12px] font-bold text-slate-300">
+					<p className="mt-2 text-[12px] font-bold text-slate-500">
 						바로 팀 스페이스 생성 가능
 					</p>
 				</div>
@@ -2170,10 +2206,12 @@ function WorkspaceDemoWindow({
 							<div className="px-4 py-3 text-slate-400">체크리스트</div>
 							<div className="px-4 py-3 text-slate-400">회의 기록</div>
 						</div>
-						<div className="mt-8 rounded-lg bg-slate-950 p-5 text-white">
-							<p className="text-[13px] font-bold text-blue-200">이번 주</p>
-							<p className="mt-2 text-[25px] font-black">Active</p>
-							<p className="mt-2 text-[12px] font-bold text-slate-300">
+						<div className="mt-8 rounded-lg border border-blue-100 bg-blue-50 p-5">
+							<p className="text-[13px] font-bold text-blue-600">이번 주</p>
+							<p className="mt-2 text-[25px] font-black text-slate-950">
+								Active
+							</p>
+							<p className="mt-2 text-[12px] font-bold text-slate-500">
 								3개 태스크 진행 중
 							</p>
 						</div>
@@ -2404,25 +2442,25 @@ function WorkspaceChecklist({ frame, fps }: { frame: number; fps: number }) {
 function WorkspaceActionDrawer({ progress }: { progress: number }) {
 	return (
 		<div
-			className="absolute bottom-7 right-7 w-[390px] rounded-lg border border-emerald-100 bg-slate-950 p-5 text-white shadow-[0_24px_72px_rgba(15,23,42,0.24)]"
+			className="absolute bottom-7 right-7 w-[390px] rounded-lg border border-emerald-100 bg-white/96 p-5 text-slate-950 shadow-[0_24px_72px_rgba(15,118,110,0.16)] backdrop-blur"
 			style={{
 				opacity: progress,
 				transform: `translate3d(${interpolate(progress, [0, 1], [46, 0])}px, 0, 0)`,
 			}}
 		>
 			<div className="mb-3 flex items-center gap-3">
-				<div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-400 text-slate-950">
+				<div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-100 text-emerald-600">
 					<Check size={21} strokeWidth={3} />
 				</div>
 				<div>
 					<p className="text-[18px] font-black">active 단계로 전환</p>
-					<p className="text-[12px] font-bold text-slate-300">
+					<p className="text-[12px] font-bold text-slate-500">
 						팀원에게 다음 액션이 공유됩니다
 					</p>
 				</div>
 			</div>
-			<div className="h-2 rounded-full bg-white/10">
-				<div className="h-2 w-[72%] rounded-full bg-emerald-400" />
+			<div className="h-2 rounded-full bg-emerald-100">
+				<div className="h-2 w-[72%] rounded-full bg-emerald-500" />
 			</div>
 		</div>
 	);
@@ -2645,10 +2683,12 @@ function ReportDemoWindow({
 							</div>
 							<div className="px-4 py-3 text-slate-400">회고</div>
 						</div>
-						<div className="mt-8 rounded-lg bg-slate-950 p-5 text-white">
-							<p className="text-[13px] font-bold text-indigo-200">이번 주</p>
-							<p className="mt-2 text-[25px] font-black">Shipping</p>
-							<p className="mt-2 text-[12px] font-bold text-slate-300">
+						<div className="mt-8 rounded-lg border border-indigo-100 bg-indigo-50 p-5">
+							<p className="text-[13px] font-bold text-indigo-600">이번 주</p>
+							<p className="mt-2 text-[25px] font-black text-slate-950">
+								Shipping
+							</p>
+							<p className="mt-2 text-[12px] font-bold text-slate-500">
 								릴리즈까지 D-3
 							</p>
 						</div>
@@ -2868,7 +2908,7 @@ function ReportActivityList({ frame, fps }: { frame: number; fps: number }) {
 function ReportInsightPanel({ progress }: { progress: number }) {
 	return (
 		<div
-			className="absolute bottom-7 left-7 right-7 rounded-lg border border-indigo-100 bg-slate-950 p-6 text-white shadow-[0_24px_72px_rgba(15,23,42,0.24)]"
+			className="absolute bottom-7 left-7 right-7 rounded-lg border border-indigo-100 bg-white/96 p-6 text-slate-950 shadow-[0_24px_72px_rgba(67,56,202,0.16)] backdrop-blur"
 			style={{
 				opacity: progress,
 				transform: `translate3d(0, ${interpolate(progress, [0, 1], [44, 0])}px, 0)`,
@@ -2876,21 +2916,23 @@ function ReportInsightPanel({ progress }: { progress: number }) {
 		>
 			<div className="grid grid-cols-[1fr_210px] gap-6">
 				<div className="flex items-center gap-4">
-					<div className="grid h-12 w-12 place-items-center rounded-lg bg-indigo-400 text-slate-950">
+					<div className="grid h-12 w-12 place-items-center rounded-lg bg-indigo-100 text-indigo-600">
 						<Sparkles size={25} strokeWidth={2.6} />
 					</div>
 					<div>
 						<p className="text-[23px] font-black">
 							이번 주 병목은 API 응답 지연
 						</p>
-						<p className="mt-1 text-[13px] font-bold text-slate-300">
+						<p className="mt-1 text-[13px] font-bold text-slate-500">
 							배포 체크리스트 전에 API 이슈를 먼저 닫는 것을 추천합니다.
 						</p>
 					</div>
 				</div>
-				<div className="rounded-lg bg-white/10 p-4">
-					<p className="text-[13px] font-bold text-indigo-200">next action</p>
-					<p className="mt-2 text-[20px] font-black">BE 리뷰 요청</p>
+				<div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+					<p className="text-[13px] font-bold text-indigo-600">next action</p>
+					<p className="mt-2 text-[20px] font-black text-slate-950">
+						BE 리뷰 요청
+					</p>
 				</div>
 			</div>
 		</div>
@@ -3111,7 +3153,7 @@ function ClosingDashboardWindow({
 							</p>
 						</div>
 						<div
-							className="rounded-lg bg-slate-950 px-6 py-4 text-[17px] font-black text-white shadow-[0_14px_34px_rgba(15,23,42,0.22)]"
+							className="rounded-lg bg-blue-500 px-6 py-4 text-[17px] font-black text-white shadow-[0_14px_34px_rgba(59,130,246,0.24)]"
 							style={{
 								transform: `scale(${interpolate(launch, [0, 0.45, 1], [1, 0.97, 1.05])})`,
 							}}
@@ -3180,11 +3222,13 @@ function ClosingDashboardWindow({
 									);
 								})}
 							</div>
-							<div className="mt-6 rounded-lg bg-slate-950 p-5 text-white">
-								<p className="text-[13px] font-bold text-emerald-200">
+							<div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50 p-5">
+								<p className="text-[13px] font-bold text-emerald-600">
 									next action
 								</p>
-								<p className="mt-2 text-[21px] font-black">데모 배포 체크</p>
+								<p className="mt-2 text-[21px] font-black text-slate-950">
+									데모 배포 체크
+								</p>
 							</div>
 						</div>
 					</div>
