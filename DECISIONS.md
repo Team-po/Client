@@ -48,3 +48,8 @@
 - Route performance approach: lazy-load route pages from `src/App.tsx`, especially `/team` and `/deck/*`, to keep the initial app bundle smaller without changing route ownership.
 - Team workspace structure: keep `/team` orchestration in `team-space-view.tsx`, split signed-in server-backed panels into focused `real-team-*` components, and keep the signed-out mock preview separate while sharing tabs, status helpers, and GitHub permission notices.
 - MSW maintainability: keep route handlers in `src/lib/api/mocks/handlers.ts`, but move reusable team-space fixture builders into `src/lib/api/mocks/team-space-fixtures.ts` so handler code focuses on request behavior.
+
+## 2026-06-11
+- PR video approach: use Remotion for frame-accurate React motion graphics and `@remotion/player` for in-app preview at `/pr-video` before rendering.
+- Remotion dependency policy: keep `remotion`, `@remotion/cli`, and `@remotion/player` on the same exact version to avoid render/runtime mismatches.
+- Remotion styling bridge: use `@remotion/tailwind` so Vite preview and Remotion CLI renders share the same Tailwind v3 visual system.

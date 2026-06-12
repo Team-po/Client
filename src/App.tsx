@@ -56,6 +56,11 @@ const TeamSpacePage = lazy(() =>
 		default: TeamSpacePage,
 	})),
 );
+const PrVideoPage = lazy(() =>
+	import("@/pages/pr-video-page").then(({ PrVideoPage }) => ({
+		default: PrVideoPage,
+	})),
+);
 const TeamPoPresentationPage = lazy(() =>
 	import("@/pages/team-po-presentation-page").then(
 		({ TeamPoPresentationPage }) => ({
@@ -226,6 +231,7 @@ export function App() {
 					<Route path="/me" element={<ProfilePage />} />
 					<Route path="/match" element={<MatchPage />} />
 					<Route path="/team" element={<TeamSpacePage />} />
+					<Route path="/pr-video" element={<PrVideoPage />} />
 					<Route path="*" element={<Navigate replace to="/" />} />
 				</Routes>
 			</Suspense>
