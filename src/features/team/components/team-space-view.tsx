@@ -4,7 +4,6 @@ import {
 	GitPullRequest,
 	LoaderCircle,
 	Save,
-	SendHorizontal,
 	Settings2,
 	Sparkles,
 } from "lucide-react";
@@ -30,6 +29,7 @@ import {
 	storeProjectGroupFinishAgreement,
 } from "@/features/project-groups/lib/finish-agreement-storage";
 import { RealGithubInstallationPanel } from "@/features/team/components/real-github-installation-panel";
+import { RealTeamChatPanel } from "@/features/team/components/real-team-chat-panel";
 import { RealGuidePanel } from "@/features/team/components/real-team-guide-panel";
 import { RealManagePanel } from "@/features/team/components/real-team-manage-panel";
 import { RealOverviewPanel } from "@/features/team/components/real-team-overview-panel";
@@ -435,7 +435,9 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 									projectGroup={projectGroup}
 								/>
 							) : null}
-							{selectedTab === "chat" ? <RealChatPanelDisabled /> : null}
+							{selectedTab === "chat" ? (
+								<RealTeamChatPanel projectGroup={projectGroup} />
+							) : null}
 							{selectedTab === "manage" ? (
 								<RealManagePanel
 									canManageAdminPermissions={canManageAdminPermissions}
@@ -791,51 +793,6 @@ function RealRulesPanelDisabled() {
 	);
 }
 
-function RealChatPanelDisabled() {
-	return (
-		<AppPanel>
-			<AppPanelHeader
-				action={<Badge variant="neutral">준비 중</Badge>}
-				description="팀 채팅 API가 연결되면 메시지를 보낼 수 있어요."
-				eyebrow="Messages"
-				title="팀 채팅"
-			/>
-			<div className="flex h-[34rem] flex-col gap-5 p-5">
-				<div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-border/70 bg-brand-warm p-4">
-					<div className="flex justify-start">
-						<div className="max-w-[min(34rem,88%)] rounded-lg border border-border/70 bg-white p-4 shadow-crisp">
-							<p className="font-semibold text-brand-ink">Team-po</p>
-							<p className="mt-2 text-sm leading-6 text-muted-foreground">
-								채팅 기능은 API가 연결되면 사용할 수 있어요.
-							</p>
-						</div>
-					</div>
-				</div>
-				<form className="grid shrink-0 gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-[1fr_auto]">
-					<label
-						className="grid gap-2 text-sm font-semibold text-brand-ink"
-						htmlFor="real-team-message"
-					>
-						메시지
-						<input
-							className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
-							disabled
-							id="real-team-message"
-							placeholder="채팅 API 연결 후 입력할 수 있어요"
-						/>
-					</label>
-					<div className="flex items-end">
-						<Button disabled type="button">
-							<SendHorizontal data-icon="inline-start" />
-							전송
-						</Button>
-					</div>
-				</form>
-			</div>
-		</AppPanel>
-	);
-}
-
 function getRealTeamTabBadge(
 	tabId: TeamTab,
 	checklists: ProjectChecklist[],
@@ -856,7 +813,7 @@ function getRealTeamTabBadge(
 		return summary.openCount > 0 ? String(summary.openCount) : "완료";
 	}
 
-	if (tabId === "rules" || tabId === "chat") {
+	if (tabId === "rules") {
 		return "준비";
 	}
 
@@ -875,5 +832,5 @@ function getRealTeamTabBadge(
 }
 
 function isRealTeamTabDisabled(tabId: TeamTab) {
-	return tabId === "rules" || tabId === "chat";
+	return tabId === "rules";
 }
