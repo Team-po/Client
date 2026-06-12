@@ -28,6 +28,8 @@ import {
 	useVideoConfig,
 } from "remotion";
 
+import { PrVideoSoundDesign } from "@/features/pr-video/components/pr-video-sound-design";
+
 const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
 const EASE_IN_OUT = Easing.bezier(0.45, 0, 0.55, 1);
 const OPENING_SCENE_FRAMES = 180;
@@ -431,6 +433,7 @@ export function TeamPoPrVideo() {
 			>
 				<FinaleLogoScene />
 			</Sequence>
+			<PrVideoSoundDesign />
 			<TeamGroupWatermark />
 		</AbsoluteFill>
 	);
