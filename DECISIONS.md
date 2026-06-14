@@ -53,3 +53,7 @@
 - PR video approach: use Remotion for frame-accurate React motion graphics and `@remotion/player` for in-app preview at `/pr-video` before rendering.
 - Remotion dependency policy: keep `remotion`, `@remotion/cli`, and `@remotion/player` on the same exact version to avoid render/runtime mismatches.
 - Remotion styling bridge: use `@remotion/tailwind` so Vite preview and Remotion CLI renders share the same Tailwind v3 visual system.
+
+## 2026-06-13
+- Remotion sound design: use `@remotion/sfx` at the same exact Remotion version for predefined motion-graphic SFX cues instead of hand-generating local audio assets.
+- PR video BGM: use a locally generated light musical WAV under `public/audio/pr-video/` with Remotion fade controls, avoiding external music licensing and network-dependent playback.
