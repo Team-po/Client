@@ -13,6 +13,8 @@ interface ApiRequestOptions extends Omit<RequestInit, "body"> {
 	skipRefresh?: boolean;
 }
 
+const authRefreshSkewMs = 30_000;
+
 export class ApiError extends Error {
 	code?: string;
 	fieldErrors?: Record<string, string>;
@@ -64,6 +66,21 @@ export async function apiRequest<T>(
 	}
 
 	return data as T;
+}
+
+export async function ensureFreshAuthSession() {
+	const session = getAuthSession();
+
+	if (!session) {
+		return null;
+	}
+
+	if (!isAuthSessionExpiring(session.expiresAt)) {
+		return session;
+	}
+
+	const refreshed = await refreshAccessToken();
+	return refreshed ? getAuthSession() : null;
 }
 
 function buildRequestInit({
@@ -126,6 +143,16 @@ async function refreshAccessToken() {
 	});
 
 	return true;
+}
+
+function isAuthSessionExpiring(expiresAt: string) {
+	const expiresAtMs = new Date(expiresAt).getTime();
+
+	if (!Number.isFinite(expiresAtMs)) {
+		return true;
+	}
+
+	return expiresAtMs <= Date.now() + authRefreshSkewMs;
 }
 
 export function getApiErrorMessage(

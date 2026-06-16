@@ -26,6 +26,9 @@ importers:
       '@remotion/sfx':
         specifier: 4.0.475
         version: 4.0.475
+      '@stomp/stompjs':
+        specifier: ^7.2.1
+        version: 7.3.0
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@19.2.4)
@@ -1320,6 +1323,9 @@ packages:
     peerDependenciesMeta:
       webpack-hot-middleware:
         optional: true
+
+  '@stomp/stompjs@7.3.0':
+    resolution: {integrity: sha512-nKMLoFfJhrQAqkvvKd1vLq/cVBGCMwPRCD0LqW7UT1fecRx9C3GoKEIR2CYwVuErGeZu8w0kFkl2rlhPlqHVgQ==}
 
   '@tanstack/query-core@5.90.20':
     resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
@@ -3941,6 +3947,8 @@ snapshots:
       error-stack-parser: 2.1.4
       html-entities: 2.6.0
       react-refresh: 0.18.0
+
+  '@stomp/stompjs@7.3.0': {}
 
   '@tanstack/query-core@5.90.20': {}
 

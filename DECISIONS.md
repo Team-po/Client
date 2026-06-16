@@ -54,6 +54,11 @@
 - Remotion dependency policy: keep `remotion`, `@remotion/cli`, and `@remotion/player` on the same exact version to avoid render/runtime mismatches.
 - Remotion styling bridge: use `@remotion/tailwind` so Vite preview and Remotion CLI renders share the same Tailwind v3 visual system.
 
+## 2026-06-12
+- Team chat transport: use `@stomp/stompjs` for the signed-in team-space chat panel because the backend exposes Spring STOMP topics for real-time project-group messages.
+- Team chat state: keep message history in TanStack Query through `src/features/team/hooks/use-chat-queries.ts`, and append live STOMP messages into the same cache so REST history and real-time delivery share one UI source of truth.
+- Mock parity: keep chat handlers in MSW for `/project-groups/:projectGroupId/chat/messages` and `/project-groups/:projectGroupId/chat/read` so the same chat panel can be browser-tested without a running backend.
+
 ## 2026-06-13
 - Remotion sound design: use `@remotion/sfx` at the same exact Remotion version for predefined motion-graphic SFX cues instead of hand-generating local audio assets.
 - PR video BGM: use a locally generated light musical WAV under `public/audio/pr-video/` with Remotion fade controls, avoiding external music licensing and network-dependent playback.

@@ -36,6 +36,7 @@ import type {
 	UpdateProjectChecklistRequest,
 } from "@/lib/types/project-checklist";
 import type { MyProjectGroup } from "@/lib/types/project-group";
+import type { ChatMessage } from "@/lib/types/chat";
 import type {
 	DevGuideContent,
 	DevGuideGenerationStatus,
@@ -67,6 +68,7 @@ let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
 let projectGroupFinishAgreementUserIds = new Set<number>();
 let activeProjectChecklists: ProjectChecklist[] = createMockProjectChecklists();
+let activeChatMessages: ChatMessage[] = createMockChatMessages();
 let activeDevGuide: DevGuideContent | null =
 	createMockDevGuide(activeProjectGroup);
 let activeDevGuideGenerationStatus: DevGuideGenerationStatus | null =
@@ -273,6 +275,7 @@ function resetTeamSpaceApiState() {
 	activeProjectChecklists = activeProjectGroup
 		? createMockProjectChecklists()
 		: [];
+	activeChatMessages = activeProjectGroup ? createMockChatMessages() : [];
 	activeDevGuide = createMockDevGuide(activeProjectGroup);
 	activeDevGuideGenerationStatus = activeDevGuide ? "COMPLETED" : null;
 	remainingDevGuideRegenerationCount = activeDevGuide ? 3 : null;
@@ -757,6 +760,52 @@ function createMockProjectGroup(): MyProjectGroup {
 		projectName: "Blue Sprint",
 		projectTitle: "Team-po 팀 운영 MVP",
 	};
+}
+
+function createMockChatMessages(): ChatMessage[] {
+	const currentMember = activeProjectGroup?.members.find(
+		(member) => member.userId === currentUserId,
+	);
+	const backendMember = activeProjectGroup?.members.find(
+		(member) => member.memberRole === "BACKEND",
+	);
+
+	return [
+		{
+			content: "오늘 체크리스트 우선순위만 먼저 맞춰볼까요?",
+			createdAt: "2026-06-11T09:15:00Z",
+			messageId: 1000,
+			mine: false,
+			projectGroupId: activeProjectGroup?.projectGroupId ?? 10,
+			senderNickname: backendMember?.nickname ?? "api_builder",
+			senderProfileImage: backendMember?.profileImage ?? null,
+			senderUserId: backendMember?.userId ?? 2,
+			type: "TEXT",
+		},
+		{
+			content: "좋아요. 저는 팀스페이스 화면 연결부터 볼게요.",
+			createdAt: "2026-06-11T09:17:00Z",
+			messageId: 1001,
+			mine: true,
+			projectGroupId: activeProjectGroup?.projectGroupId ?? 10,
+			senderNickname: currentMember?.nickname ?? "preview",
+			senderProfileImage: currentMember?.profileImage ?? null,
+			senderUserId: currentMember?.userId ?? currentUserId,
+			type: "TEXT",
+		},
+		{
+			content:
+				"GitHub 연결 전까지는 체크리스트 기준으로 진행 상황을 공유하면 될 것 같아요.",
+			createdAt: "2026-06-11T09:20:00Z",
+			messageId: 1002,
+			mine: false,
+			projectGroupId: activeProjectGroup?.projectGroupId ?? 10,
+			senderNickname: "pixel_runner",
+			senderProfileImage: null,
+			senderUserId: 3,
+			type: "TEXT",
+		},
+	];
 }
 
 function createMockProjectChecklists(): ProjectChecklist[] {
@@ -2069,6 +2118,73 @@ export const handlers = [
 			return HttpResponse.json({
 				aiAdvice,
 				checklistId,
+			});
+		},
+	),
+
+	http.get(
+		getPath("/project-groups/:projectGroupId/chat/messages"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const url = new URL(request.url);
+			const beforeMessageId = Number(url.searchParams.get("beforeMessageId"));
+			const size = Number(url.searchParams.get("size") ?? "30");
+			const normalizedSize =
+				Number.isFinite(size) && size > 0 ? Math.min(size, 50) : 30;
+			const cursor =
+				Number.isFinite(beforeMessageId) && beforeMessageId > 0
+					? beforeMessageId
+					: null;
+			const availableMessages = activeChatMessages
+				.filter((message) => message.projectGroupId === projectGroupId)
+				.filter((message) => cursor === null || message.messageId < cursor);
+			const pageMessages = availableMessages.slice(-normalizedSize);
+			const hasNext = availableMessages.length > pageMessages.length;
+
+			return HttpResponse.json({
+				hasNext,
+				messages: pageMessages,
+				nextBeforeMessageId:
+					hasNext && pageMessages.length > 0 ? pageMessages[0].messageId : null,
+			});
+		},
+	),
+
+	http.patch(
+		getPath("/project-groups/:projectGroupId/chat/read"),
+		async ({ params, request }) => {
+			const body = (await request.json()) as { lastReadMessageId?: number };
+
+			await delay(150);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			if (typeof body.lastReadMessageId !== "number") {
+				return buildErrorResponse(
+					400,
+					"읽은 메시지 식별자는 필수입니다.",
+					"INVALID_INPUT_FIELD",
+				);
+			}
+
+			return HttpResponse.json({
+				lastReadMessageId: body.lastReadMessageId,
+				updatedAt: new Date().toISOString(),
 			});
 		},
 	),
