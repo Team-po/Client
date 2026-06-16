@@ -23,9 +23,11 @@ type ChatConnectionState =
 	| "error";
 
 export function useProjectGroupChat({
+	currentUserId,
 	enabled,
 	projectGroupId,
 }: {
+	currentUserId: number | undefined;
 	enabled: boolean;
 	projectGroupId: number | undefined;
 }) {
@@ -83,10 +85,14 @@ export function useProjectGroupChat({
 						if (!chatMessage) {
 							return;
 						}
+						const ownedChatMessage = applyChatMessageOwnership(
+							chatMessage,
+							currentUserId,
+						);
 
 						queryClient.setQueryData<ChatMessagePage>(
 							chatQueryKeys.messages(projectGroupId),
-							(current) => appendChatMessagePage(current, chatMessage),
+							(current) => appendChatMessagePage(current, ownedChatMessage),
 						);
 					},
 				);
@@ -120,7 +126,7 @@ export function useProjectGroupChat({
 			clientRef.current = null;
 			void client.deactivate();
 		};
-	}, [enabled, projectGroupId, queryClient]);
+	}, [currentUserId, enabled, projectGroupId, queryClient]);
 
 	const sendMessage = useCallback(
 		(content: string) => {
@@ -179,4 +185,18 @@ function parseChatMessage(message: IMessage) {
 	} catch {
 		return null;
 	}
+}
+
+function applyChatMessageOwnership(
+	message: ChatMessage,
+	currentUserId: number | undefined,
+): ChatMessage {
+	if (typeof currentUserId !== "number") {
+		return message;
+	}
+
+	return {
+		...message,
+		mine: message.senderUserId === currentUserId,
+	};
 }
