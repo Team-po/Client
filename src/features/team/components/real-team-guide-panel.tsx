@@ -1,10 +1,20 @@
-import { CheckCircle2, LoaderCircle, RefreshCw } from "lucide-react";
+import {
+	Check,
+	CheckCircle2,
+	History,
+	LoaderCircle,
+	RefreshCw,
+} from "lucide-react";
+import { useState } from "react";
 
 import { AppPanel, AppPanelHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RealInlineStatus } from "@/features/team/components/real-team-shared";
 import {
+	useConfirmDevGuideMutation,
+	useDevGuideHistoriesQuery,
+	useDevGuideHistoryContentQuery,
 	useDevGuideQuery,
 	useRegenerateDevGuideMutation,
 } from "@/features/team/hooks/use-team-space-queries";
@@ -13,14 +23,19 @@ import type { MyProjectGroup } from "@/lib/types/project-group";
 import type {
 	DevGuideContent,
 	DevGuideGenerationStatus,
+	DevGuideHistory,
 	DevGuideQueryResponse,
 } from "@/lib/types/team-space";
+import { formatDateTime } from "@/lib/utils/date";
 
 export function RealGuidePanel({
 	projectGroup,
 }: {
 	projectGroup: MyProjectGroup;
 }) {
+	const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(
+		null,
+	);
 	const devGuideQuery = useDevGuideQuery(projectGroup.projectGroupId);
 	const regenerateDevGuideMutation = useRegenerateDevGuideMutation();
 	const guideResponse = devGuideQuery.data;
@@ -28,9 +43,31 @@ export function RealGuidePanel({
 	const generationStatus = guideResponse?.generationStatus;
 	const remainingRegenerationCount =
 		guideResponse?.remainingRegenerationCount ?? null;
+	const historiesQuery = useDevGuideHistoriesQuery(
+		projectGroup.projectGroupId,
+		Boolean(guideResponse) && generationStatus !== "GENERATING",
+	);
+	const histories = historiesQuery.data?.histories ?? [];
+	const selectedHistory =
+		histories.find((history) => history.devGuideId === selectedHistoryId) ??
+		histories[0] ??
+		null;
+	const historyContentQuery = useDevGuideHistoryContentQuery(
+		projectGroup.projectGroupId,
+		selectedHistory?.devGuideId,
+		Boolean(selectedHistory),
+	);
+	const confirmDevGuideMutation = useConfirmDevGuideMutation();
 
 	const handleRegenerateDevGuide = () => {
 		regenerateDevGuideMutation.mutate({
+			projectGroupId: projectGroup.projectGroupId,
+		});
+	};
+
+	const handleConfirmDevGuide = (devGuideId: number) => {
+		confirmDevGuideMutation.mutate({
+			devGuideId,
 			projectGroupId: projectGroup.projectGroupId,
 		});
 	};
@@ -224,6 +261,20 @@ export function RealGuidePanel({
 					</div>
 				</div>
 			</AppPanel>
+
+			<RealDevGuideHistoryPanel
+				confirmError={confirmDevGuideMutation.error}
+				histories={histories}
+				historiesError={historiesQuery.error}
+				isConfirming={confirmDevGuideMutation.isPending}
+				isLoading={historiesQuery.isLoading}
+				onConfirm={handleConfirmDevGuide}
+				onSelectHistory={setSelectedHistoryId}
+				selectedHistory={selectedHistory}
+				selectedHistoryContent={historyContentQuery.data ?? null}
+				selectedHistoryContentError={historyContentQuery.error}
+				selectedHistoryContentLoading={historyContentQuery.isLoading}
+			/>
 
 			<div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
 				<RealDevGuideTechStackPanel guide={guide} />
@@ -468,6 +519,217 @@ function RealDevGuideMilestonePanel({ guide }: { guide: DevGuideContent }) {
 			</div>
 		</AppPanel>
 	);
+}
+
+function RealDevGuideHistoryPanel({
+	confirmError,
+	histories,
+	historiesError,
+	isConfirming,
+	isLoading,
+	onConfirm,
+	onSelectHistory,
+	selectedHistory,
+	selectedHistoryContent,
+	selectedHistoryContentError,
+	selectedHistoryContentLoading,
+}: {
+	confirmError: unknown;
+	histories: DevGuideHistory[];
+	historiesError: unknown;
+	isConfirming: boolean;
+	isLoading: boolean;
+	onConfirm: (devGuideId: number) => void;
+	onSelectHistory: (devGuideId: number) => void;
+	selectedHistory: DevGuideHistory | null;
+	selectedHistoryContent: (DevGuideContent & DevGuideHistory) | null;
+	selectedHistoryContentError: unknown;
+	selectedHistoryContentLoading: boolean;
+}) {
+	const canConfirmSelected = selectedHistory
+		? !selectedHistory.confirmed
+		: false;
+
+	return (
+		<AppPanel>
+			<AppPanelHeader
+				action={<Badge variant="neutral">버전 {histories.length}개</Badge>}
+				description="서버에 저장된 개발 가이드 버전을 비교하고 팀 기준 버전으로 확정해요."
+				eyebrow="History"
+				title="가이드 버전 기록"
+			/>
+			<div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+				<div className="grid content-start gap-3">
+					{isLoading ? (
+						<RealInlineStatus
+							icon={<LoaderCircle className="size-4 animate-spin" />}
+							message="가이드 버전 기록을 불러오고 있어요."
+						/>
+					) : null}
+
+					{historiesError ? (
+						<RealInlineStatus
+							message={`버전 기록 조회 실패: ${getApiErrorMessage(
+								historiesError,
+							)}`}
+						/>
+					) : null}
+
+					{!isLoading && !historiesError && histories.length === 0 ? (
+						<RealInlineStatus message="아직 저장된 가이드 버전이 없어요." />
+					) : null}
+
+					{histories.map((history) => (
+						<button
+							className={`rounded-lg border p-4 text-left shadow-crisp transition-colors ${
+								selectedHistory?.devGuideId === history.devGuideId
+									? "border-primary/30 bg-primary/5"
+									: "border-border/70 bg-white hover:border-primary/30"
+							}`}
+							key={history.devGuideId}
+							onClick={() => onSelectHistory(history.devGuideId)}
+							type="button"
+						>
+							<span className="flex flex-wrap items-start justify-between gap-3">
+								<span className="min-w-0">
+									<span className="flex items-center gap-2 font-semibold text-brand-ink">
+										<History className="size-4 shrink-0 text-primary" />v
+										{history.versionNo}
+									</span>
+									<span className="mt-1 block text-xs text-muted-foreground">
+										{formatDateTime(history.createdAt)}
+									</span>
+								</span>
+								<span className="flex flex-wrap gap-2">
+									<Badge variant="neutral">
+										{getDevGuideGenerationTypeLabel(history.generationType)}
+									</Badge>
+									{history.confirmed ? (
+										<Badge variant="brand">확정됨</Badge>
+									) : null}
+								</span>
+							</span>
+						</button>
+					))}
+				</div>
+
+				<div className="min-w-0 rounded-lg border border-border/70 bg-brand-warm p-4">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+						<div className="min-w-0">
+							<p className="text-sm font-semibold text-brand-ink">
+								{selectedHistory
+									? `v${selectedHistory.versionNo} 본문`
+									: "선택된 버전 없음"}
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								{selectedHistory
+									? formatDateTime(selectedHistory.createdAt)
+									: "기록을 선택하면 본문 요약이 표시돼요."}
+							</p>
+						</div>
+						<Button
+							disabled={!selectedHistory || !canConfirmSelected || isConfirming}
+							onClick={() =>
+								selectedHistory
+									? onConfirm(selectedHistory.devGuideId)
+									: undefined
+							}
+							size="sm"
+							type="button"
+							variant="outline"
+						>
+							{isConfirming ? (
+								<LoaderCircle
+									className="animate-spin"
+									data-icon="inline-start"
+								/>
+							) : (
+								<Check data-icon="inline-start" />
+							)}
+							확정
+						</Button>
+					</div>
+
+					{confirmError ? (
+						<RealInlineStatus
+							className="mt-4"
+							message={`가이드 확정 실패: ${getApiErrorMessage(confirmError)}`}
+						/>
+					) : null}
+
+					{selectedHistoryContentLoading ? (
+						<RealInlineStatus
+							className="mt-4"
+							icon={<LoaderCircle className="size-4 animate-spin" />}
+							message="선택한 버전의 본문을 불러오고 있어요."
+						/>
+					) : null}
+
+					{selectedHistoryContentError ? (
+						<RealInlineStatus
+							className="mt-4"
+							message={`버전 본문 조회 실패: ${getApiErrorMessage(
+								selectedHistoryContentError,
+							)}`}
+						/>
+					) : null}
+
+					{selectedHistoryContent ? (
+						<div className="mt-4 grid gap-4">
+							<p className="text-sm leading-7 text-brand-ink">
+								{selectedHistoryContent.overview}
+							</p>
+							<div className="grid gap-2 sm:grid-cols-3">
+								<RealDevGuideHistoryMetric
+									label="MVP"
+									value={`${selectedHistoryContent.mvpPriorities.length}개`}
+								/>
+								<RealDevGuideHistoryMetric
+									label="결정"
+									value={`${selectedHistoryContent.decisionPoints.length}개`}
+								/>
+								<RealDevGuideHistoryMetric
+									label="마일스톤"
+									value={`${selectedHistoryContent.milestones.length}주`}
+								/>
+							</div>
+						</div>
+					) : null}
+				</div>
+			</div>
+		</AppPanel>
+	);
+}
+
+function RealDevGuideHistoryMetric({
+	label,
+	value,
+}: {
+	label: string;
+	value: string;
+}) {
+	return (
+		<div className="rounded-md border border-border/70 bg-white px-3 py-2">
+			<p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
+			<p className="mt-1 font-mono text-sm font-semibold text-brand-ink">
+				{value}
+			</p>
+		</div>
+	);
+}
+
+function getDevGuideGenerationTypeLabel(
+	type: DevGuideHistory["generationType"],
+) {
+	if (type === "MANUAL") {
+		return "수동";
+	}
+
+	if (type === "RECOVERY") {
+		return "복구";
+	}
+
+	return "초기";
 }
 
 function RealDevGuideRoleTask({

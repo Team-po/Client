@@ -112,3 +112,48 @@ export interface RegenerateDevGuideResponse {
 	generationType: DevGuideGenerationType;
 	remainingRegenerationCount?: number | null;
 }
+
+export interface ConfirmDevGuideRequest {
+	devGuideId: number;
+	projectGroupId: number;
+}
+
+export interface DevGuideHistory {
+	confirmed: boolean;
+	createdAt: string;
+	devGuideId: number;
+	generationType: DevGuideGenerationType;
+	versionNo: number;
+}
+
+export interface DevGuideHistoryListResponse {
+	histories: DevGuideHistory[];
+}
+
+export type DevGuideHistoryContentResponse = DevGuideContent & DevGuideHistory;
+
+export interface GithubWeeklySummaryRequest {
+	projectGroupId: number;
+	targetUserId: number;
+}
+
+export interface GithubWeeklySummaryContent {
+	followUpSuggestions: string[];
+	issueHighlights: string[];
+	mainActivities: string[];
+	pullRequestHighlights: string[];
+	summary: string;
+}
+
+export interface GithubWeeklySummary {
+	periodEnd: string;
+	periodStart: string;
+	sourceIssueCount: number;
+	sourcePrCount: number;
+	summary: GithubWeeklySummaryContent;
+	weeklyGithubSummaryId: number;
+}
+
+export interface GithubWeeklySummaryListResponse {
+	summaries: GithubWeeklySummary[];
+}

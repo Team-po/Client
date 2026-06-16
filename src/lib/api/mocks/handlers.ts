@@ -40,11 +40,13 @@ import type { ChatMessage } from "@/lib/types/chat";
 import type {
 	DevGuideContent,
 	DevGuideGenerationStatus,
+	DevGuideHistoryContentResponse,
 	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubInstallationStatus,
 	GithubRepository,
 	GithubRepositoryContributionResponse,
+	GithubWeeklySummaryListResponse,
 	RegenerateDevGuideResponse,
 } from "@/lib/types/team-space";
 import type {
@@ -74,6 +76,8 @@ let activeDevGuideGenerationStatus: DevGuideGenerationStatus | null =
 let remainingDevGuideRegenerationCount: number | null = activeDevGuide
 	? 3
 	: null;
+let activeDevGuideHistories = createMockDevGuideHistories(activeDevGuide);
+let nextDevGuideId = 902;
 let nextProjectChecklistId = 103;
 let githubInstallationStatus: GithubInstallationStatus =
 	createDisconnectedGithubStatus();
@@ -275,6 +279,8 @@ function resetTeamSpaceApiState() {
 	activeDevGuide = createMockDevGuide(activeProjectGroup);
 	activeDevGuideGenerationStatus = activeDevGuide ? "COMPLETED" : null;
 	remainingDevGuideRegenerationCount = activeDevGuide ? 3 : null;
+	activeDevGuideHistories = createMockDevGuideHistories(activeDevGuide);
+	nextDevGuideId = 902;
 	nextProjectChecklistId = 103;
 	githubInstallationStatus = createDisconnectedGithubStatus();
 	clearPendingGithubInstallationState();
@@ -311,6 +317,106 @@ function createRegeneratedMockDevGuide(feedback: string | undefined) {
 			? `${guide.overview} 최근 재생성 요청에서 전달한 피드백도 함께 반영했습니다: ${feedback}`
 			: `${guide.overview} 최근 팀 정보를 기준으로 가이드라인을 다시 생성했습니다.`,
 	} satisfies DevGuideContent;
+}
+
+function createMockDevGuideHistories(
+	guide: DevGuideContent | null,
+): DevGuideHistoryContentResponse[] {
+	if (!guide) {
+		return [];
+	}
+
+	return [
+		{
+			...guide,
+			confirmed: true,
+			createdAt: "2026-05-24T09:00:00Z",
+			devGuideId: 901,
+			generationType: "INITIAL",
+			versionNo: 2,
+		},
+		{
+			...guide,
+			confirmed: false,
+			createdAt: "2026-05-20T09:00:00Z",
+			devGuideId: 900,
+			generationType: "INITIAL",
+			overview: `${guide.overview} 초기 버전은 체크리스트 운영보다 팀 규칙 정리에 더 무게를 두었습니다.`,
+			versionNo: 1,
+		},
+	];
+}
+
+function addMockDevGuideHistory({
+	content,
+	generationType,
+}: {
+	content: DevGuideContent;
+	generationType: DevGuideHistoryContentResponse["generationType"];
+}) {
+	const nextVersionNo =
+		Math.max(
+			0,
+			...activeDevGuideHistories.map((history) => history.versionNo),
+		) + 1;
+
+	activeDevGuideHistories = [
+		{
+			...content,
+			confirmed: false,
+			createdAt: new Date().toISOString(),
+			devGuideId: nextDevGuideId,
+			generationType,
+			versionNo: nextVersionNo,
+		},
+		...activeDevGuideHistories,
+	];
+	nextDevGuideId += 1;
+}
+
+function createMockGithubWeeklySummaries(
+	targetUserId: number,
+): GithubWeeklySummaryListResponse {
+	const member = activeProjectGroup?.members.find(
+		(candidate) => candidate.userId === targetUserId,
+	);
+
+	if (!member) {
+		return { summaries: [] };
+	}
+
+	const roleLabel = member.memberRole.toLowerCase();
+
+	return {
+		summaries: [
+			{
+				periodEnd: "2026-06-07T14:59:59Z",
+				periodStart: "2026-06-01T15:00:00Z",
+				sourceIssueCount: 3,
+				sourcePrCount: 4,
+				summary: {
+					followUpSuggestions: [
+						"리뷰 대기 PR의 merge 기준을 팀 체크리스트에 남겨요.",
+						"다음 주에는 변경 파일이 큰 PR을 더 작게 나눠요.",
+					],
+					issueHighlights: [
+						"매칭 플로우 예외 케이스를 이슈로 정리했어요.",
+						"팀 스페이스 진입 조건을 재확인했어요.",
+					],
+					mainActivities: [
+						`${member.nickname}님은 ${roleLabel} 작업 흐름을 안정화했어요.`,
+						"팀 스페이스 API 계약과 화면 상태를 함께 점검했어요.",
+					],
+					pullRequestHighlights: [
+						"GitHub 연동 상태 카드의 실패/로딩 표시를 다듬었어요.",
+						"체크리스트 API 응답과 mock 데이터를 맞췄어요.",
+					],
+					summary: `${member.nickname}님은 이번 주 팀 운영 기능의 연결성과 검증 흐름을 개선했습니다.`,
+				},
+				weeklyGithubSummaryId: targetUserId * 1000 + 1,
+			},
+		],
+	};
 }
 
 async function readOptionalJsonBody<T>(request: Request) {
@@ -2118,6 +2224,77 @@ export const handlers = [
 		},
 	),
 
+	http.get(
+		getPath("/team-space/:projectGroupId/dev-guide/history"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			if (activeDevGuideGenerationStatus === "GENERATING") {
+				return buildErrorResponse(
+					409,
+					"개발 가이드라인이 생성 중입니다.",
+					"DEV_GUIDE_GENERATING",
+				);
+			}
+
+			return HttpResponse.json({
+				histories: activeDevGuideHistories.map(
+					({
+						confirmed,
+						createdAt,
+						devGuideId,
+						generationType,
+						versionNo,
+					}) => ({
+						confirmed,
+						createdAt,
+						devGuideId,
+						generationType,
+						versionNo,
+					}),
+				),
+			});
+		},
+	),
+
+	http.get(
+		getPath("/team-space/:projectGroupId/dev-guide/history/:devGuideId"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const devGuideId = Number(params.devGuideId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const history = activeDevGuideHistories.find(
+				(candidate) => candidate.devGuideId === devGuideId,
+			);
+
+			if (!history) {
+				return buildErrorResponse(
+					404,
+					"개발 가이드라인이 존재하지 않습니다.",
+					"DEV_GUIDE_NOT_FOUND",
+				);
+			}
+
+			return HttpResponse.json(history);
+		},
+	),
+
 	http.post(
 		getPath("/team-space/:projectGroupId/dev-guide/regenerate"),
 		async ({ params, request }) => {
@@ -2186,12 +2363,66 @@ export const handlers = [
 				remainingDevGuideRegenerationCount =
 					remainingDevGuideRegenerationCount ?? 3;
 			}
+			addMockDevGuideHistory({
+				content: activeDevGuide,
+				generationType,
+			});
 
 			return HttpResponse.json({
 				content: activeDevGuide,
 				generationType,
 				remainingRegenerationCount: remainingDevGuideRegenerationCount,
 			} satisfies RegenerateDevGuideResponse);
+		},
+	),
+
+	http.post(
+		getPath("/team-space/:projectGroupId/dev-guide/:devGuideId/confirm"),
+		async ({ params, request }) => {
+			await delay(350);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const devGuideId = Number(params.devGuideId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			if (activeDevGuideGenerationStatus === "GENERATING") {
+				return buildErrorResponse(
+					409,
+					"개발 가이드라인이 생성 중입니다.",
+					"DEV_GUIDE_GENERATING",
+				);
+			}
+
+			const history = activeDevGuideHistories.find(
+				(candidate) => candidate.devGuideId === devGuideId,
+			);
+
+			if (!history) {
+				return buildErrorResponse(
+					404,
+					"개발 가이드라인이 존재하지 않습니다.",
+					"DEV_GUIDE_NOT_FOUND",
+				);
+			}
+
+			activeDevGuideHistories = activeDevGuideHistories.map((candidate) => ({
+				...candidate,
+				confirmed: candidate.devGuideId === devGuideId,
+			}));
+			activeDevGuide = {
+				decisionPoints: history.decisionPoints,
+				milestones: history.milestones,
+				mvpPriorities: history.mvpPriorities,
+				overview: history.overview,
+				techStack: history.techStack,
+			};
+
+			return new HttpResponse(null, { status: 200 });
 		},
 	),
 
@@ -2488,6 +2719,38 @@ export const handlers = [
 			);
 
 			return new HttpResponse(null, { status: 200 });
+		},
+	),
+
+	http.get(
+		getPath(
+			"/team-space/:projectGroupId/github/users/:targetUserId/weekly-summaries",
+		),
+		async ({ params, request }) => {
+			await delay(300);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const targetUserId = Number(params.targetUserId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const targetMember = activeProjectGroup?.members.find(
+				(member) => member.userId === targetUserId,
+			);
+
+			if (!targetMember) {
+				return buildErrorResponse(
+					404,
+					"팀 멤버를 찾을 수 없습니다.",
+					"PROJECT_GROUP_MEMBER_NOT_FOUND",
+				);
+			}
+
+			return HttpResponse.json(createMockGithubWeeklySummaries(targetUserId));
 		},
 	),
 ];
