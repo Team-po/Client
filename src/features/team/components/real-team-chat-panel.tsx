@@ -28,6 +28,7 @@ export function RealTeamChatPanel({ projectGroup }: RealTeamChatPanelProps) {
 	const { mutate: markChatRead } = useMarkChatReadMutation();
 	const { connectionMessage, connectionState, isConnected, sendMessage } =
 		useProjectGroupChat({
+			currentUserId: projectGroup.currentUserId,
 			enabled: true,
 			projectGroupId: projectGroup.projectGroupId,
 		});
@@ -213,9 +214,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 					<p
 						className={cn(
 							"font-mono text-xs",
-							message.mine
-								? "text-blue-100"
-								: "text-muted-foreground",
+							message.mine ? "text-blue-100" : "text-muted-foreground",
 						)}
 					>
 						{formatChatTime(message.createdAt)}
