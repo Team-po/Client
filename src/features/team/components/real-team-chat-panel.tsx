@@ -126,6 +126,7 @@ export function RealTeamChatPanel({ projectGroup }: RealTeamChatPanelProps) {
 					/>
 				) : null}
 				<form
+					autoComplete="off"
 					className="grid shrink-0 gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp md:grid-cols-[1fr_auto]"
 					onSubmit={handleSubmit}
 				>
@@ -135,6 +136,7 @@ export function RealTeamChatPanel({ projectGroup }: RealTeamChatPanelProps) {
 					>
 						메시지
 						<input
+							autoComplete="off"
 							className="h-11 rounded-lg border border-input bg-white px-3 text-sm font-normal outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-secondary/60 disabled:text-muted-foreground"
 							disabled={!isConnected}
 							id="real-team-message"
@@ -202,7 +204,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 				className={cn(
 					"max-w-[min(34rem,88%)] rounded-lg border p-4 shadow-crisp",
 					message.mine
-						? "border-primary/20 bg-primary text-primary-foreground"
+						? "border-blue-600 bg-blue-600 text-white"
 						: "border-border/70 bg-white text-brand-ink",
 				)}
 			>
@@ -212,7 +214,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 						className={cn(
 							"font-mono text-xs",
 							message.mine
-								? "text-primary-foreground/75"
+								? "text-blue-100"
 								: "text-muted-foreground",
 						)}
 					>
@@ -222,9 +224,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 				<p
 					className={cn(
 						"mt-2 whitespace-pre-wrap break-words text-sm leading-6",
-						message.mine
-							? "text-primary-foreground/90"
-							: "text-muted-foreground",
+						message.mine ? "text-blue-50" : "text-muted-foreground",
 					)}
 				>
 					{message.content}
