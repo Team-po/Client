@@ -56,6 +56,13 @@ const TeamSpacePage = lazy(() =>
 		default: TeamSpacePage,
 	})),
 );
+const GithubSubtabsPreviewPage = lazy(() =>
+	import("@/pages/github-subtabs-preview-page").then(
+		({ GithubSubtabsPreviewPage }) => ({
+			default: GithubSubtabsPreviewPage,
+		}),
+	),
+);
 const PrVideoPage = lazy(() =>
 	import("@/pages/pr-video-page").then(({ PrVideoPage }) => ({
 		default: PrVideoPage,
@@ -231,6 +238,10 @@ export function App() {
 					<Route path="/me" element={<ProfilePage />} />
 					<Route path="/match" element={<MatchPage />} />
 					<Route path="/team" element={<TeamSpacePage />} />
+					<Route
+						path="/team/github-preview"
+						element={<GithubSubtabsPreviewPage />}
+					/>
 					<Route path="/pr-video" element={<PrVideoPage />} />
 					<Route path="*" element={<Navigate replace to="/" />} />
 				</Routes>

@@ -12,7 +12,7 @@ import {
 	UserRound,
 	type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { AppPanel, AppPanelHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,18 @@ import { formatDateTime } from "@/lib/utils/date";
 
 const contributionNumberFormatter = new Intl.NumberFormat("ko-KR");
 
+type GithubSubtabId = "contributions" | "weekly-summary" | "integration";
+
+const githubSubtabs: {
+	icon: LucideIcon;
+	id: GithubSubtabId;
+	label: string;
+}[] = [
+	{ icon: GitPullRequest, id: "contributions", label: "기여도" },
+	{ icon: Sparkles, id: "weekly-summary", label: "주간 요약" },
+	{ icon: Github, id: "integration", label: "연동" },
+];
+
 function areNumberSelectionsEqual(left: number[], right: number[]) {
 	if (left.length !== right.length) {
 		return false;
@@ -81,16 +93,22 @@ export function RealGithubInstallationPanel({
 	);
 	const createInstallUrlMutation = useCreateGithubAppInstallationUrlMutation();
 	const setGithubRepositoriesMutation = useSetGithubRepositoriesMutation();
+	const [selectedGithubSubtab, setSelectedGithubSubtab] =
+		useState<GithubSubtabId>("contributions");
 	const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
 	const githubStatus = githubStatusQuery.data;
 	const isGithubConnected = githubStatus?.connected === true;
+	const shouldLoadGithubRepositories =
+		isGithubConnected && selectedGithubSubtab !== "weekly-summary";
 	const githubRepositoriesQuery = useGithubRepositoriesQuery(
 		projectGroup.projectGroupId,
-		isGithubConnected,
+		shouldLoadGithubRepositories,
 	);
 	const availableGithubRepositoriesQuery = useAvailableGithubRepositoriesQuery(
 		projectGroup.projectGroupId,
-		isGithubConnected && canManageGithubInstallation,
+		isGithubConnected &&
+			canManageGithubInstallation &&
+			selectedGithubSubtab === "integration",
 	);
 	const connectedRepositories =
 		githubRepositoriesQuery.data?.repositories ?? [];
@@ -151,7 +169,13 @@ export function RealGithubInstallationPanel({
 		canChangeGithubRepositories &&
 		hasRepositorySelectionChanged;
 	const showGithubPolicyNotice =
+		selectedGithubSubtab === "integration" &&
 		githubStatusQuery.isSuccess &&
+		canManageGithubInstallation &&
+		!hasGithubRepositorySelection;
+	const shouldOpenGithubRepositorySetup =
+		githubStatusQuery.isSuccess &&
+		isGithubConnected &&
 		canManageGithubInstallation &&
 		!hasGithubRepositorySelection;
 
@@ -162,6 +186,16 @@ export function RealGithubInstallationPanel({
 
 		setSelectedGithubRepositoryIds(connectedRepositoryIds);
 	}, [connectedRepositoryIds, githubRepositoriesQuery.data]);
+
+	useEffect(() => {
+		if (!shouldOpenGithubRepositorySetup) {
+			return;
+		}
+
+		setSelectedGithubSubtab((current) =>
+			current === "contributions" ? "integration" : current,
+		);
+	}, [shouldOpenGithubRepositorySetup]);
 
 	function handleCreateInstallUrl() {
 		setFeedback(null);
@@ -211,6 +245,11 @@ export function RealGithubInstallationPanel({
 		);
 	}
 
+	function handleGithubSubtabSelect(subtab: GithubSubtabId) {
+		setSelectedGithubSubtab(subtab);
+		setFeedback(null);
+	}
+
 	return (
 		<AppPanel>
 			<AppPanelHeader
@@ -219,9 +258,9 @@ export function RealGithubInstallationPanel({
 						{githubStatus?.connected ? "connected" : "not connected"}
 					</Badge>
 				}
-				description="GitHub 조직과 저장소 연결 상태를 확인해요."
+				description="기여도, 주간 요약, 연동 설정을 분리해 확인해요."
 				eyebrow="GitHub App"
-				title="GitHub 조직 연결"
+				title="GitHub 운영"
 			/>
 			<div className="grid gap-5 p-5">
 				<RealActionFeedback feedback={completionFeedback ?? feedback} />
@@ -243,53 +282,13 @@ export function RealGithubInstallationPanel({
 					/>
 				) : null}
 
-				<div className="grid gap-3 md:grid-cols-3">
-					<RealGithubStatusCard
-						label="Organization"
-						ready={githubStatus?.connected === true}
-						value={githubStatus?.organizationLogin ?? "연결 전"}
-					/>
-					<RealGithubStatusCard
-						label="Repositories"
-						ready={hasGithubRepositorySelection}
-						value={`${githubStatus?.repositoryCount ?? 0}개`}
-					/>
-					<RealGithubStatusCard
-						label="Permission"
-						ready={canManageGithubInstallation}
-						value={canManageGithubInstallation ? "HOST" : "READ ONLY"}
-					/>
-				</div>
+				<RealGithubSubtabList
+					onSelectSubtab={handleGithubSubtabSelect}
+					selectedSubtab={selectedGithubSubtab}
+				/>
 
-				{showGithubPolicyNotice ? <GithubOrganizationPolicyNotice /> : null}
-
-				<div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-center sm:justify-between">
-					<div className="min-w-0">
-						<p className="text-sm font-semibold text-brand-ink">
-							TeamPo GitHub App
-						</p>
-						<p className="mt-1 text-sm leading-6 text-muted-foreground">
-							{githubStatus?.connected
-								? "GitHub 조직이 팀 스페이스에 연결되어 있어요."
-								: "호스트가 GitHub App 설치를 시작할 수 있어요."}
-						</p>
-					</div>
-					<Button
-						disabled={!canCreateInstallUrl}
-						onClick={handleCreateInstallUrl}
-						type="button"
-					>
-						{createInstallUrlMutation.isPending ? (
-							<LoaderCircle className="animate-spin" data-icon="inline-start" />
-						) : (
-							<Github data-icon="inline-start" />
-						)}
-						설치 URL 발급
-					</Button>
-				</div>
-
-				{isGithubConnected ? (
-					<div className="grid gap-4">
+				{selectedGithubSubtab === "contributions" ? (
+					isGithubConnected ? (
 						<div className="min-w-0 rounded-lg border border-border/70 bg-brand-warm p-5">
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 								<div>
@@ -325,10 +324,28 @@ export function RealGithubInstallationPanel({
 
 								{githubRepositoriesQuery.isSuccess &&
 								connectedRepositories.length === 0 ? (
-									<div className="rounded-lg border border-dashed border-border bg-white/65 p-4">
-										<p className="text-sm leading-6 text-muted-foreground">
-											아직 팀 스페이스에 등록된 GitHub 저장소가 없어요.
-										</p>
+									<div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-white/65 p-4 sm:flex-row sm:items-center sm:justify-between">
+										<div>
+											<p className="text-sm font-semibold text-brand-ink">
+												등록된 GitHub 저장소가 없어요.
+											</p>
+											<p className="mt-1 text-sm leading-6 text-muted-foreground">
+												{canManageGithubInstallation
+													? "연동 설정에서 집계할 저장소를 선택하면 기여도가 표시돼요."
+													: "호스트가 연동 설정에서 집계할 저장소를 선택해야 해요."}
+											</p>
+										</div>
+										{canManageGithubInstallation ? (
+											<Button
+												className="shrink-0"
+												onClick={() => handleGithubSubtabSelect("integration")}
+												type="button"
+												variant="outline"
+											>
+												<Github data-icon="inline-start" />
+												연동 설정
+											</Button>
+										) : null}
 									</div>
 								) : null}
 
@@ -342,114 +359,255 @@ export function RealGithubInstallationPanel({
 								))}
 							</div>
 						</div>
-
-						<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
-							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-								<div>
-									<p className="text-sm font-semibold text-brand-ink">
-										저장소 설정
-									</p>
-									<p className="mt-1 text-sm leading-6 text-muted-foreground">
-										GitHub App이 접근할 수 있는 저장소 중 집계할 대상을
-										선택해요.
-									</p>
-								</div>
-								<Badge
-									className="whitespace-nowrap"
-									variant={canManageGithubInstallation ? "brand" : "neutral"}
+					) : (
+						<RealGithubSubtabEmptyState
+							action={
+								<Button
+									onClick={() => handleGithubSubtabSelect("integration")}
+									type="button"
+									variant="outline"
 								>
-									{canManageGithubInstallation ? "editable" : "read only"}
-								</Badge>
-							</div>
-
-							{canManageGithubInstallation ? (
-								<div className="mt-4 grid gap-3">
-									{availableGithubRepositoriesQuery.isLoading ? (
-										<RealInlineStatus
-											icon={<LoaderCircle className="size-4 animate-spin" />}
-											message="선택 가능한 저장소를 불러오고 있어요."
-										/>
-									) : null}
-
-									{availableGithubRepositoriesQuery.error ? (
-										<RealInlineStatus
-											message={getApiErrorMessage(
-												availableGithubRepositoriesQuery.error,
-											)}
-										/>
-									) : null}
-
-									{availableGithubRepositoriesQuery.isSuccess &&
-									availableRepositories.length === 0 ? (
-										<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4">
-											<p className="text-sm leading-6 text-muted-foreground">
-												GitHub App이 접근할 수 있는 저장소가 없어요.
-											</p>
-										</div>
-									) : null}
-
-									{configurableRepositories.map((repository) => {
-										const selected = selectedGithubRepositoryIdSet.has(
-											repository.githubRepositoryId,
-										);
-										const available = availableGithubRepositoryIdSet.has(
-											repository.githubRepositoryId,
-										);
-
-										return (
-											<RealGithubRepositoryOption
-												disabled={
-													!canChangeGithubRepositories ||
-													(!available && !selected)
-												}
-												key={repository.githubRepositoryId}
-												onToggle={handleGithubRepositoryToggle}
-												repository={repository}
-												selected={selected}
-												unavailable={!available}
-											/>
-										);
-									})}
-
-									<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-										<p className="text-xs leading-5 text-muted-foreground">
-											{selectedGithubRepositoryIds.length}개 저장소 선택됨
-										</p>
-										<Button
-											disabled={!canSaveGithubRepositories}
-											onClick={handleSaveGithubRepositories}
-											type="button"
-										>
-											{setGithubRepositoriesMutation.isPending ? (
-												<LoaderCircle
-													className="animate-spin"
-													data-icon="inline-start"
-												/>
-											) : (
-												<Save data-icon="inline-start" />
-											)}
-											저장소 설정 저장
-										</Button>
-									</div>
-								</div>
-							) : (
-								<div className="mt-4 rounded-lg border border-dashed border-border bg-secondary/30 p-4">
-									<p className="text-sm leading-6 text-muted-foreground">
-										호스트만 GitHub 저장소 설정을 변경할 수 있어요.
-									</p>
-								</div>
-							)}
-						</div>
-					</div>
+									<Github data-icon="inline-start" />
+									연동 설정
+								</Button>
+							}
+							description="연동 탭에서 GitHub App 설치와 저장소 선택을 마치면 저장소별 기여도가 표시돼요."
+							icon={GitPullRequest}
+							title="기여도를 보려면 GitHub 연동이 필요해요."
+						/>
+					)
 				) : null}
 
-				<RealGithubWeeklySummariesPanel
-					isGithubConnected={isGithubConnected}
-					members={projectGroup.members}
-					projectGroupId={projectGroup.projectGroupId}
-				/>
+				{selectedGithubSubtab === "weekly-summary" ? (
+					<RealGithubWeeklySummariesPanel
+						isGithubConnected={isGithubConnected}
+						members={projectGroup.members}
+						projectGroupId={projectGroup.projectGroupId}
+					/>
+				) : null}
+
+				{selectedGithubSubtab === "integration" ? (
+					<div className="grid gap-4">
+						<div className="grid gap-3 md:grid-cols-3">
+							<RealGithubStatusCard
+								label="Organization"
+								ready={githubStatus?.connected === true}
+								value={githubStatus?.organizationLogin ?? "연결 전"}
+							/>
+							<RealGithubStatusCard
+								label="Repositories"
+								ready={hasGithubRepositorySelection}
+								value={`${githubStatus?.repositoryCount ?? 0}개`}
+							/>
+							<RealGithubStatusCard
+								label="Permission"
+								ready={canManageGithubInstallation}
+								value={canManageGithubInstallation ? "HOST" : "READ ONLY"}
+							/>
+						</div>
+
+						{showGithubPolicyNotice ? <GithubOrganizationPolicyNotice /> : null}
+
+						<div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-white p-4 shadow-crisp sm:flex-row sm:items-center sm:justify-between">
+							<div className="min-w-0">
+								<p className="text-sm font-semibold text-brand-ink">
+									TeamPo GitHub App
+								</p>
+								<p className="mt-1 text-sm leading-6 text-muted-foreground">
+									{githubStatus?.connected
+										? "GitHub 조직이 팀 스페이스에 연결되어 있어요."
+										: "호스트가 GitHub App 설치를 시작할 수 있어요."}
+								</p>
+							</div>
+							<Button
+								disabled={!canCreateInstallUrl}
+								onClick={handleCreateInstallUrl}
+								type="button"
+							>
+								{createInstallUrlMutation.isPending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : (
+									<Github data-icon="inline-start" />
+								)}
+								설치 URL 발급
+							</Button>
+						</div>
+
+						{isGithubConnected ? (
+							<div className="rounded-lg border border-border/70 bg-white p-5 shadow-crisp">
+								<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+									<div>
+										<p className="text-sm font-semibold text-brand-ink">
+											저장소 설정
+										</p>
+										<p className="mt-1 text-sm leading-6 text-muted-foreground">
+											GitHub App이 접근할 수 있는 저장소 중 집계할 대상을
+											선택해요.
+										</p>
+									</div>
+									<Badge
+										className="whitespace-nowrap"
+										variant={canManageGithubInstallation ? "brand" : "neutral"}
+									>
+										{canManageGithubInstallation ? "editable" : "read only"}
+									</Badge>
+								</div>
+
+								{canManageGithubInstallation ? (
+									<div className="mt-4 grid gap-3">
+										{availableGithubRepositoriesQuery.isLoading ? (
+											<RealInlineStatus
+												icon={<LoaderCircle className="size-4 animate-spin" />}
+												message="선택 가능한 저장소를 불러오고 있어요."
+											/>
+										) : null}
+
+										{availableGithubRepositoriesQuery.error ? (
+											<RealInlineStatus
+												message={getApiErrorMessage(
+													availableGithubRepositoriesQuery.error,
+												)}
+											/>
+										) : null}
+
+										{availableGithubRepositoriesQuery.isSuccess &&
+										availableRepositories.length === 0 ? (
+											<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4">
+												<p className="text-sm leading-6 text-muted-foreground">
+													GitHub App이 접근할 수 있는 저장소가 없어요.
+												</p>
+											</div>
+										) : null}
+
+										{configurableRepositories.map((repository) => {
+											const selected = selectedGithubRepositoryIdSet.has(
+												repository.githubRepositoryId,
+											);
+											const available = availableGithubRepositoryIdSet.has(
+												repository.githubRepositoryId,
+											);
+
+											return (
+												<RealGithubRepositoryOption
+													disabled={
+														!canChangeGithubRepositories ||
+														(!available && !selected)
+													}
+													key={repository.githubRepositoryId}
+													onToggle={handleGithubRepositoryToggle}
+													repository={repository}
+													selected={selected}
+													unavailable={!available}
+												/>
+											);
+										})}
+
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="text-xs leading-5 text-muted-foreground">
+												{selectedGithubRepositoryIds.length}개 저장소 선택됨
+											</p>
+											<Button
+												disabled={!canSaveGithubRepositories}
+												onClick={handleSaveGithubRepositories}
+												type="button"
+											>
+												{setGithubRepositoriesMutation.isPending ? (
+													<LoaderCircle
+														className="animate-spin"
+														data-icon="inline-start"
+													/>
+												) : (
+													<Save data-icon="inline-start" />
+												)}
+												저장소 설정 저장
+											</Button>
+										</div>
+									</div>
+								) : (
+									<div className="mt-4 rounded-lg border border-dashed border-border bg-secondary/30 p-4">
+										<p className="text-sm leading-6 text-muted-foreground">
+											호스트만 GitHub 저장소 설정을 변경할 수 있어요.
+										</p>
+									</div>
+								)}
+							</div>
+						) : null}
+					</div>
+				) : null}
 			</div>
 		</AppPanel>
+	);
+}
+
+function RealGithubSubtabList({
+	onSelectSubtab,
+	selectedSubtab,
+}: {
+	onSelectSubtab: (subtab: GithubSubtabId) => void;
+	selectedSubtab: GithubSubtabId;
+}) {
+	return (
+		<div
+			aria-label="GitHub 세부 보기"
+			className="grid gap-1 rounded-lg border border-border/70 bg-secondary/50 p-1 sm:grid-cols-3"
+			role="tablist"
+		>
+			{githubSubtabs.map(({ icon: Icon, id, label }) => {
+				const selected = selectedSubtab === id;
+
+				return (
+					<button
+						aria-selected={selected}
+						className={cn(
+							"flex h-11 min-w-0 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+							selected
+								? "border border-primary/20 bg-white text-brand-ink shadow-crisp"
+								: "text-muted-foreground hover:bg-white/65 hover:text-brand-ink",
+						)}
+						key={id}
+						onClick={() => onSelectSubtab(id)}
+						role="tab"
+						type="button"
+					>
+						<Icon
+							className={cn(
+								"size-4 shrink-0",
+								selected ? "text-primary" : "text-muted-foreground",
+							)}
+						/>
+						<span className="truncate">{label}</span>
+					</button>
+				);
+			})}
+		</div>
+	);
+}
+
+function RealGithubSubtabEmptyState({
+	action,
+	description,
+	icon: Icon,
+	title,
+}: {
+	action?: ReactNode;
+	description: string;
+	icon: LucideIcon;
+	title: string;
+}) {
+	return (
+		<div className="rounded-lg border border-dashed border-border bg-white p-6 text-center shadow-crisp">
+			<div className="mx-auto grid size-12 place-items-center rounded-lg bg-primary/10 text-primary">
+				<Icon className="size-5" />
+			</div>
+			<p className="mt-4 text-sm font-semibold text-brand-ink">{title}</p>
+			<p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+				{description}
+			</p>
+			{action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+		</div>
 	);
 }
 
