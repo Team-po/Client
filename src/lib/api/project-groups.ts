@@ -39,7 +39,7 @@ export function updateProjectGroupName({
 	projectName,
 }: UpdateProjectGroupNameRequest) {
 	return apiRequest<void>(`/project-groups/${projectGroupId}/name`, {
-		body: JSON.stringify({ projectName }),
+		json: { projectName },
 		method: "PATCH",
 	});
 }
