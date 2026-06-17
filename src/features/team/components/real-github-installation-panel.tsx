@@ -173,6 +173,11 @@ export function RealGithubInstallationPanel({
 		githubStatusQuery.isSuccess &&
 		canManageGithubInstallation &&
 		!hasGithubRepositorySelection;
+	const shouldOpenGithubRepositorySetup =
+		githubStatusQuery.isSuccess &&
+		isGithubConnected &&
+		canManageGithubInstallation &&
+		!hasGithubRepositorySelection;
 
 	useEffect(() => {
 		if (!githubRepositoriesQuery.data) {
@@ -181,6 +186,16 @@ export function RealGithubInstallationPanel({
 
 		setSelectedGithubRepositoryIds(connectedRepositoryIds);
 	}, [connectedRepositoryIds, githubRepositoriesQuery.data]);
+
+	useEffect(() => {
+		if (!shouldOpenGithubRepositorySetup) {
+			return;
+		}
+
+		setSelectedGithubSubtab((current) =>
+			current === "contributions" ? "integration" : current,
+		);
+	}, [shouldOpenGithubRepositorySetup]);
 
 	function handleCreateInstallUrl() {
 		setFeedback(null);
