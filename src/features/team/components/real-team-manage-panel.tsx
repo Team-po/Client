@@ -1,8 +1,10 @@
-import { CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, LoaderCircle, Save, ShieldCheck } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { AppPanel, AppPanelHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	type ActionFeedback,
 	RealActionFeedback,
@@ -23,10 +25,13 @@ export function RealManagePanel({
 	hasCurrentUserAgreedFinish,
 	isAdminPermissionPending,
 	isFinishPending,
+	isProjectNamePending,
 	onAdminPermissionChange,
 	onFinishProjectGroup,
+	onProjectNameUpdate,
 	pendingAdminPermissionTargetId,
 	projectGroup,
+	projectNameFeedback,
 }: {
 	canManageAdminPermissions: boolean;
 	currentUserId: number;
@@ -35,31 +40,86 @@ export function RealManagePanel({
 	hasCurrentUserAgreedFinish: boolean;
 	isAdminPermissionPending: boolean;
 	isFinishPending: boolean;
+	isProjectNamePending: boolean;
 	onAdminPermissionChange: (member: ProjectGroupMember) => void;
 	onFinishProjectGroup: () => void;
+	onProjectNameUpdate: (projectName: string) => void;
 	pendingAdminPermissionTargetId: number | null;
 	projectGroup: MyProjectGroup;
+	projectNameFeedback: ActionFeedback | null;
 }) {
+	const [projectNameInput, setProjectNameInput] = useState(
+		projectGroup.projectName,
+	);
+	const trimmedProjectName = projectNameInput.trim();
+	const isProjectNameChanged = trimmedProjectName !== projectGroup.projectName;
+	const isProjectNameInvalid =
+		trimmedProjectName.length === 0 || trimmedProjectName.length > 255;
+	const canSubmitProjectName =
+		canManageAdminPermissions &&
+		isProjectNameChanged &&
+		!isProjectNameInvalid &&
+		!isProjectNamePending;
+
+	useEffect(() => {
+		setProjectNameInput(projectGroup.projectName);
+	}, [projectGroup.projectName]);
+
+	function handleProjectNameSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+
+		if (!canSubmitProjectName) {
+			return;
+		}
+
+		onProjectNameUpdate(trimmedProjectName);
+	}
+
 	return (
 		<div className="grid gap-5">
 			<AppPanel>
 				<AppPanelHeader
 					action={<Badge variant="brand">active</Badge>}
-					description="멤버 관리자 권한과 팀 종료 동의를 관리해요."
+					description="팀 이름, 멤버 관리자 권한, 팀 종료 동의를 관리해요."
 					eyebrow="Manage"
 					title="팀 관리"
 				/>
 				<div className="grid gap-5 p-5">
-					<div className="grid gap-4 lg:grid-cols-2">
-						<label className="grid gap-2 text-sm font-semibold text-brand-ink">
-							팀 이름
-							<input
-								className="h-11 rounded-lg border border-input bg-secondary/40 px-3 text-sm font-normal text-muted-foreground outline-none"
-								defaultValue={projectGroup.projectName}
-								disabled
-								readOnly
+					<form
+						className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]"
+						onSubmit={handleProjectNameSubmit}
+					>
+						<div className="grid gap-2">
+							<label
+								className="text-sm font-semibold text-brand-ink"
+								htmlFor="project-group-name"
+							>
+								팀 이름
+							</label>
+							<Input
+								disabled={!canManageAdminPermissions || isProjectNamePending}
+								id="project-group-name"
+								maxLength={255}
+								onChange={(event) => setProjectNameInput(event.target.value)}
+								value={projectNameInput}
 							/>
-						</label>
+						</div>
+						<div className="flex items-end">
+							<Button disabled={!canSubmitProjectName} type="submit">
+								{isProjectNamePending ? (
+									<LoaderCircle
+										className="animate-spin"
+										data-icon="inline-start"
+									/>
+								) : (
+									<Save data-icon="inline-start" />
+								)}
+								{isProjectNamePending ? "저장 중" : "이름 저장"}
+							</Button>
+						</div>
+					</form>
+					<RealActionFeedback feedback={projectNameFeedback} />
+					<div className="grid gap-4 lg:grid-cols-2">
 						<label className="grid gap-2 text-sm font-semibold text-brand-ink">
 							팀 상태
 							<select
@@ -72,8 +132,9 @@ export function RealManagePanel({
 						</label>
 					</div>
 					<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
-						팀 이름 편집은 준비 중이에요. 팀 종료는 모든 팀원의 동의가 모이면
-						완료돼요.
+						{canManageAdminPermissions
+							? "팀 이름 변경은 모든 팀원에게 같은 팀 스페이스 이름으로 보여요."
+							: "팀 이름은 방장만 수정할 수 있어요."}
 					</div>
 				</div>
 			</AppPanel>

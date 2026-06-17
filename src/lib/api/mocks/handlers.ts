@@ -35,7 +35,10 @@ import type {
 	ProjectChecklistStatus,
 	UpdateProjectChecklistRequest,
 } from "@/lib/types/project-checklist";
-import type { MyProjectGroup } from "@/lib/types/project-group";
+import type {
+	MyProjectGroup,
+	UpdateProjectGroupNameRequest,
+} from "@/lib/types/project-group";
 import type { ChatMessage } from "@/lib/types/chat";
 import type {
 	DevGuideContent,
@@ -1840,6 +1843,59 @@ export const handlers = [
 
 		return HttpResponse.json(activeProjectGroup);
 	}),
+
+	http.patch(
+		getPath("/project-groups/:projectGroupId/name"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const currentMember = findProjectGroupMember(currentUserId);
+			if (currentMember?.groupRole !== "HOST") {
+				return buildErrorResponse(
+					403,
+					"방장만 팀 이름을 수정할 수 있습니다.",
+					"PROJECT_GROUP_PERMISSION_DENIED",
+				);
+			}
+
+			const body = (await request
+				.json()
+				.catch(() => null)) as Partial<UpdateProjectGroupNameRequest> | null;
+			const projectName =
+				typeof body?.projectName === "string" ? body.projectName.trim() : "";
+
+			if (!projectName) {
+				return buildErrorResponse(
+					400,
+					"팀 이름은 비어 있을 수 없습니다.",
+					"INVALID_PROJECT_GROUP_REQUEST",
+				);
+			}
+
+			if (projectName.length > 255) {
+				return buildErrorResponse(
+					400,
+					"팀 이름은 255자 이하여야 합니다.",
+					"INVALID_PROJECT_GROUP_REQUEST",
+				);
+			}
+
+			activeProjectGroup = activeProjectGroup
+				? { ...activeProjectGroup, projectName }
+				: activeProjectGroup;
+			activeDevGuide = createMockDevGuide(activeProjectGroup);
+
+			return new HttpResponse(null, { status: 200 });
+		},
+	),
 
 	http.patch(
 		getPath("/project-groups/:projectGroupId/admins/:targetUserId"),
