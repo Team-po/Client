@@ -30,6 +30,21 @@ export interface SetGithubRepositoriesRequest {
 	projectGroupId: number;
 }
 
+export interface TeamRuleResponse {
+	content: string;
+	id: number;
+	projectGroupId: number;
+	updatedAt: string;
+	updatedByNickname: string;
+	version: number;
+}
+
+export interface UpdateTeamRuleRequest {
+	content: string;
+	projectGroupId: number;
+	version: number;
+}
+
 export interface GithubRepositoryContributionRequest {
 	githubRepositoryId: number;
 	projectGroupId: number;

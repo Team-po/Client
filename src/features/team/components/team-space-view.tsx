@@ -3,7 +3,6 @@ import {
 	CheckCircle2,
 	GitPullRequest,
 	LoaderCircle,
-	Save,
 	Settings2,
 	Sparkles,
 } from "lucide-react";
@@ -34,6 +33,7 @@ import { RealGuidePanel } from "@/features/team/components/real-team-guide-panel
 import { RealManagePanel } from "@/features/team/components/real-team-manage-panel";
 import { RealOverviewPanel } from "@/features/team/components/real-team-overview-panel";
 import { RealProjectChecklistsPanel } from "@/features/team/components/real-project-checklists-panel";
+import { RealTeamRulesPanel } from "@/features/team/components/real-team-rules-panel";
 import {
 	type ActionFeedback,
 	RealInlineStatus,
@@ -408,7 +408,6 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 									githubStatusQuery.isLoading || githubStatusQuery.isError,
 								)
 							}
-							isDisabled={isRealTeamTabDisabled}
 							onSelectTab={setSelectedTab}
 							selectedTab={selectedTab}
 						/>
@@ -423,7 +422,9 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 							{selectedTab === "guide" ? (
 								<RealGuidePanel projectGroup={projectGroup} />
 							) : null}
-							{selectedTab === "rules" ? <RealRulesPanelDisabled /> : null}
+							{selectedTab === "rules" ? (
+								<RealTeamRulesPanel projectGroup={projectGroup} />
+							) : null}
 							{selectedTab === "checklist" ? (
 								<RealProjectChecklistsPanel projectGroup={projectGroup} />
 							) : null}
@@ -759,40 +760,6 @@ function RealTeamFocusPanel({
 	);
 }
 
-function RealRulesPanelDisabled() {
-	return (
-		<AppPanel>
-			<AppPanelHeader
-				action={<Badge variant="neutral">준비 중</Badge>}
-				description="팀 규칙 저장 API가 연결되면 이 탭에서 수정할 수 있어요."
-				eyebrow="Rulebook"
-				title="팀 규칙"
-			/>
-			<div className="grid gap-4 p-5">
-				<div className="rounded-lg border border-dashed border-border bg-secondary/30 p-5">
-					<p className="text-sm font-semibold text-brand-ink">
-						아직 서버 기능이 준비되지 않았어요.
-					</p>
-					<p className="mt-2 text-sm leading-6 text-muted-foreground">
-						규칙 조회/수정 API가 생기면 이곳에서 바로 편집할 수 있게 연결할게요.
-					</p>
-				</div>
-				<textarea
-					className="min-h-56 rounded-lg border border-input bg-secondary/40 px-4 py-3 font-mono text-sm leading-7 text-muted-foreground"
-					defaultValue={"# 팀 규칙\n- 서버 API 연결 후 편집할 수 있어요."}
-					disabled
-				/>
-				<div className="flex justify-end">
-					<Button disabled type="button">
-						<Save data-icon="inline-start" />
-						저장 준비 중
-					</Button>
-				</div>
-			</div>
-		</AppPanel>
-	);
-}
-
 function getRealTeamTabBadge(
 	tabId: TeamTab,
 	checklists: ProjectChecklist[],
@@ -814,7 +781,7 @@ function getRealTeamTabBadge(
 	}
 
 	if (tabId === "rules") {
-		return "준비";
+		return null;
 	}
 
 	if (tabId === "github") {
@@ -829,8 +796,4 @@ function getRealTeamTabBadge(
 	}
 
 	return null;
-}
-
-function isRealTeamTabDisabled(tabId: TeamTab) {
-	return tabId === "rules";
 }
