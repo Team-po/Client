@@ -309,10 +309,28 @@ export function RealGithubInstallationPanel({
 
 								{githubRepositoriesQuery.isSuccess &&
 								connectedRepositories.length === 0 ? (
-									<div className="rounded-lg border border-dashed border-border bg-white/65 p-4">
-										<p className="text-sm leading-6 text-muted-foreground">
-											아직 팀 스페이스에 등록된 GitHub 저장소가 없어요.
-										</p>
+									<div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-white/65 p-4 sm:flex-row sm:items-center sm:justify-between">
+										<div>
+											<p className="text-sm font-semibold text-brand-ink">
+												등록된 GitHub 저장소가 없어요.
+											</p>
+											<p className="mt-1 text-sm leading-6 text-muted-foreground">
+												{canManageGithubInstallation
+													? "연동 설정에서 집계할 저장소를 선택하면 기여도가 표시돼요."
+													: "호스트가 연동 설정에서 집계할 저장소를 선택해야 해요."}
+											</p>
+										</div>
+										{canManageGithubInstallation ? (
+											<Button
+												className="shrink-0"
+												onClick={() => handleGithubSubtabSelect("integration")}
+												type="button"
+												variant="outline"
+											>
+												<Github data-icon="inline-start" />
+												연동 설정
+											</Button>
+										) : null}
 									</div>
 								) : null}
 
