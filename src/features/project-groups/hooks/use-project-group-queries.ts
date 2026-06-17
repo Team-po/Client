@@ -5,10 +5,13 @@ import {
 	getMyProjectGroup,
 	grantProjectGroupAdminPermission,
 	revokeProjectGroupAdminPermission,
+	updateProjectGroupName,
 } from "@/lib/api/project-groups";
 import type {
+	MyProjectGroup,
 	ProjectGroupAdminPermissionRequest,
 	ProjectGroupFinishRequest,
+	UpdateProjectGroupNameRequest,
 } from "@/lib/types/project-group";
 import { isProjectGroupNotFoundError } from "@/features/project-groups/lib/errors";
 
@@ -59,6 +62,28 @@ export function useRevokeProjectGroupAdminPermissionMutation() {
 		mutationFn: (payload: ProjectGroupAdminPermissionRequest) =>
 			revokeProjectGroupAdminPermission(payload),
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: projectGroupQueryKeys.all });
+		},
+	});
+}
+
+export function useUpdateProjectGroupNameMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: UpdateProjectGroupNameRequest) =>
+			updateProjectGroupName(payload),
+		onSuccess: (_, variables) => {
+			queryClient.setQueryData<MyProjectGroup | null>(
+				projectGroupQueryKeys.me,
+				(current) =>
+					current
+						? {
+								...current,
+								projectName: variables.projectName.trim(),
+							}
+						: current,
+			);
 			queryClient.invalidateQueries({ queryKey: projectGroupQueryKeys.all });
 		},
 	});

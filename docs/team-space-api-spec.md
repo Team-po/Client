@@ -9,6 +9,7 @@ Base URL은 `/api`이며, 아래 경로는 모두 인증 토큰을 사용한다.
 | Method | Path | 용도 |
 | --- | --- | --- |
 | `GET` | `/project-groups/me` | 내 활성 팀 스페이스 조회 |
+| `PATCH` | `/project-groups/{projectGroupId}/name` | 팀 스페이스 이름 수정 |
 | `PATCH` | `/project-groups/{projectGroupId}/admins/{targetUserId}` | 팀 스페이스 관리자 권한 부여 |
 | `DELETE` | `/project-groups/{projectGroupId}/admins/{targetUserId}` | 팀 스페이스 관리자 권한 회수 |
 | `GET` | `/project-groups/{projectGroupId}/checklists` | 체크리스트 목록 조회 |

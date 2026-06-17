@@ -12,6 +12,11 @@ export interface ProjectGroupFinishRequest {
 	projectGroupId: number;
 }
 
+export interface UpdateProjectGroupNameRequest {
+	projectGroupId: number;
+	projectName: string;
+}
+
 export interface ProjectGroupMember {
 	admin: boolean;
 	groupRole: ProjectGroupRole;

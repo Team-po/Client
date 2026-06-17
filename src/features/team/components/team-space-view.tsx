@@ -23,6 +23,7 @@ import {
 	useGrantProjectGroupAdminPermissionMutation,
 	useMyProjectGroupQuery,
 	useRevokeProjectGroupAdminPermissionMutation,
+	useUpdateProjectGroupNameMutation,
 } from "@/features/project-groups/hooks/use-project-group-queries";
 import {
 	hasStoredProjectGroupFinishAgreement,
@@ -84,12 +85,15 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		useGrantProjectGroupAdminPermissionMutation();
 	const revokeAdminPermissionMutation =
 		useRevokeProjectGroupAdminPermissionMutation();
+	const updateProjectGroupNameMutation = useUpdateProjectGroupNameMutation();
 	const finishProjectGroupMutation = useFinishProjectGroupMutation();
 	const {
 		isPending: isCompletingGithubInstallation,
 		mutate: completeGithubAppInstallation,
 	} = useCompleteGithubAppInstallationMutation();
 	const [adminPermissionFeedback, setAdminPermissionFeedback] =
+		useState<ActionFeedback | null>(null);
+	const [projectNameFeedback, setProjectNameFeedback] =
 		useState<ActionFeedback | null>(null);
 	const [finishState, setFinishState] = useState<ProjectGroupFinishState>({
 		agreedProjectGroupId: null,
@@ -288,6 +292,35 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 		);
 	}
 
+	function handleUpdateProjectGroupName(projectName: string) {
+		if (!projectGroup) {
+			return;
+		}
+
+		const trimmedProjectName = projectName.trim();
+		setProjectNameFeedback(null);
+		updateProjectGroupNameMutation.mutate(
+			{
+				projectGroupId: projectGroup.projectGroupId,
+				projectName: trimmedProjectName,
+			},
+			{
+				onError: (error: unknown) => {
+					setProjectNameFeedback({
+						message: getApiErrorMessage(error),
+						tone: "error",
+					});
+				},
+				onSuccess: () => {
+					setProjectNameFeedback({
+						message: "팀 이름을 저장했어요.",
+						tone: "success",
+					});
+				},
+			},
+		);
+	}
+
 	return (
 		<AppShell
 			actions={
@@ -447,12 +480,17 @@ function RealTeamSpaceView({ isSignedIn }: { isSignedIn: boolean }) {
 									hasCurrentUserAgreedFinish={hasCurrentUserAgreedFinish}
 									isAdminPermissionPending={isAdminPermissionPending}
 									isFinishPending={finishProjectGroupMutation.isPending}
+									isProjectNamePending={
+										updateProjectGroupNameMutation.isPending
+									}
 									onAdminPermissionChange={handleAdminPermissionChange}
 									onFinishProjectGroup={handleFinishProjectGroup}
+									onProjectNameUpdate={handleUpdateProjectGroupName}
 									pendingAdminPermissionTargetId={
 										pendingAdminPermissionTargetId
 									}
 									projectGroup={projectGroup}
+									projectNameFeedback={projectNameFeedback}
 								/>
 							) : null}
 						</section>

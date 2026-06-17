@@ -3,6 +3,7 @@ import type {
 	ProjectGroupFinishRequest,
 	MyProjectGroup,
 	ProjectGroupAdminPermissionRequest,
+	UpdateProjectGroupNameRequest,
 } from "@/lib/types/project-group";
 
 export function getMyProjectGroup() {
@@ -31,6 +32,16 @@ export function revokeProjectGroupAdminPermission({
 			method: "DELETE",
 		},
 	);
+}
+
+export function updateProjectGroupName({
+	projectGroupId,
+	projectName,
+}: UpdateProjectGroupNameRequest) {
+	return apiRequest<void>(`/project-groups/${projectGroupId}/name`, {
+		body: JSON.stringify({ projectName }),
+		method: "PATCH",
+	});
 }
 
 export function finishProjectGroup({
