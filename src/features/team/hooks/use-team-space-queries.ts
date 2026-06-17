@@ -13,9 +13,11 @@ import {
 	getGithubRepositories,
 	getGithubRepositoryContributions,
 	getGithubWeeklySummaries,
+	getTeamRule,
 	regenerateDevGuide,
 	setGithubRepositories,
 	syncGithubPullRequestContributions,
+	updateTeamRule,
 } from "@/lib/api/team-space";
 import type {
 	ConfirmDevGuideRequest,
@@ -24,6 +26,8 @@ import type {
 	GithubRepositoryContributionRequest,
 	RegenerateDevGuideRequest,
 	SetGithubRepositoriesRequest,
+	TeamRuleResponse,
+	UpdateTeamRuleRequest,
 } from "@/lib/types/team-space";
 
 export const teamSpaceQueryKeys = {
@@ -62,12 +66,15 @@ export const teamSpaceQueryKeys = {
 		] as const,
 	githubStatus: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "status"] as const,
+	teamRule: (projectGroupId: number) =>
+		["team-space", projectGroupId, "team-rule"] as const,
 };
 
 const githubStatusStaleTimeMs = 15_000;
 const githubRepositoryStaleTimeMs = 15_000;
 const githubContributionStaleTimeMs = 15_000;
 const devGuideStaleTimeMs = 60_000;
+const teamRuleStaleTimeMs = 30_000;
 const pendingDevGuideRefetchIntervalMs = 5_000;
 
 function requireProjectGroupId(projectGroupId: number | undefined) {
@@ -338,6 +345,37 @@ export function useSetGithubRepositoriesMutation() {
 					variables.projectGroupId,
 				),
 			});
+		},
+	});
+}
+
+export function useTeamRuleQuery(
+	projectGroupId: number | undefined,
+	enabled = true,
+) {
+	return useQuery({
+		enabled: enabled && typeof projectGroupId === "number",
+		queryFn: () => getTeamRule(requireProjectGroupId(projectGroupId)),
+		queryKey:
+			typeof projectGroupId === "number"
+				? teamSpaceQueryKeys.teamRule(projectGroupId)
+				: teamSpaceQueryKeys.disabled,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: teamRuleStaleTimeMs,
+	});
+}
+
+export function useUpdateTeamRuleMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: UpdateTeamRuleRequest) => updateTeamRule(payload),
+		onSuccess: (response, variables) => {
+			queryClient.setQueryData<TeamRuleResponse>(
+				teamSpaceQueryKeys.teamRule(variables.projectGroupId),
+				response,
+			);
 		},
 	});
 }

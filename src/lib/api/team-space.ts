@@ -15,6 +15,8 @@ import type {
 	RegenerateDevGuideRequest,
 	RegenerateDevGuideResponse,
 	SetGithubRepositoriesRequest,
+	TeamRuleResponse,
+	UpdateTeamRuleRequest,
 } from "@/lib/types/team-space";
 
 export function getDevGuide(projectGroupId: number) {
@@ -121,6 +123,29 @@ export function setGithubRepositories({
 		},
 		method: "PUT",
 	});
+}
+
+export function getTeamRule(projectGroupId: number) {
+	return apiRequest<TeamRuleResponse>(
+		`/team-space/${projectGroupId}/team-rule`,
+	);
+}
+
+export function updateTeamRule({
+	content,
+	projectGroupId,
+	version,
+}: UpdateTeamRuleRequest) {
+	return apiRequest<TeamRuleResponse>(
+		`/team-space/${projectGroupId}/team-rule`,
+		{
+			json: {
+				content,
+				version,
+			},
+			method: "PUT",
+		},
+	);
 }
 
 export function getGithubRepositoryContributions({

@@ -48,12 +48,59 @@ import type {
 	GithubRepositoryContributionResponse,
 	GithubWeeklySummaryListResponse,
 	RegenerateDevGuideResponse,
+	TeamRuleResponse,
+	UpdateTeamRuleRequest,
 } from "@/lib/types/team-space";
 import type {
 	EditPasswordRequest,
 	UpdateCurrentUserRequest,
 	UserProfile,
 } from "@/lib/types/user";
+
+const defaultMockTeamRuleContent = `# 팀 룰
+
+## 1. 기본 원칙
+
+- 막힌 내용은 혼자 오래 끌지 않고 팀 채널에 공유한다.
+- 중요한 결정은 구두로만 남기지 않고 GitHub Issue, PR, 회의록 중 하나에 기록한다.
+- 일정이 늦어질 것 같으면 마감 직전이 아니라 가능한 빨리 공유한다.
+
+## 2. GitHub 작업 규칙
+
+- 모든 작업은 Issue를 먼저 만들고 시작한다.
+- 브랜치는 Issue 번호를 포함해 만든다. 예: \`feat/12-login-api\`, \`fix/25-token-refresh\`
+- \`main\` 브랜치에는 직접 커밋하지 않는다.
+- 하나의 PR은 하나의 목적만 가진다.
+- PR 본문에는 변경 내용, 테스트 결과, 리뷰어가 확인해야 할 점을 적는다.
+
+## 3. 커밋 규칙
+
+- 커밋 메시지는 변경 의도를 알 수 있게 작성한다.
+- 추천 형식:
+  - \`feat: 새로운 기능 추가\`
+  - \`fix: 버그 수정\`
+  - \`refactor: 동작 변경 없는 구조 개선\`
+  - \`test: 테스트 추가 또는 수정\`
+  - \`docs: 문서 수정\`
+
+## 4. PR 리뷰 규칙
+
+- 리뷰어는 가능한 24시간 안에 확인한다.
+- approve 없이 merge하지 않는다.
+
+## 5. 코드 작성 규칙
+
+- 임시 로그, 불필요한 주석, 사용하지 않는 코드는 남기지 않는다.
+- 비밀번호, 토큰, API Key 같은 민감 정보는 코드와 로그에 남기지 않는다.
+- 예외 상황은 무시하지 않고 명확히 처리한다.
+- API 응답 형식과 에러 코드는 기존 방식과 맞춘다.
+
+## 6. 테스트 규칙
+
+- 주요 서비스 로직은 단위 테스트를 작성한다.
+- 권한 실패, 잘못된 입력, 존재하지 않는 데이터도 테스트한다.
+- 버그를 수정할 때는 같은 문제가 다시 생기지 않도록 테스트를 추가한다.
+- 테스트를 실행하지 못했다면 PR에 이유를 적는다.`;
 
 let currentUser: UserProfile | null = createPreviewUser();
 let currentUserId = 1;
@@ -66,6 +113,8 @@ let activeProjectRequestRole: MatchRole | null = null;
 let activeMatchMembers: MatchMemberResponse["members"] = [];
 let activeMatchProject: MatchProjectResponse | null = null;
 let activeProjectGroup: MyProjectGroup | null = createMockProjectGroup();
+let activeTeamRule: TeamRuleResponse | null =
+	createMockTeamRule(activeProjectGroup);
 let projectGroupFinishAgreementUserIds = new Set<number>();
 let activeProjectChecklists: ProjectChecklist[] = createMockProjectChecklists();
 let activeChatMessages: ChatMessage[] = createMockChatMessages();
@@ -272,6 +321,7 @@ function resetMatchState() {
 
 function resetTeamSpaceApiState() {
 	projectGroupFinishAgreementUserIds = new Set();
+	activeTeamRule = createMockTeamRule(activeProjectGroup);
 	activeProjectChecklists = activeProjectGroup
 		? createMockProjectChecklists()
 		: [];
@@ -425,6 +475,17 @@ async function readOptionalJsonBody<T>(request: Request) {
 	} catch {
 		return null;
 	}
+}
+
+function isTeamRuleUpdateBody(
+	value: unknown,
+): value is Pick<UpdateTeamRuleRequest, "content" | "version"> {
+	if (!value || typeof value !== "object") {
+		return false;
+	}
+
+	const { content, version } = value as Partial<UpdateTeamRuleRequest>;
+	return typeof content === "string" && typeof version === "number";
 }
 
 function parseGithubRepositoryIds(value: unknown): number[] | null {
@@ -759,6 +820,28 @@ function createMockProjectGroup(): MyProjectGroup {
 		projectMvp: "매칭 요청, 수락/거절, 팀 스페이스 홈, 첫 체크리스트 운영",
 		projectName: "Blue Sprint",
 		projectTitle: "Team-po 팀 운영 MVP",
+	};
+}
+
+function createMockTeamRule(
+	projectGroup: MyProjectGroup | null,
+): TeamRuleResponse | null {
+	if (!projectGroup) {
+		return null;
+	}
+
+	const currentMember = projectGroup.members.find(
+		(member) => member.userId === currentUserId,
+	);
+
+	return {
+		content: defaultMockTeamRuleContent,
+		id: 700,
+		projectGroupId: projectGroup.projectGroupId,
+		updatedAt: "2026-06-10T10:00:00Z",
+		updatedByNickname:
+			currentMember?.nickname ?? currentUser?.nickname ?? "preview",
+		version: 0,
 	};
 }
 
@@ -2186,6 +2269,115 @@ export const handlers = [
 				lastReadMessageId: body.lastReadMessageId,
 				updatedAt: new Date().toISOString(),
 			});
+		},
+	),
+
+	http.get(
+		getPath("/team-space/:projectGroupId/team-rule"),
+		async ({ params, request }) => {
+			await delay(250);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			activeTeamRule = activeTeamRule ?? createMockTeamRule(activeProjectGroup);
+
+			if (!activeTeamRule) {
+				return buildErrorResponse(
+					404,
+					"소속된 팀 스페이스를 찾을 수 없습니다.",
+					"PROJECT_GROUP_NOT_FOUND",
+				);
+			}
+
+			return HttpResponse.json(activeTeamRule);
+		},
+	),
+
+	http.put(
+		getPath("/team-space/:projectGroupId/team-rule"),
+		async ({ params, request }) => {
+			const body = await readOptionalJsonBody(request);
+
+			await delay(350);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			if (!isTeamRuleUpdateBody(body)) {
+				return buildErrorResponse(
+					400,
+					"입력값이 올바르지 않습니다.",
+					"INVALID_INPUT_FIELD",
+				);
+			}
+
+			if (!body.content.trim()) {
+				return buildErrorResponse(
+					400,
+					"팀 룰 내용은 필수입니다.",
+					"PROJECT_TEAM_RULE_CONTENT_REQUIRED",
+				);
+			}
+
+			if (body.content.length > 10_000) {
+				return buildErrorResponse(
+					400,
+					"입력값이 올바르지 않습니다.",
+					"INVALID_INPUT_FIELD",
+					{ content: "팀 룰 내용은 10000자 이하여야 합니다." },
+				);
+			}
+
+			if (body.content.includes("[server-error]")) {
+				return buildErrorResponse(
+					500,
+					"팀 룰 저장 중 서버 오류가 발생했습니다.",
+					"MATCH_DATA_ERROR",
+				);
+			}
+
+			activeTeamRule = activeTeamRule ?? createMockTeamRule(activeProjectGroup);
+
+			if (!activeTeamRule) {
+				return buildErrorResponse(
+					404,
+					"소속된 팀 스페이스를 찾을 수 없습니다.",
+					"PROJECT_GROUP_NOT_FOUND",
+				);
+			}
+
+			if (activeTeamRule.version !== body.version) {
+				return buildErrorResponse(
+					409,
+					"팀 룰이 다른 사용자에 의해 먼저 수정되었습니다.",
+					"PROJECT_TEAM_RULE_UPDATE_CONFLICT",
+				);
+			}
+
+			const currentMember = activeProjectGroup?.members.find(
+				(member) => member.userId === currentUserId,
+			);
+			activeTeamRule = {
+				...activeTeamRule,
+				content: body.content,
+				updatedAt: new Date().toISOString(),
+				updatedByNickname:
+					currentMember?.nickname ?? currentUser?.nickname ?? "preview",
+				version: activeTeamRule.version + 1,
+			};
+
+			return HttpResponse.json(activeTeamRule);
 		},
 	),
 
