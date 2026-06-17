@@ -3001,4 +3001,52 @@ export const handlers = [
 			return HttpResponse.json(createMockGithubWeeklySummaries(targetUserId));
 		},
 	),
+
+	http.get(
+		getPath(
+			"/team-space/:projectGroupId/github/users/:targetUserId/weekly-summaries/:weeklyGithubSummaryId",
+		),
+		async ({ params, request }) => {
+			await delay(300);
+			syncSessionFromRequest(request);
+
+			const projectGroupId = Number(params.projectGroupId);
+			const targetUserId = Number(params.targetUserId);
+			const weeklyGithubSummaryId = Number(params.weeklyGithubSummaryId);
+			const accessError = assertProjectGroupAccess(projectGroupId);
+
+			if (accessError) {
+				return accessError;
+			}
+
+			const targetMember = activeProjectGroup?.members.find(
+				(member) => member.userId === targetUserId,
+			);
+
+			if (!targetMember) {
+				return buildErrorResponse(
+					404,
+					"팀 멤버를 찾을 수 없습니다.",
+					"PROJECT_GROUP_MEMBER_NOT_FOUND",
+				);
+			}
+
+			const summary = createMockGithubWeeklySummaries(
+				targetUserId,
+			).summaries.find(
+				(candidate) =>
+					candidate.weeklyGithubSummaryId === weeklyGithubSummaryId,
+			);
+
+			if (!summary) {
+				return buildErrorResponse(
+					404,
+					"주간 GitHub 요약을 찾을 수 없습니다.",
+					"WEEKLY_GITHUB_SUMMARY_NOT_FOUND",
+				);
+			}
+
+			return HttpResponse.json(summary);
+		},
+	),
 ];

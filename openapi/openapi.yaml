@@ -1142,6 +1142,31 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /team-space/{projectGroupId}/github/users/{targetUserId}/weekly-summaries/{weeklyGithubSummaryId}:
+    get:
+      tags: [TeamSpace]
+      security:
+        - bearerAuth: []
+      summary: Get one weekly GitHub activity summary for a team member
+      parameters:
+        - $ref: '#/components/parameters/ProjectGroupId'
+        - $ref: '#/components/parameters/TargetUserId'
+        - $ref: '#/components/parameters/WeeklyGithubSummaryId'
+      responses:
+        '200':
+          description: Weekly GitHub summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubWeeklySummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     bearerAuth:
@@ -1180,6 +1205,13 @@ components:
     GithubRepositoryId:
       in: path
       name: githubRepositoryId
+      required: true
+      schema:
+        type: integer
+        format: int64
+    WeeklyGithubSummaryId:
+      in: path
+      name: weeklyGithubSummaryId
       required: true
       schema:
         type: integer

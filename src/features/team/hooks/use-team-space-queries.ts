@@ -12,6 +12,7 @@ import {
 	getGithubInstallationStatus,
 	getGithubRepositories,
 	getGithubRepositoryContributions,
+	getGithubWeeklySummary,
 	getGithubWeeklySummaries,
 	getTeamRule,
 	regenerateDevGuide,
@@ -24,6 +25,7 @@ import type {
 	DevGuideQueryResponse,
 	GithubAppInstallationCompleteRequest,
 	GithubRepositoryContributionRequest,
+	GithubWeeklySummaryDetailRequest,
 	RegenerateDevGuideRequest,
 	SetGithubRepositoriesRequest,
 	TeamRuleResponse,
@@ -63,6 +65,20 @@ export const teamSpaceQueryKeys = {
 			"users",
 			targetUserId,
 			"weekly-summaries",
+		] as const,
+	githubWeeklySummary: (
+		projectGroupId: number,
+		targetUserId: number,
+		weeklyGithubSummaryId: number,
+	) =>
+		[
+			"team-space",
+			projectGroupId,
+			"github",
+			"users",
+			targetUserId,
+			"weekly-summaries",
+			weeklyGithubSummaryId,
 		] as const,
 	githubStatus: (projectGroupId: number) =>
 		["team-space", projectGroupId, "github", "status"] as const,
@@ -414,6 +430,41 @@ export function useGithubWeeklySummariesQuery(
 			}),
 		queryKey: hasIds
 			? teamSpaceQueryKeys.githubWeeklySummaries(projectGroupId, targetUserId)
+			: teamSpaceQueryKeys.disabled,
+		refetchOnWindowFocus: false,
+		retry: false,
+		staleTime: githubContributionStaleTimeMs,
+	});
+}
+
+export function useGithubWeeklySummaryQuery(
+	projectGroupId: number | undefined,
+	targetUserId: number | undefined,
+	weeklyGithubSummaryId: number | undefined,
+	enabled = true,
+) {
+	const hasIds =
+		typeof projectGroupId === "number" &&
+		typeof targetUserId === "number" &&
+		typeof weeklyGithubSummaryId === "number";
+
+	return useQuery({
+		enabled: enabled && hasIds,
+		queryFn: () =>
+			getGithubWeeklySummary({
+				projectGroupId: requireProjectGroupId(projectGroupId),
+				targetUserId: requireNumericId(targetUserId, "Target user id"),
+				weeklyGithubSummaryId: requireNumericId(
+					weeklyGithubSummaryId,
+					"Weekly Github summary id",
+				),
+			} satisfies GithubWeeklySummaryDetailRequest),
+		queryKey: hasIds
+			? teamSpaceQueryKeys.githubWeeklySummary(
+					projectGroupId,
+					targetUserId,
+					weeklyGithubSummaryId,
+				)
 			: teamSpaceQueryKeys.disabled,
 		refetchOnWindowFocus: false,
 		retry: false,
