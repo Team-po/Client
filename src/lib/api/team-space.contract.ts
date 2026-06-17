@@ -2,12 +2,15 @@ import {
 	confirmDevGuide,
 	getDevGuideHistories,
 	getDevGuideHistoryContent,
+	getGithubWeeklySummary,
 	getGithubWeeklySummaries,
 } from "@/lib/api/team-space";
 import type {
 	ConfirmDevGuideRequest,
 	DevGuideHistoryContentResponse,
 	DevGuideHistoryListResponse,
+	GithubWeeklySummary,
+	GithubWeeklySummaryDetailRequest,
 	GithubWeeklySummaryListResponse,
 	GithubWeeklySummaryRequest,
 } from "@/lib/types/team-space";
@@ -23,11 +26,15 @@ type TeamSpaceServerOnlyApiContract = {
 	getGithubWeeklySummaries: (
 		payload: GithubWeeklySummaryRequest,
 	) => Promise<GithubWeeklySummaryListResponse>;
+	getGithubWeeklySummary: (
+		payload: GithubWeeklySummaryDetailRequest,
+	) => Promise<GithubWeeklySummary>;
 };
 
 export const teamSpaceServerOnlyApiContract = {
 	confirmDevGuide,
 	getDevGuideHistories,
 	getDevGuideHistoryContent,
+	getGithubWeeklySummary,
 	getGithubWeeklySummaries,
 } satisfies TeamSpaceServerOnlyApiContract;

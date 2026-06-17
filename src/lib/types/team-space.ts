@@ -152,6 +152,11 @@ export interface GithubWeeklySummaryRequest {
 	targetUserId: number;
 }
 
+export interface GithubWeeklySummaryDetailRequest
+	extends GithubWeeklySummaryRequest {
+	weeklyGithubSummaryId: number;
+}
+
 export interface GithubWeeklySummaryContent {
 	followUpSuggestions: string[];
 	issueHighlights: string[];

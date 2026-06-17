@@ -10,6 +10,8 @@ import type {
 	GithubRepositoryContributionRequest,
 	GithubRepositoryContributionResponse,
 	GithubRepositoryListResponse,
+	GithubWeeklySummary,
+	GithubWeeklySummaryDetailRequest,
 	GithubWeeklySummaryListResponse,
 	GithubWeeklySummaryRequest,
 	RegenerateDevGuideRequest,
@@ -175,5 +177,15 @@ export function getGithubWeeklySummaries({
 }: GithubWeeklySummaryRequest) {
 	return apiRequest<GithubWeeklySummaryListResponse>(
 		`/team-space/${projectGroupId}/github/users/${targetUserId}/weekly-summaries`,
+	);
+}
+
+export function getGithubWeeklySummary({
+	projectGroupId,
+	targetUserId,
+	weeklyGithubSummaryId,
+}: GithubWeeklySummaryDetailRequest) {
+	return apiRequest<GithubWeeklySummary>(
+		`/team-space/${projectGroupId}/github/users/${targetUserId}/weekly-summaries/${weeklyGithubSummaryId}`,
 	);
 }
